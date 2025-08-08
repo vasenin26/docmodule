@@ -3,7 +3,7 @@
     <template #header>
       <div class="flex items-center justify-between">
         <div>
-          <Heading>{{ page.title }}</Heading>
+          <Heading :title="page.title" />
           <p class="text-sm text-muted-foreground mt-1">
             Создано {{ formatDate(page.created_at) }} пользователем {{ page.creator?.name }}
           </p>

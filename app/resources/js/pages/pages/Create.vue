@@ -2,7 +2,7 @@
   <AppLayout title="Создать страницу">
     <template #header>
       <div class="flex items-center justify-between">
-        <Heading>Создать страницу</Heading>
+        <Heading title="Создать страницу" />
         <Button as-child variant="outline">
           <Link :href="route('pages.index')">
             Назад к списку
@@ -99,9 +99,12 @@ interface ParentPage {
   title: string
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   parentPage?: ParentPage
-}>()
+  errors?: Record<string, string>
+}>(), {
+  errors: () => ({}),
+})
 
 const form = useForm({
   title: '',

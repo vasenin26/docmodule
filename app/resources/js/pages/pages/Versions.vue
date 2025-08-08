@@ -3,7 +3,7 @@
     <template #header>
       <div class="flex items-center justify-between">
         <div>
-          <Heading>Версии страницы</Heading>
+          <Heading title="Версии страницы" />
           <p class="text-sm text-muted-foreground mt-1">
             {{ page.title }}
           </p>

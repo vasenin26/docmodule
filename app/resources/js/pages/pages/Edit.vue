@@ -2,7 +2,7 @@
   <AppLayout title="Редактировать страницу">
     <template #header>
       <div class="flex items-center justify-between">
-        <Heading>Редактировать страницу</Heading>
+        <Heading title="Редактировать страницу" />
         <div class="flex items-center gap-2">
           <Button as-child variant="outline">
             <Link :href="route('pages.show', page?.id)">
@@ -106,10 +106,12 @@ interface Page {
   content: string
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   page: Page
   errors?: Record<string, string>
-}>()
+}>(), {
+  errors: () => ({}),
+})
 
 const form = useForm({
   title: props.page?.title || '',

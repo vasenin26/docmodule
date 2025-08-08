@@ -64,9 +64,12 @@ import InputError from '@/components/InputError.vue'
 
 interface Props {
   parentId: number
+  errors?: Record<string, string>
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  errors: () => ({}),
+})
 
 const showForm = ref(false)
 const processing = ref(false)
