@@ -2,7 +2,7 @@
   <AppLayout title="Страницы документации">
     <template #header>
       <div class="flex items-center justify-between">
-        <Heading>Страницы документации</Heading>
+        <Heading title="Страницы документации" />
         <div class="flex items-center gap-2">
           <Button as-child>
             <Link :href="route('pages.create')">
