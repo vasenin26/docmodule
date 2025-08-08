@@ -104,6 +104,7 @@ class PageController extends Controller
 
         return Inertia::render('pages/Edit', [
             'page' => $page,
+            'errors' => (object) [],
         ]);
     }
 

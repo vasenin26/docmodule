@@ -5,7 +5,7 @@
         <Heading>Редактировать страницу</Heading>
         <div class="flex items-center gap-2">
           <Button as-child variant="outline">
-            <Link :href="route('pages.show', page.id)">
+            <Link :href="route('pages.show', page?.id)">
               Просмотр
             </Link>
           </Button>
@@ -21,7 +21,7 @@
     <div class="max-w-4xl">
       <Card>
         <CardHeader>
-          <CardTitle>{{ page.title }}</CardTitle>
+          <CardTitle>{{ page?.title || 'Загрузка...' }}</CardTitle>
           <CardDescription>
             Редактирование страницы документации. При сохранении будет создана новая версия.
           </CardDescription>
@@ -35,9 +35,9 @@
                 id="title"
                 v-model="form.title"
                 placeholder="Введите название страницы"
-                :class="{ 'border-destructive': errors.title }"
+                :class="{ 'border-destructive': errors?.title }"
               />
-              <InputError v-if="errors.title" :message="errors.title" />
+              <InputError v-if="errors?.title" :message="errors.title" />
             </div>
 
             <!-- Содержимое -->
@@ -49,9 +49,9 @@
                 rows="15"
                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Введите содержимое страницы в формате Markdown..."
-                :class="{ 'border-destructive': errors.content }"
+                :class="{ 'border-destructive': errors?.content }"
               />
-                          <InputError v-if="errors.content" :message="errors.content" />
+                          <InputError v-if="errors?.content" :message="errors.content" />
             <p class="text-xs text-muted-foreground">
               Поддерживается формат Markdown
             </p>
@@ -108,18 +108,19 @@ interface Page {
 
 const props = defineProps<{
   page: Page
+  errors?: Record<string, string>
 }>()
 
 const form = useForm({
-  title: props.page.title,
-  content: props.page.content,
+  title: props.page?.title || '',
+  content: props.page?.content || '',
 })
 
 const processing = ref(false)
 
 const submit = () => {
   processing.value = true
-  form.put(route('pages.update', props.page.id), {
+  form.put(route('pages.update', props.page?.id), {
     onSuccess: () => {
       processing.value = false
     },
@@ -130,6 +131,6 @@ const submit = () => {
 }
 
 const cancel = () => {
-  router.visit(route('pages.show', props.page.id))
+  router.visit(route('pages.show', props.page?.id))
 }
 </script>
