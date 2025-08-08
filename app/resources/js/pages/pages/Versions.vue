@@ -57,24 +57,32 @@
         </CardContent>
       </Card>
 
-      <!-- История версий -->
+      <!-- Цепочка версий -->
       <Card>
         <CardHeader>
-          <CardTitle>История версий</CardTitle>
+          <CardTitle>Цепочка версий</CardTitle>
           <CardDescription>
-            Все версии страницы в хронологическом порядке
+            Полная история изменений страницы от первой до последней версии
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div class="space-y-4">
             <div
-              v-for="version in versions"
+              v-for="(version, index) in versions"
               :key="version.id"
               class="p-4 border rounded-lg hover:bg-muted/50"
             >
               <div class="flex items-center justify-between">
                 <div class="flex-1">
-                  <h3 class="font-medium">{{ version.title }}</h3>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium text-muted-foreground">
+                      Версия {{ index + 1 }}
+                    </span>
+                    <span v-if="version.current" class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                      Текущая
+                    </span>
+                  </div>
+                  <h3 class="font-medium mt-1">{{ version.title }}</h3>
                   <p class="text-sm text-muted-foreground">
                     Создано {{ formatDate(version.created_at) }} пользователем {{ version.creator?.name }}
                   </p>
@@ -152,6 +160,8 @@ interface Version {
   created_at: string
   current: boolean
   creator: Creator
+  base_id?: number
+  previous_version_id?: number
 }
 
 interface Page {

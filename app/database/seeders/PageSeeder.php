@@ -35,6 +35,8 @@ class PageSeeder extends Seeder
                 'title' => $title,
                 'content' => $content,
                 'created_by' => $user->id,
+                'base_id' => null, // Первая версия
+                'previous_version_id' => null, // Первая версия
                 'current' => true,
             ]);
 
@@ -52,31 +54,37 @@ class PageSeeder extends Seeder
                         'content' => $childContent,
                         'created_by' => $user->id,
                         'parent_id' => $page->id,
+                        'base_id' => null, // Первая версия
+                        'previous_version_id' => null, // Первая версия
                         'current' => true,
                     ]);
                 }
             }
         }
 
-        // Создаем несколько страниц с версиями для демонстрации
+        // Создаем страницу с версиями для демонстрации
         $versionPage = Page::create([
             'title' => 'Страница с версиями',
             'content' => 'Первая версия страницы',
             'created_by' => $user->id,
-            'current' => false,
+            'base_id' => null, // Первая версия
+            'previous_version_id' => null, // Первая версия
+            'current' => false, // Будет обновлено при создании новых версий
         ]);
 
-        // Создаем несколько версий
+        // Создаем несколько версий с корректной цепочкой
         $versions = [
             'Вторая версия страницы' => 'Обновленное содержимое второй версии',
             'Третья версия страницы' => 'Финальная версия с улучшениями',
         ];
 
+        $previousVersion = $versionPage;
         foreach ($versions as $title => $content) {
-            $versionPage->createNewVersion([
+            $newVersion = $previousVersion->createNewVersion([
                 'title' => $title,
                 'content' => $content,
             ]);
+            $previousVersion = $newVersion;
         }
     }
 }

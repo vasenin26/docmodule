@@ -92,6 +92,43 @@
         </CardContent>
       </Card>
 
+      <!-- Информация о версиях -->
+      <Card>
+        <CardHeader>
+          <CardTitle>Информация о версиях</CardTitle>
+          <CardDescription>
+            Детали версионирования страницы
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span class="font-medium">Base ID:</span>
+              <span class="text-muted-foreground ml-2">{{ page.base_id || 'Первая версия' }}</span>
+            </div>
+            <div>
+              <span class="font-medium">Previous Version ID:</span>
+              <span class="text-muted-foreground ml-2">{{ page.previous_version_id || 'Первая версия' }}</span>
+            </div>
+            <div>
+              <span class="font-medium">Текущая версия:</span>
+              <span class="text-muted-foreground ml-2">{{ page.current ? 'Да' : 'Нет' }}</span>
+            </div>
+            <div>
+              <span class="font-medium">Статус:</span>
+              <span class="text-muted-foreground ml-2">
+                <span v-if="page.current" class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                  Текущая
+                </span>
+                <span v-else class="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">
+                  Архивная
+                </span>
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <!-- Информация о странице -->
       <Card>
         <CardHeader>
@@ -152,6 +189,9 @@ interface Page {
   creator: Creator
   parent?: Page
   children: Page[]
+  base_id?: number
+  previous_version_id?: number
+  current: boolean
 }
 
 const props = defineProps<{

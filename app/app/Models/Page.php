@@ -13,6 +13,7 @@ class Page extends Model
         'content',
         'created_by',
         'base_id',
+        'previous_version_id',
         'parent_id',
         'current',
     ];
@@ -35,6 +36,22 @@ class Page extends Model
     public function basePage(): BelongsTo
     {
         return $this->belongsTo(Page::class, 'base_id');
+    }
+
+    /**
+     * Предыдущая версия страницы
+     */
+    public function previousVersion(): BelongsTo
+    {
+        return $this->belongsTo(Page::class, 'previous_version_id');
+    }
+
+    /**
+     * Следующая версия страницы
+     */
+    public function nextVersion(): HasMany
+    {
+        return $this->hasMany(Page::class, 'previous_version_id');
     }
 
     /**
@@ -74,17 +91,31 @@ class Page extends Model
      */
     public function createNewVersion(array $data = []): Page
     {
+        // Определяем base_id для новой версии
+        $baseId = $this->base_id ?? $this->id;
+        
         // Создаем новую версию
         $newVersion = $this->replicate();
-        $newVersion->base_id = $this->base_id ?? $this->id;
+        $newVersion->base_id = $baseId;
+        $newVersion->previous_version_id = $this->id;
         $newVersion->current = true;
         $newVersion->fill($data);
         $newVersion->save();
 
         // Убираем флаг current у всех других версий
-        Page::where('base_id', $this->base_id ?? $this->id)
-            ->where('id', '!=', $newVersion->id)
-            ->update(['current' => false]);
+        if ($this->base_id) {
+            // Если это не первая версия, обновляем все версии с тем же base_id
+            Page::where('base_id', $baseId)
+                ->where('id', '!=', $newVersion->id)
+                ->update(['current' => false]);
+        } else {
+            // Если это первая версия, обновляем все версии с base_id равным ID этой страницы
+            Page::where('base_id', $this->id)
+                ->where('id', '!=', $newVersion->id)
+                ->update(['current' => false]);
+            // Также обновляем саму первую версию
+            $this->update(['current' => false]);
+        }
 
         return $newVersion;
     }
@@ -97,6 +128,29 @@ class Page extends Model
         return static::where('base_id', $baseId)
             ->where('current', true)
             ->first();
+    }
+
+    /**
+     * Получить полную цепочку версий страницы
+     */
+    public function getVersionChain(): \Illuminate\Database\Eloquent\Collection
+    {
+        // Находим первую версию в цепочке
+        $firstVersion = $this;
+        while ($firstVersion->previous_version_id) {
+            $firstVersion = $firstVersion->previousVersion;
+        }
+
+        // Собираем всю цепочку версий
+        $chain = new \Illuminate\Database\Eloquent\Collection([$firstVersion]);
+        $current = $firstVersion;
+        
+        while ($current->nextVersion->count() > 0) {
+            $current = $current->nextVersion->first();
+            $chain->push($current);
+        }
+
+        return $chain;
     }
 
     /**

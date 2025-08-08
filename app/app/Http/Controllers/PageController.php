@@ -74,6 +74,8 @@ class PageController extends Controller
             'content' => $request->content,
             'created_by' => Auth::id(),
             'parent_id' => $request->parent_id,
+            'base_id' => null, // Для первой версии base_id = null
+            'previous_version_id' => null, // Для первой версии previous_version_id = null
             'current' => true,
         ]);
 
@@ -120,7 +122,7 @@ class PageController extends Controller
 
         $page = Page::where('current', true)->findOrFail($id);
 
-        // Создаем новую версию страницы
+        // Создаем новую версию страницы с корректной установкой previous_version_id
         $newVersion = $page->createNewVersion([
             'title' => $request->title,
             'content' => $request->content,
@@ -138,7 +140,8 @@ class PageController extends Controller
         $page = Page::where('current', true)->findOrFail($id);
 
         // Удаляем все версии страницы
-        Page::where('base_id', $page->base_id ?? $page->id)->delete();
+        $baseId = $page->base_id ?? $page->id;
+        Page::where('base_id', $baseId)->delete();
 
         return redirect()->route('pages.index')
             ->with('success', 'Страница успешно удалена.');
@@ -150,13 +153,9 @@ class PageController extends Controller
     public function versions(string $id)
     {
         $page = Page::findOrFail($id);
-        $baseId = $page->base_id ?? $page->id;
-
-        $versions = Page::where('base_id', $baseId)
-            ->orWhere('id', $baseId)
-            ->with('creator')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        
+        // Получаем полную цепочку версий
+        $versions = $page->getVersionChain();
 
         return Inertia::render('pages/Versions', [
             'page' => $page,
@@ -171,6 +170,14 @@ class PageController extends Controller
     {
         $page = Page::findOrFail($id);
         $version = Page::findOrFail($versionId);
+
+        // Проверяем, что версия принадлежит той же цепочке
+        $pageChain = $page->getVersionChain();
+        $versionInChain = $pageChain->where('id', $versionId)->first();
+        
+        if (!$versionInChain) {
+            return redirect()->back()->with('error', 'Версия не найдена в цепочке страницы.');
+        }
 
         // Создаем новую версию на основе выбранной
         $newVersion = $page->createNewVersion([

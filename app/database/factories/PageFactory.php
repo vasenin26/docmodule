@@ -22,6 +22,8 @@ class PageFactory extends Factory
             'title' => fake()->sentence(3, 6),
             'content' => fake()->paragraphs(3, true),
             'created_by' => User::factory(),
+            'base_id' => null, // Для первой версии base_id = null
+            'previous_version_id' => null, // Для первой версии previous_version_id = null
             'current' => true,
         ];
     }
@@ -45,13 +47,29 @@ class PageFactory extends Factory
     public function withVersions(): static
     {
         return $this->afterCreating(function (Page $page) {
-            // Создаем несколько версий
+            // Создаем несколько версий с корректной цепочкой
+            $previousVersion = $page;
             for ($i = 0; $i < rand(2, 4); $i++) {
-                $page->createNewVersion([
+                $newVersion = $previousVersion->createNewVersion([
                     'title' => fake()->sentence(3, 6),
                     'content' => fake()->paragraphs(3, true),
                 ]);
+                $previousVersion = $newVersion;
             }
+        });
+    }
+
+    /**
+     * Создать страницу как новую версию существующей
+     */
+    public function asVersion(Page $basePage): static
+    {
+        return $this->state(function (array $attributes) use ($basePage) {
+            return [
+                'base_id' => $basePage->base_id ?? $basePage->id,
+                'previous_version_id' => $basePage->id,
+                'current' => true,
+            ];
         });
     }
 }
