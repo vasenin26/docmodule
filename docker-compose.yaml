@@ -1,0 +1,31 @@
+services:
+  development:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    volumes:
+      - ./app:/app
+    working_dir: /app
+    ports:
+      - "80:80"
+      - "8000:8000"
+      - "5173:5173"
+    command: composer run dev
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+
+  mysql:
+    image: mysql:8.0
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=laravel
+      - MYSQL_USER=laravel
+      - MYSQL_PASSWORD=laravel
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
