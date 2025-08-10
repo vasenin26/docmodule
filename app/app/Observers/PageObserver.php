@@ -29,6 +29,17 @@ class PageObserver
     }
 
     /**
+     * Handle the Page "saved" event.
+     */
+    public function saved(Page $page): void
+    {
+        // Если это новая версия (previous_version_id не null), запускаем Job
+        if ($page->previous_version_id && $page->wasRecentlyCreated) {
+            CalculateVersionDifferenceJob::dispatch($page->id, $page->previous_version_id);
+        }
+    }
+
+    /**
      * Handle the Page "deleted" event.
      */
     public function deleted(Page $page): void

@@ -55,7 +55,8 @@ class PageVersioningWithTaskCreationTest extends TestCase
         ]);
 
         // Получаем ID созданной страницы
-        $pageId = \App\Models\Page::where('title', 'Original Page')->first()->id;
+        $originalPage = \App\Models\Page::where('title', 'Original Page')->first();
+        $pageId = $originalPage->id;
 
         // Обновляем страницу
         $response = $this->put("/pages/{$pageId}", [
@@ -66,9 +67,15 @@ class PageVersioningWithTaskCreationTest extends TestCase
         $response->assertRedirect('/pages');
         $response->assertSessionHas('success');
 
-        // Проверяем, что Job был запущен через обсервер
-        Queue::assertPushed(CalculateVersionDifferenceJob::class, function ($job) use ($pageId) {
-            return $job->newVersionId > $pageId && $job->oldVersionId === $pageId;
+        // Проверяем, что была создана новая версия
+        $newVersion = \App\Models\Page::where('title', 'Updated Page')->first();
+        $this->assertNotNull($newVersion);
+        $this->assertNotEquals($pageId, $newVersion->id);
+        $this->assertEquals($pageId, $newVersion->previous_version_id);
+
+        // Проверяем, что Job был запущен через обсервер для новой версии
+        Queue::assertPushed(CalculateVersionDifferenceJob::class, function ($job) use ($newVersion, $pageId) {
+            return $job->newVersionId === $newVersion->id && $job->oldVersionId === $pageId;
         });
     }
 
