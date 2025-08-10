@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\TaskDescriptionGenerator\OpenAIDescriptionGenerator;
 use App\Services\TaskDescriptionGenerator\StubDescriptionGenerator;
 use App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorInterface;
 use App\Services\TaskTracker\FakeIntegration;
@@ -21,7 +22,16 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TaskTrackerService::class);
 
         // Регистрация сервисов генерации описания задач
-        $this->app->bind(TaskDescriptionGeneratorInterface::class, StubDescriptionGenerator::class);
+        // Используем OpenAI генератор, если настроен API ключ, иначе заглушку
+        $this->app->bind(TaskDescriptionGeneratorInterface::class, function ($app) {
+            $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
+            
+            if ($apiKey) {
+                return new OpenAIDescriptionGenerator();
+            }
+            
+            return new StubDescriptionGenerator();
+        });
     }
 
     /**

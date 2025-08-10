@@ -8,6 +8,23 @@
 
 ## Функционал
 
+### Интеграция с LLM (Large Language Models)
+
+Система поддерживает интеграцию с OpenAI API для автоматической генерации описаний задач на основе изменений в коде:
+
+#### Возможности LLM интеграции:
+- ✅ **Автоматическая генерация описаний** - создание описаний задач из diff'ов кода
+- ✅ **Поддержка OpenAI API** - использование GPT моделей для анализа изменений
+- ✅ **Fallback механизм** - автоматический переход на заглушку при недоступности API
+- ✅ **Мониторинг расходов** - логирование использования токенов
+- ✅ **Гибкая конфигурация** - настройка моделей и параметров через .env
+
+#### Доступные библиотеки:
+- **openai-php/client** - основная библиотека для работы с OpenAI API
+- **openai-php/laravel** - Laravel-специфичная интеграция
+
+Подробная документация: [Интеграция с LLM](docs/интеграция%20с%20LLM.md)
+
 ### Система управления страницами документации
 
 Система предоставляет полный функционал для управления страницами документации с поддержкой:
@@ -35,6 +52,7 @@
 ### Требования
 - Docker и Docker Compose
 - Node.js 18+ (для разработки)
+- OpenAI API ключ (опционально, для LLM интеграции)
 
 ### Запуск проекта
 
@@ -65,12 +83,19 @@ docker-compose exec -u local development php artisan migrate
 docker-compose exec -u local development php artisan db:seed
 ```
 
-6. Соберите фронтенд:
+6. (Опционально) Настройте OpenAI API для LLM интеграции:
+```bash
+# Добавьте в .env файл:
+OPENAI_API_KEY=sk-your-openai-api-key-here
+OPENAI_MODEL=gpt-4o-mini
+```
+
+7. Соберите фронтенд:
 ```bash
 docker-compose exec -u local development npm run build
 ```
 
-7. Запустите сервер разработки:
+8. Запустите сервер разработки:
 ```bash
 docker-compose exec -u local development php artisan serve --host=0.0.0.0 --port=8000
 ```
@@ -133,6 +158,15 @@ app/
 │   │   └── PageController.php      # Контроллер страниц
 │   └── Requests/
 │       └── PageRequest.php         # Валидация
+├── Services/
+│   ├── TaskDescriptionGenerator/   # LLM интеграция
+│   │   ├── TaskDescriptionGeneratorInterface.php
+│   │   ├── OpenAIDescriptionGenerator.php
+│   │   └── StubDescriptionGenerator.php
+│   └── TaskTracker/                # Интеграция с таск-трекерами
+│       ├── TaskTrackerInterface.php
+│       ├── TaskTrackerService.php
+│       └── FakeIntegration.php
 ├── database/
 │   ├── migrations/
 │   │   └── create_pages_table.php  # Миграция таблицы
@@ -181,6 +215,7 @@ docker-compose exec -u local development php artisan test
 - **Reka UI** - компонентная библиотека
 - **Marked** - Markdown парсер
 - **SQLite** - база данных
+- **OpenAI API** - интеграция с LLM для генерации описаний
 
 ## Лицензия
 
