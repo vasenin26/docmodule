@@ -13,7 +13,7 @@ class PageObserver
     public function created(Page $page): void
     {
         // Запускаем Job для создания задачи в трекере при создании новой страницы
-        CalculateVersionDifferenceJob::dispatch($page->id, null);
+        CalculateVersionDifferenceJob::dispatch($page->id, $page->previous_version_id);
     }
 
     /**
@@ -21,11 +21,6 @@ class PageObserver
      */
     public function updated(Page $page): void
     {
-        // Для обновления страницы нам нужно найти предыдущую версию
-        // Если это новая версия (previous_version_id не null), запускаем Job
-        if ($page->previous_version_id) {
-            CalculateVersionDifferenceJob::dispatch($page->id, $page->previous_version_id);
-        }
     }
 
     /**
@@ -33,10 +28,6 @@ class PageObserver
      */
     public function saved(Page $page): void
     {
-        // Если это новая версия (previous_version_id не null), запускаем Job
-        if ($page->previous_version_id && $page->wasRecentlyCreated) {
-            CalculateVersionDifferenceJob::dispatch($page->id, $page->previous_version_id);
-        }
     }
 
     /**
