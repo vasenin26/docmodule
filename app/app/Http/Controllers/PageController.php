@@ -88,8 +88,7 @@ class PageController extends Controller
      */
     public function show(string $id)
     {
-        $page = Page::where('current', true)
-            ->with(['creator', 'children.creator', 'parent'])
+        $page = Page::with(['creator', 'children.creator', 'parent'])
             ->findOrFail($id);
 
         return Inertia::render('pages/Show', [
@@ -153,7 +152,7 @@ class PageController extends Controller
     public function versions(string $id)
     {
         $page = Page::findOrFail($id);
-        
+
         // Получаем полную цепочку версий
         $versions = $page->getVersionChain();
 
@@ -174,7 +173,7 @@ class PageController extends Controller
         // Проверяем, что версия принадлежит той же цепочке
         $pageChain = $page->getVersionChain();
         $versionInChain = $pageChain->where('id', $versionId)->first();
-        
+
         if (!$versionInChain) {
             return redirect()->back()->with('error', 'Версия не найдена в цепочке страницы.');
         }
