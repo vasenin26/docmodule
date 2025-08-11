@@ -64,13 +64,14 @@ class PageObserverTest extends TestCase
             'previous_version_id' => null,
         ]);
 
-        // Очищаем очередь от событий создания
-        Queue::clear();
+        // Проверяем, что job был запущен при создании
+        Queue::assertPushed(CalculateVersionDifferenceJob::class, 1);
 
         $observer = new PageObserver();
         $observer->updated($page);
 
-        Queue::assertNotPushed(CalculateVersionDifferenceJob::class);
+        // Проверяем, что дополнительный job не был запущен при обновлении
+        Queue::assertPushed(CalculateVersionDifferenceJob::class, 1);
     }
 
     public function test_deleted_event_does_not_dispatch_job()
@@ -82,13 +83,14 @@ class PageObserverTest extends TestCase
             'created_by' => $user->id,
         ]);
 
-        // Очищаем очередь от событий создания
-        Queue::clear();
+        // Проверяем, что job был запущен при создании
+        Queue::assertPushed(CalculateVersionDifferenceJob::class, 1);
 
         $observer = new PageObserver();
         $observer->deleted($page);
 
-        Queue::assertNotPushed(CalculateVersionDifferenceJob::class);
+        // Проверяем, что дополнительный job не был запущен при удалении
+        Queue::assertPushed(CalculateVersionDifferenceJob::class, 1);
     }
 
     public function test_restored_event_does_not_dispatch_job()
@@ -100,13 +102,14 @@ class PageObserverTest extends TestCase
             'created_by' => $user->id,
         ]);
 
-        // Очищаем очередь от событий создания
-        Queue::clear();
+        // Проверяем, что job был запущен при создании
+        Queue::assertPushed(CalculateVersionDifferenceJob::class, 1);
 
         $observer = new PageObserver();
         $observer->restored($page);
 
-        Queue::assertNotPushed(CalculateVersionDifferenceJob::class);
+        // Проверяем, что дополнительный job не был запущен при восстановлении
+        Queue::assertPushed(CalculateVersionDifferenceJob::class, 1);
     }
 
     public function test_force_deleted_event_does_not_dispatch_job()
@@ -118,12 +121,13 @@ class PageObserverTest extends TestCase
             'created_by' => $user->id,
         ]);
 
-        // Очищаем очередь от событий создания
-        Queue::clear();
+        // Проверяем, что job был запущен при создании
+        Queue::assertPushed(CalculateVersionDifferenceJob::class, 1);
 
         $observer = new PageObserver();
         $observer->forceDeleted($page);
 
-        Queue::assertNotPushed(CalculateVersionDifferenceJob::class);
+        // Проверяем, что дополнительный job не был запущен при принудительном удалении
+        Queue::assertPushed(CalculateVersionDifferenceJob::class, 1);
     }
 }
