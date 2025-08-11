@@ -2,9 +2,10 @@
 
 namespace App\Services\TaskDescriptionGenerator;
 
-use OpenAI\OpenAI;
-use Illuminate\Support\Facades\Log;
 use App\Interfaces\LLMGenerator;
+use App\Interfaces\TaskDescriptionGeneratorInterface;
+use Illuminate\Support\Facades\Log;
+use OpenAI\OpenAI;
 
 class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
 {
@@ -47,7 +48,7 @@ class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
     private function buildPrompt(array $differenceData): string
     {
         $changes = [];
-        
+
         // Use diff_output if available (new format)
         if (isset($differenceData['diff_output']) && !empty($differenceData['diff_output'])) {
             $changes[] = "Изменения в формате git diff:\n" . $differenceData['diff_output'];
@@ -87,8 +88,8 @@ class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
             $changes[] = "Сообщение коммита: " . $differenceData['commit_message'];
         }
 
-        return "Создай описание задачи на основе следующих изменений в документации:\n\n" . 
-               implode("\n\n", $changes) . 
+        return "Создай описание задачи на основе следующих изменений в документации:\n\n" .
+               implode("\n\n", $changes) .
                "\n\nОписание должно быть понятным для разработчиков и содержать основную суть изменений.";
     }
 

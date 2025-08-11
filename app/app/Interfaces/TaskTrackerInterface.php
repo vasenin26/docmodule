@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\TaskTracker;
+namespace App\Interfaces;
 
 interface TaskTrackerInterface
 {

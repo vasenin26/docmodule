@@ -2,6 +2,8 @@
 
 namespace App\Services\TaskTracker;
 
+use App\Interfaces\TaskTrackerInterface;
+
 class TaskTrackerService
 {
     /**

@@ -21,7 +21,7 @@ class PageVersioningWithTaskCreationTest extends TestCase
     {
         parent::setUp();
         $this->withoutMiddleware();
-        
+
         // Создаем мок для DiffGeneratorInterface
         $this->diffGenerator = $this->createMock(DiffGeneratorInterface::class);
         $this->diffGenerator->method('generateDiff')
@@ -129,7 +129,7 @@ class PageVersioningWithTaskCreationTest extends TestCase
             'diff_output' => "+ {$page->title}\n+ {$page->content}",
         ];
         $descriptionJob = new GenerateTaskDescriptionJob($differenceData);
-        $descriptionJob->handle(app(\App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorInterface::class));
+        $descriptionJob->handle(app(\App\Interfaces\TaskDescriptionGeneratorInterface::class));
 
         // Проверяем, что CreateTaskInTrackerJob был запущен
         Queue::assertPushed(CreateTaskInTrackerJob::class, function ($job) {

@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Services\TaskTracker;
+namespace App\Services\TaskTracker\Integration;
 
+use App\Interfaces\TaskTrackerInterface;
 use Illuminate\Support\Facades\Log;
 
 class FakeIntegration implements TaskTrackerInterface

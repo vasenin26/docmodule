@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorInterface;
+use App\Interfaces\TaskDescriptionGeneratorInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -51,13 +51,13 @@ class GenerateTaskDescriptionJob implements ShouldQueue
         }
 
         $title = 'Page updated: ' . $this->differenceData['new_version_title'];
-        
+
         // Use diff_output if available for more detailed information
         if (isset($this->differenceData['diff_output']) && !empty($this->differenceData['diff_output'])) {
             $diffLines = explode("\n", trim($this->differenceData['diff_output']));
             $addedLines = 0;
             $removedLines = 0;
-            
+
             foreach ($diffLines as $line) {
                 if (str_starts_with($line, '+')) {
                     $addedLines++;
@@ -65,7 +65,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
                     $removedLines++;
                 }
             }
-            
+
             $changes = [];
             if ($addedLines > 0) {
                 $changes[] = "{$addedLines} line(s) added";
@@ -73,7 +73,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
             if ($removedLines > 0) {
                 $changes[] = "{$removedLines} line(s) removed";
             }
-            
+
             if (!empty($changes)) {
                 $title .= ' (' . implode(', ', $changes) . ')';
             }

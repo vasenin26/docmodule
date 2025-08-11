@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\TaskDescriptionGenerator;
+namespace App\Interfaces;
 
 interface TaskDescriptionGeneratorInterface
 {

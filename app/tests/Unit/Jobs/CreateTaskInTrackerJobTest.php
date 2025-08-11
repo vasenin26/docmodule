@@ -3,7 +3,7 @@
 namespace Tests\Unit\Jobs;
 
 use App\Jobs\CreateTaskInTrackerJob;
-use App\Services\TaskTracker\FakeIntegration;
+use App\Services\TaskTracker\Integration\FakeIntegration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

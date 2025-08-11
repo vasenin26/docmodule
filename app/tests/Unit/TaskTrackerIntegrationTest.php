@@ -2,8 +2,8 @@
 
 namespace Tests\Unit;
 
-use App\Services\TaskTracker\FakeIntegration;
-use App\Services\TaskTracker\TaskTrackerInterface;
+use App\Interfaces\TaskTrackerInterface;
+use App\Services\TaskTracker\Integration\FakeIntegration;
 use App\Services\TaskTracker\TaskTrackerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;

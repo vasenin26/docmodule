@@ -10,7 +10,7 @@ class TaskDescriptionGeneratorTest extends TestCase
     public function test_stub_generator_returns_basic_description()
     {
         $generator = new StubDescriptionGenerator();
-        
+
         $differenceData = [
             'new_version_id' => 1,
             'new_version_title' => 'Test Page',
@@ -26,7 +26,7 @@ class TaskDescriptionGeneratorTest extends TestCase
     public function test_stub_generator_handles_empty_data()
     {
         $generator = new StubDescriptionGenerator();
-        
+
         $differenceData = [];
 
         $description = $generator->generateDescription($differenceData);
@@ -38,7 +38,7 @@ class TaskDescriptionGeneratorTest extends TestCase
     public function test_stub_generator_handles_complex_data()
     {
         $generator = new StubDescriptionGenerator();
-        
+
         $differenceData = [
             'new_version_id' => 2,
             'new_version_title' => 'Updated Page',
@@ -61,9 +61,9 @@ class TaskDescriptionGeneratorTest extends TestCase
     public function test_stub_generator_implements_interface()
     {
         $generator = new StubDescriptionGenerator();
-        
+
         $this->assertInstanceOf(
-            \App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorInterface::class,
+            \App\Interfaces\TaskDescriptionGeneratorInterface::class,
             $generator
         );
     }

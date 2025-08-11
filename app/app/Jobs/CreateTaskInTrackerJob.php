@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\TaskTracker\TaskTrackerInterface;
+use App\Interfaces\TaskTrackerInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
