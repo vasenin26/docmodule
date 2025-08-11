@@ -2,6 +2,8 @@
 
 namespace App\Services\DiffGenerator;
 
+use App\Interfaces\DiffGeneratorInterface;
+
 class DiffGeneratorService implements DiffGeneratorInterface
 {
     /**
@@ -16,9 +18,9 @@ class DiffGeneratorService implements DiffGeneratorInterface
     {
         $oldLines = explode("\n", $oldContent);
         $newLines = explode("\n", $newContent);
-        
+
         $diffOutput = [];
-        
+
         // Handle title changes
         if ($type === 'title') {
             if ($oldContent !== $newContent) {
@@ -31,22 +33,22 @@ class DiffGeneratorService implements DiffGeneratorInterface
             }
             return implode("\n", $diffOutput);
         }
-        
+
         // Handle content changes
         $oldLines = array_filter($oldLines, function($line) { return $line !== ''; });
         $newLines = array_filter($newLines, function($line) { return $line !== ''; });
-        
+
         $deletedLines = array_diff($oldLines, $newLines);
         $addedLines = array_diff($newLines, $oldLines);
-        
+
         foreach ($deletedLines as $line) {
             $diffOutput[] = "- {$line}";
         }
-        
+
         foreach ($addedLines as $line) {
             $diffOutput[] = "+ {$line}";
         }
-        
+
         return implode("\n", $diffOutput);
     }
 }

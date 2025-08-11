@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\DiffGenerator;
+namespace App\Interfaces;
 
 interface DiffGeneratorInterface
 {

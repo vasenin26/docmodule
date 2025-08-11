@@ -2,13 +2,15 @@
 
 namespace App\Interfaces;
 
+use App\Common\DTO\DifferenceDataDTO;
+
 interface TaskDescriptionGeneratorInterface
 {
     /**
      * Generate task description based on version difference data
      *
-     * @param array $differenceData Data about the difference between versions
+     * @param DifferenceDataDTO $differenceData Data about the difference between versions
      * @return string Generated task description
      */
-    public function generateDescription(array $differenceData): string;
+    public function generateDescription(DifferenceDataDTO $differenceData): string;
 }

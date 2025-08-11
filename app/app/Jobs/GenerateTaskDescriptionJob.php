@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Common\DTO\DifferenceDataDTO;
 use App\Interfaces\TaskDescriptionGeneratorInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -24,7 +25,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        public array $differenceData
+        public DifferenceDataDTO $differenceData
     ) {}
 
     /**
@@ -46,15 +47,15 @@ class GenerateTaskDescriptionJob implements ShouldQueue
      */
     private function generateTaskTitle(): string
     {
-        if ($this->differenceData['is_new_page']) {
-            return 'New page created: ' . $this->differenceData['new_version_title'];
+        if ($this->differenceData->isNewPage) {
+            return 'New page created: ' . $this->differenceData->newVersionTitle;
         }
 
-        $title = 'Page updated: ' . $this->differenceData['new_version_title'];
+        $title = 'Page updated: ' . $this->differenceData->newVersionTitle;
 
         // Use diff_output if available for more detailed information
-        if (isset($this->differenceData['diff_output']) && !empty($this->differenceData['diff_output'])) {
-            $diffLines = explode("\n", trim($this->differenceData['diff_output']));
+        if ($this->differenceData->diffOutput && !empty($this->differenceData->diffOutput)) {
+            $diffLines = explode("\n", trim($this->differenceData->diffOutput));
             $addedLines = 0;
             $removedLines = 0;
 
@@ -77,13 +78,13 @@ class GenerateTaskDescriptionJob implements ShouldQueue
             if (!empty($changes)) {
                 $title .= ' (' . implode(', ', $changes) . ')';
             }
-        } elseif (isset($this->differenceData['title_changed']) || isset($this->differenceData['content_changed'])) {
+        } elseif ($this->differenceData->titleChanged || $this->differenceData->contentChanged) {
             // Fallback to old logic for backward compatibility
-            if ($this->differenceData['title_changed'] && $this->differenceData['content_changed']) {
+            if ($this->differenceData->titleChanged && $this->differenceData->contentChanged) {
                 $title .= ' (title and content changed)';
-            } elseif ($this->differenceData['title_changed']) {
+            } elseif ($this->differenceData->titleChanged) {
                 $title .= ' (title changed)';
-            } elseif ($this->differenceData['content_changed']) {
+            } elseif ($this->differenceData->contentChanged) {
                 $title .= ' (content changed)';
             }
         }

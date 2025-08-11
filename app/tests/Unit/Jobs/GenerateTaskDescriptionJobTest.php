@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Jobs;
 
+use App\Common\DTO\DifferenceDataDTO;
 use App\Jobs\CreateTaskInTrackerJob;
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Services\TaskDescriptionGenerator\StubDescriptionGenerator;
@@ -17,13 +18,11 @@ class GenerateTaskDescriptionJobTest extends TestCase
     {
         Queue::fake();
 
-        $differenceData = [
-            'new_version_id' => 1,
-            'new_version_title' => 'Test Page',
-            'new_version_content' => 'Test content',
-            'is_new_page' => true,
-            'diff_output' => '+ Test Page\n+ Test content',
-        ];
+        $differenceData = new DifferenceDataDTO(
+            newVersionTitle: 'Test Page',
+            isNewPage: true,
+            diffOutput: '+ Test Page\n+ Test content'
+        );
 
         $job = new GenerateTaskDescriptionJob($differenceData);
         $job->handle(new StubDescriptionGenerator());
@@ -38,17 +37,12 @@ class GenerateTaskDescriptionJobTest extends TestCase
     {
         Queue::fake();
 
-        $differenceData = [
-            'new_version_id' => 2,
-            'new_version_title' => 'Updated Page',
-            'new_version_content' => 'Updated content',
-            'old_version_id' => 1,
-            'old_version_title' => 'Old Page',
-            'old_version_content' => 'Old content',
-            'title_changed' => true,
-            'content_changed' => true,
-            'is_new_page' => false,
-        ];
+        $differenceData = new DifferenceDataDTO(
+            newVersionTitle: 'Updated Page',
+            isNewPage: false,
+            titleChanged: true,
+            contentChanged: true
+        );
 
         $job = new GenerateTaskDescriptionJob($differenceData);
         $job->handle(new StubDescriptionGenerator());
@@ -62,17 +56,12 @@ class GenerateTaskDescriptionJobTest extends TestCase
     {
         Queue::fake();
 
-        $differenceData = [
-            'new_version_id' => 2,
-            'new_version_title' => 'Updated Page',
-            'new_version_content' => 'Same content',
-            'old_version_id' => 1,
-            'old_version_title' => 'Old Page',
-            'old_version_content' => 'Same content',
-            'title_changed' => true,
-            'content_changed' => false,
-            'is_new_page' => false,
-        ];
+        $differenceData = new DifferenceDataDTO(
+            newVersionTitle: 'Updated Page',
+            isNewPage: false,
+            titleChanged: true,
+            contentChanged: false
+        );
 
         $job = new GenerateTaskDescriptionJob($differenceData);
         $job->handle(new StubDescriptionGenerator());
@@ -86,17 +75,12 @@ class GenerateTaskDescriptionJobTest extends TestCase
     {
         Queue::fake();
 
-        $differenceData = [
-            'new_version_id' => 2,
-            'new_version_title' => 'Same Title',
-            'new_version_content' => 'Updated content',
-            'old_version_id' => 1,
-            'old_version_title' => 'Same Title',
-            'old_version_content' => 'Old content',
-            'title_changed' => false,
-            'content_changed' => true,
-            'is_new_page' => false,
-        ];
+        $differenceData = new DifferenceDataDTO(
+            newVersionTitle: 'Same Title',
+            isNewPage: false,
+            titleChanged: false,
+            contentChanged: true
+        );
 
         $job = new GenerateTaskDescriptionJob($differenceData);
         $job->handle(new StubDescriptionGenerator());
@@ -110,18 +94,13 @@ class GenerateTaskDescriptionJobTest extends TestCase
     {
         Queue::fake();
 
-        $differenceData = [
-            'new_version_id' => 2,
-            'new_version_title' => 'Test Page',
-            'new_version_content' => 'New content with multiple lines',
-            'old_version_id' => 1,
-            'old_version_title' => 'Test Page',
-            'old_version_content' => 'Old content',
-            'title_changed' => false,
-            'content_changed' => true,
-            'is_new_page' => false,
-            'diff_output' => "- Old content\n+ New content with multiple lines",
-        ];
+        $differenceData = new DifferenceDataDTO(
+            newVersionTitle: 'Test Page',
+            isNewPage: false,
+            titleChanged: false,
+            contentChanged: true,
+            diffOutput: "- Old content\n+ New content with multiple lines"
+        );
 
         $job = new GenerateTaskDescriptionJob($differenceData);
         $job->handle(new StubDescriptionGenerator());
@@ -135,17 +114,12 @@ class GenerateTaskDescriptionJobTest extends TestCase
     {
         Queue::fake();
 
-        $differenceData = [
-            'new_version_id' => 2,
-            'new_version_title' => 'Updated Page',
-            'new_version_content' => 'Updated content',
-            'old_version_id' => 1,
-            'old_version_title' => 'Old Page',
-            'old_version_content' => 'Old content',
-            'title_changed' => true,
-            'content_changed' => true,
-            'is_new_page' => false,
-        ];
+        $differenceData = new DifferenceDataDTO(
+            newVersionTitle: 'Updated Page',
+            isNewPage: false,
+            titleChanged: true,
+            contentChanged: true
+        );
 
         $job = new GenerateTaskDescriptionJob($differenceData);
         $job->handle(new StubDescriptionGenerator());
@@ -159,18 +133,13 @@ class GenerateTaskDescriptionJobTest extends TestCase
     {
         Queue::fake();
 
-        $differenceData = [
-            'new_version_id' => 2,
-            'new_version_title' => 'Test Page',
-            'new_version_content' => "Line 1\nLine 2\nLine 3",
-            'old_version_id' => 1,
-            'old_version_title' => 'Test Page',
-            'old_version_content' => "Line 1\nLine 2",
-            'title_changed' => false,
-            'content_changed' => true,
-            'is_new_page' => false,
-            'diff_output' => "+ Line 3",
-        ];
+        $differenceData = new DifferenceDataDTO(
+            newVersionTitle: 'Test Page',
+            isNewPage: false,
+            titleChanged: false,
+            contentChanged: true,
+            diffOutput: "+ Line 3"
+        );
 
         $job = new GenerateTaskDescriptionJob($differenceData);
         $job->handle(new StubDescriptionGenerator());

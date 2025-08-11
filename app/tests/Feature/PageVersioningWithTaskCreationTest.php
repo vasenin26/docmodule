@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Interfaces\DiffGeneratorInterface;
 use App\Jobs\CalculateVersionDifferenceJob;
 use App\Jobs\CreateTaskInTrackerJob;
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Models\User;
-use App\Services\DiffGenerator\DiffGeneratorInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -121,13 +121,11 @@ class PageVersioningWithTaskCreationTest extends TestCase
         Queue::assertPushed(GenerateTaskDescriptionJob::class);
 
         // Симулируем выполнение GenerateTaskDescriptionJob
-        $differenceData = [
-            'new_version_id' => $page->id,
-            'new_version_title' => $page->title,
-            'new_version_content' => $page->content,
-            'is_new_page' => true,
-            'diff_output' => "+ {$page->title}\n+ {$page->content}",
-        ];
+        $differenceData = new \App\Common\DTO\DifferenceDataDTO(
+            diffOutput: "+ {$page->title}\n+ {$page->content}",
+            newVersionTitle: $page->title,
+            isNewPage: true
+        );
         $descriptionJob = new GenerateTaskDescriptionJob($differenceData);
         $descriptionJob->handle(app(\App\Interfaces\TaskDescriptionGeneratorInterface::class));
 
@@ -210,9 +208,9 @@ class PageVersioningWithTaskCreationTest extends TestCase
         // Проверяем, что GenerateTaskDescriptionJob получил diff_output
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
             $differenceData = $job->differenceData;
-            return isset($differenceData['diff_output']) &&
-                   str_contains($differenceData['diff_output'], '+ Test Page') &&
-                   str_contains($differenceData['diff_output'], '+ Test content');
+            return $differenceData->diffOutput &&
+                   str_contains($differenceData->diffOutput, '+ Test Page') &&
+                   str_contains($differenceData->diffOutput, '+ Test content');
         });
     }
 }

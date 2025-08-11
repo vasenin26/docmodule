@@ -2,12 +2,12 @@
 
 namespace App\Providers;
 
+use App\Interfaces\DiffGeneratorInterface;
 use App\Interfaces\TaskDescriptionGeneratorInterface;
 use App\Interfaces\TaskTrackerInterface;
-use App\Services\DiffGenerator\DiffGeneratorInterface;
 use App\Services\DiffGenerator\DiffGeneratorService;
 use App\Services\LLMGenerator\LMStudioGenerator;
-use App\Services\TaskDescriptionGenerator\OpenAIDescriptionGenerator;
+use App\Services\TaskDescriptionGenerator\LLMDescriptionGenerator;
 use App\Services\TaskDescriptionGenerator\StubDescriptionGenerator;
 use App\Services\TaskTracker\Integration\FakeIntegration;
 use App\Services\TaskTracker\TaskTrackerService;
@@ -31,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
 
             if ($apiKey) {
                 $llmGenerator = new LMStudioGenerator();
-                return new OpenAIDescriptionGenerator($llmGenerator);
+                return new LLMDescriptionGenerator($llmGenerator);
             }
 
             return new StubDescriptionGenerator();

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Services;
 
-use App\Services\TaskDescriptionGenerator\OpenAIDescriptionGenerator;
+use App\Services\TaskDescriptionGenerator\LLMDescriptionGenerator;
 use PHPUnit\Framework\Attributes\Skip;
 use OpenAI\Testing\ClientFake;
 use OpenAI\Responses\Chat\CreateResponse;
@@ -28,7 +28,7 @@ class OpenAIDescriptionGeneratorTest extends TestCase
         ];
 
         // Act
-        $generator = new OpenAIDescriptionGenerator($llmGenerator);
+        $generator = new LLMDescriptionGenerator($llmGenerator);
         $description = $generator->generateDescription($differenceData);
 
         // Assert

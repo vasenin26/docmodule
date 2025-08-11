@@ -1,17 +1,17 @@
 <?php
 
-namespace App\DTOs;
+namespace App\Common\DTO;
 
-class DifferenceDataDTO
+readonly class DifferenceDataDTO
 {
     public function __construct(
-        public readonly ?string $diffOutput = null,
-        public readonly ?string $newVersionTitle = null,
-        public readonly bool $isNewPage = false,
-        public readonly array $addedLines = [],
-        public readonly array $removedLines = [],
-        public readonly bool $titleChanged = false,
-        public readonly bool $contentChanged = false
+        public ?string $diffOutput = null,
+        public ?string $newVersionTitle = null,
+        public bool    $isNewPage = false,
+        public array   $addedLines = [],
+        public array   $removedLines = [],
+        public bool    $titleChanged = false,
+        public bool    $contentChanged = false
     ) {}
 
     /**

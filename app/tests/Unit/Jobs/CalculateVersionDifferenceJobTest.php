@@ -6,7 +6,7 @@ use App\Jobs\CalculateVersionDifferenceJob;
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Models\Page;
 use App\Models\User;
-use App\Services\DiffGenerator\DiffGeneratorInterface;
+use App\Interfaces\DiffGeneratorInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -45,13 +45,11 @@ class CalculateVersionDifferenceJobTest extends TestCase
 
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) use ($page) {
             $differenceData = $job->differenceData;
-            return $differenceData['new_version_id'] === $page->id &&
-                   $differenceData['new_version_title'] === 'Test Page' &&
-                   $differenceData['new_version_content'] === 'Test content' &&
-                   $differenceData['is_new_page'] === true &&
-                   isset($differenceData['diff_output']) &&
-                   str_contains($differenceData['diff_output'], '+ Test Page') &&
-                   str_contains($differenceData['diff_output'], '+ Test content');
+            return $differenceData->newVersionTitle === 'Test Page' &&
+                   $differenceData->isNewPage === true &&
+                   $differenceData->diffOutput &&
+                   str_contains($differenceData->diffOutput, '+ Test Page') &&
+                   str_contains($differenceData->diffOutput, '+ Test content');
         });
     }
 
@@ -84,16 +82,15 @@ class CalculateVersionDifferenceJobTest extends TestCase
 
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) use ($oldPage, $newPage) {
             $differenceData = $job->differenceData;
-            return $differenceData['new_version_id'] === $newPage->id &&
-                   $differenceData['old_version_id'] === $oldPage->id &&
-                   $differenceData['title_changed'] === true &&
-                   $differenceData['content_changed'] === true &&
-                   $differenceData['is_new_page'] === false &&
-                   isset($differenceData['diff_output']) &&
-                   str_contains($differenceData['diff_output'], '- Old Title') &&
-                   str_contains($differenceData['diff_output'], '+ New Title') &&
-                   str_contains($differenceData['diff_output'], '- Old content') &&
-                   str_contains($differenceData['diff_output'], '+ New content');
+            return $differenceData->newVersionTitle === 'New Title' &&
+                   $differenceData->titleChanged === true &&
+                   $differenceData->contentChanged === true &&
+                   $differenceData->isNewPage === false &&
+                   $differenceData->diffOutput &&
+                   str_contains($differenceData->diffOutput, '- Old Title') &&
+                   str_contains($differenceData->diffOutput, '+ New Title') &&
+                   str_contains($differenceData->diffOutput, '- Old content') &&
+                   str_contains($differenceData->diffOutput, '+ New content');
         });
     }
 
@@ -119,8 +116,8 @@ class CalculateVersionDifferenceJobTest extends TestCase
 
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
             $differenceData = $job->differenceData;
-            return $differenceData['is_new_page'] === true &&
-                   isset($differenceData['diff_output']);
+            return $differenceData->isNewPage === true &&
+                   $differenceData->diffOutput;
         });
     }
 
@@ -153,7 +150,7 @@ class CalculateVersionDifferenceJobTest extends TestCase
 
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
             $differenceData = $job->differenceData;
-            $diffOutput = $differenceData['diff_output'];
+            $diffOutput = $differenceData->diffOutput;
             
             return str_contains($diffOutput, '- Line 3') &&
                    str_contains($diffOutput, '+ Line 4') &&
@@ -192,7 +189,7 @@ class CalculateVersionDifferenceJobTest extends TestCase
 
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
             $differenceData = $job->differenceData;
-            $diffOutput = $differenceData['diff_output'];
+            $diffOutput = $differenceData->diffOutput;
             
             return str_contains($diffOutput, '- Old Title') &&
                    str_contains($diffOutput, '+ New Title') &&
@@ -229,7 +226,7 @@ class CalculateVersionDifferenceJobTest extends TestCase
 
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
             $differenceData = $job->differenceData;
-            $diffOutput = $differenceData['diff_output'];
+            $diffOutput = $differenceData->diffOutput;
             
             return str_contains($diffOutput, '+ New content') &&
                    !str_contains($diffOutput, '-');
@@ -265,7 +262,7 @@ class CalculateVersionDifferenceJobTest extends TestCase
 
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
             $differenceData = $job->differenceData;
-            $diffOutput = $differenceData['diff_output'];
+            $diffOutput = $differenceData->diffOutput;
             
             // Check that lines start with + or -
             $lines = explode("\n", trim($diffOutput));

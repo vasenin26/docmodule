@@ -2,12 +2,12 @@
 
 namespace App\Services\TaskDescriptionGenerator;
 
+use App\Common\DTO\DifferenceDataDTO;
 use App\Interfaces\LLMGenerator;
 use App\Interfaces\TaskDescriptionGeneratorInterface;
 use Illuminate\Support\Facades\Log;
-use OpenAI\OpenAI;
 
-class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
+class LLMDescriptionGenerator implements TaskDescriptionGeneratorInterface
 {
 
     public function __construct(
@@ -19,10 +19,10 @@ class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
     /**
      * Generate task description based on version difference data
      *
-     * @param array $differenceData Data about the difference between versions
+     * @param DifferenceDataDTO $differenceData Data about the difference between versions
      * @return string Generated task description
      */
-    public function generateDescription(array $differenceData): string
+    public function generateDescription(DifferenceDataDTO $differenceData): string
     {
         try {
             $prompt = $this->buildPrompt($differenceData);
@@ -34,7 +34,7 @@ class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
         } catch (\Exception $e) {
             Log::error('Failed to generate task description with OpenAI', [
                 'error' => $e->getMessage(),
-                'difference_data' => $differenceData,
+                'difference_data' => $differenceData->toArray(),
             ]);
 
             // Возвращаем fallback описание в случае ошибки
@@ -45,47 +45,27 @@ class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
     /**
      * Build the prompt for the AI model
      */
-    private function buildPrompt(array $differenceData): string
+    private function buildPrompt(DifferenceDataDTO $differenceData): string
     {
         $changes = [];
 
-        // Use diff_output if available (new format)
-        if (isset($differenceData['diff_output']) && !empty($differenceData['diff_output'])) {
-            $changes[] = "Изменения в формате git diff:\n" . $differenceData['diff_output'];
+        if ($differenceData->diffOutput && !empty($differenceData->diffOutput)) {
+            $changes[] = "Изменения в формате git diff:\n" . $differenceData->diffOutput;
         } else {
             // Fallback to old format for backward compatibility
-            if (isset($differenceData['added_lines'])) {
-                $changes[] = "Добавлено строк: " . count($differenceData['added_lines']);
-                if (!empty($differenceData['added_lines'])) {
-                    $changes[] = "Добавленный код:\n" . implode("\n", array_slice($differenceData['added_lines'], 0, 10));
-                }
+            if (!empty($differenceData->addedLines)) {
+                $changes[] = "Добавлено строк: " . count($differenceData->addedLines);
+                $changes[] = "Добавленный код:\n" . implode("\n", array_slice($differenceData->addedLines, 0, 10));
             }
 
-            if (isset($differenceData['removed_lines'])) {
-                $changes[] = "Удалено строк: " . count($differenceData['removed_lines']);
-                if (!empty($differenceData['removed_lines'])) {
-                    $changes[] = "Удаленный код:\n" . implode("\n", array_slice($differenceData['removed_lines'], 0, 10));
-                }
+            if (!empty($differenceData->removedLines)) {
+                $changes[] = "Удалено строк: " . count($differenceData->removedLines);
+                $changes[] = "Удаленный код:\n" . implode("\n", array_slice($differenceData->removedLines, 0, 10));
             }
         }
 
-        // Add page information
-        if (isset($differenceData['new_version_title'])) {
-            $changes[] = "Страница: " . $differenceData['new_version_title'];
-        }
-
-        if (isset($differenceData['is_new_page']) && $differenceData['is_new_page']) {
-            $changes[] = "Тип: Создание новой страницы";
-        } else {
-            $changes[] = "Тип: Обновление существующей страницы";
-        }
-
-        if (isset($differenceData['modified_files'])) {
-            $changes[] = "Измененные файлы: " . implode(", ", $differenceData['modified_files']);
-        }
-
-        if (isset($differenceData['commit_message'])) {
-            $changes[] = "Сообщение коммита: " . $differenceData['commit_message'];
+        if ($differenceData->newVersionTitle) {
+            $changes[] = "Страница: " . $differenceData->newVersionTitle;
         }
 
         return "Создай описание задачи на основе следующих изменений в документации:\n\n" .
@@ -113,16 +93,22 @@ class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
     /**
      * Generate fallback description when OpenAI API fails
      */
-    private function generateFallbackDescription(array $differenceData): string
+    private function generateFallbackDescription(DifferenceDataDTO $differenceData): string
     {
-        $description = "Задача создана из разницы версий";
+        $description = 'Задача создана на основе изменений в документации.';
 
-        if (isset($differenceData['commit_message'])) {
-            $description .= ": " . $differenceData['commit_message'];
+        if ($differenceData->diffOutput && !empty($differenceData->diffOutput)) {
+            $description .= "\n\nИзменения:\n" . $differenceData->diffOutput;
         }
 
-        if (isset($differenceData['modified_files'])) {
-            $description .= " (файлы: " . implode(", ", $differenceData['modified_files']) . ")";
+        if ($differenceData->newVersionTitle) {
+            $description .= "\n\nСтраница: " . $differenceData->newVersionTitle;
+        }
+
+        if ($differenceData->isNewPage) {
+            $description .= "\nТип: Создана новая страница";
+        } else {
+            $description .= "\nТип: Страница обновлена";
         }
 
         return $description;
