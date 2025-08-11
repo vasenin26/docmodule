@@ -1,23 +1,34 @@
 <?php
 
-namespace App\Services\TaskTracker\Integration;
+namespace App\Services\TaskTracker\Integration\YouGile;
 
+use App\Common\RestApiClient\RestApiClient;
 use App\Interfaces\KeyProviderInterface;
 use App\Interfaces\TaskTrackerInterface;
-use http\Client;
+use App\Services\TaskTracker\Integration\YouGile\Command\AuthCommand;
+use App\Services\TaskTracker\Integration\YouGile\Command\CreateTaskCommand;
 
 class YouGile implements TaskTrackerInterface
 {
     public function __construct(
         private KeyProviderInterface $keyProvider,
-        private Client               $httpClient,
+        private RestApiClient $restApiClient,
+        private string $login,
+        private string $password,
+        private string $companyId
     )
     {
     }
 
     public function factory(KeyProviderInterface $keyProvider): TaskTrackerInterface
     {
-        return new self($keyProvider);
+        return new self(
+            $keyProvider,
+            $this->restApiClient,
+            $this->login,
+            $this->password,
+            $this->companyId
+        );
     }
 
     public function createTask(string $title, string $description): bool
@@ -26,38 +37,39 @@ class YouGile implements TaskTrackerInterface
 
         throw_if(is_null($key));
 
-        $token = (new AuthCommand($key))->execute($this->httpClient);
-        $taks = (new CreateTaskCommand($token, $title, $description))->execute($this->httpClient);
+        $token = (new AuthCommand($this->login, $this->password, $this->companyId))->execute($this->restApiClient);
+        $task = (new CreateTaskCommand($token, $title, $description))->execute($this->restApiClient);
 
-        return true;
+        return isset($task['id']);
     }
 
-    private function auth(string $login, string $password, string $companyId): string
-    {
-        $response = $this->httpClient->post(
-            'https://ru.yougile.com/api-v2/auth/keys',
-            [
-                'Content-Type' => 'application/json'
-            ],
-            json_encode([
-                'login' => $login,
-                'password' => $password,
-                'companyId' => $companyId
-            ])
+    public function createTaskWithDetails(
+        string $title,
+        string $description,
+        string $projectId,
+        string $columnId,
+        array $assignees = [],
+        string $dueDate = null,
+        int $priority = null
+    ): array {
+        $token = $this->authenticate();
+        
+        $command = CreateTaskCommand::createFull(
+            $token,
+            $title,
+            $description,
+            $projectId,
+            $columnId,
+            $assignees,
+            $dueDate,
+            $priority
         );
-
-        if ($response->getStatusCode() !== 200) {
-            throw new \RuntimeException('Failed to authenticate with YouGile');
-        }
-
-        $body = $response->getBody()->getContents();
-        $data = json_decode($body, true);
-
-        if (!isset($data['key'])) {
-            throw new \RuntimeException('Token not found in YouGile response');
-        }
-
-        return $data['key'];
+        
+        return $command->execute($this->restApiClient);
     }
 
+    public function authenticate(): string
+    {
+        return (new AuthCommand($this->login, $this->password, $this->companyId))->execute($this->restApiClient);
+    }
 }
