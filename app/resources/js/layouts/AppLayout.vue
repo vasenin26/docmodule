@@ -14,9 +14,7 @@ withDefaults(defineProps<Props>(), {
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
         <template #header>
-            <div class="content-box">
             <slot name="header" />
-            </div>
         </template>
         <slot />
     </AppLayout>
