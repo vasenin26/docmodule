@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\DiffGenerator\DiffGeneratorInterface;
 use App\Services\DiffGenerator\DiffGeneratorService;
+use App\Services\LLMGenerator\LMStudioGenerator;
 use App\Services\TaskDescriptionGenerator\OpenAIDescriptionGenerator;
 use App\Services\TaskDescriptionGenerator\StubDescriptionGenerator;
 use App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorInterface;
@@ -29,7 +30,8 @@ class AppServiceProvider extends ServiceProvider
             $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
             
             if ($apiKey) {
-                return new OpenAIDescriptionGenerator();
+                $llmGenerator = new LMStudioGenerator();
+                return new OpenAIDescriptionGenerator($llmGenerator);
             }
             
             return new StubDescriptionGenerator();

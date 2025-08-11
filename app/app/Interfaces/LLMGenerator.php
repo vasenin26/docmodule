@@ -4,5 +4,5 @@ namespace App\Interfaces;
 
 interface LLMGenerator
 {
-    public function generate(string $prompt): string;
+    public function generate(string $prompt, string $systemPrompt = ''): string;
 }

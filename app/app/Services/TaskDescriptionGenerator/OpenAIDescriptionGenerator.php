@@ -4,22 +4,15 @@ namespace App\Services\TaskDescriptionGenerator;
 
 use OpenAI\OpenAI;
 use Illuminate\Support\Facades\Log;
+use App\Interfaces\LLMGenerator;
 
 class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
 {
-    private OpenAI $client;
-    private string $model;
 
-    public function __construct()
+    public function __construct(
+        private LLMGenerator $llmGenerator
+    )
     {
-        $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
-        
-        if (!$apiKey) {
-            throw new \InvalidArgumentException('OpenAI API key is not configured');
-        }
-
-        $this->client = OpenAI::client($apiKey);
-        $this->model = config('services.openai.model', 'gpt-4o-mini');
     }
 
     /**
@@ -33,31 +26,7 @@ class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
         try {
             $prompt = $this->buildPrompt($differenceData);
 
-            $response = $this->client->chat()->create([
-                'model' => $this->model,
-                'messages' => [
-                    [
-                        'role' => 'system',
-                        'content' => $this->getSystemPrompt()
-                    ],
-                    [
-                        'role' => 'user',
-                        'content' => $prompt
-                    ]
-                ],
-                'max_tokens' => 500,
-                'temperature' => 0.3,
-            ]);
-
-            $description = $response->choices[0]->message->content;
-            
-            // Логируем использование токенов для мониторинга расходов
-            Log::info('OpenAI API usage', [
-                'prompt_tokens' => $response->usage->promptTokens,
-                'completion_tokens' => $response->usage->completionTokens,
-                'total_tokens' => $response->usage->totalTokens,
-                'model' => $this->model,
-            ]);
+            $description = $this->llmGenerator->generate($prompt, $this->getSystemPrompt());
 
             return trim($description);
 
@@ -118,7 +87,7 @@ class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
             $changes[] = "Сообщение коммита: " . $differenceData['commit_message'];
         }
 
-        return "Создай краткое и информативное описание задачи на основе следующих изменений в документации:\n\n" . 
+        return "Создай описание задачи на основе следующих изменений в документации:\n\n" . 
                implode("\n\n", $changes) . 
                "\n\nОписание должно быть понятным для разработчиков и содержать основную суть изменений.";
     }
@@ -128,14 +97,15 @@ class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
      */
     private function getSystemPrompt(): string
     {
-        return "Ты - опытный разработчик, который создает краткие и информативные описания задач на основе изменений в документации. " .
-               "Твоя задача - проанализировать diff между версиями документации и создать понятное описание того, что было изменено. " .
+        return "Ты - опытный менеджер продукта, который создает краткие и информативные описания задач на основе изменений в документации. " .
+                "Твоя задача сформировать задачу для разработчиков на основе изменений в документации. " .
+               "На основе различия необходимо сформировать описание требуемых изменений необходимых для того, чтобы привести кодовую базу к состоянию удовлетворяющему новую версию документации." .
                "Описание должно быть:\n" .
-               "- Кратким (1-3 предложения)\n" .
                "- Информативным\n" .
-               "- Понятным для других разработчиков\n" .
+               "- Понятным для  разработчиков\n" .
                "- На русском языке\n" .
                "- Без технических деталей, если они не критичны\n" .
+               "- Задача должна быть в формате markdown\n" .
                "Отвечай только описанием задачи, без дополнительных комментариев.";
     }
 
