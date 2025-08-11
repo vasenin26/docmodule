@@ -6,6 +6,7 @@ use App\Jobs\CalculateVersionDifferenceJob;
 use App\Jobs\CreateTaskInTrackerJob;
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Models\User;
+use App\Services\DiffGenerator\DiffGeneratorInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -14,10 +15,26 @@ class PageVersioningWithTaskCreationTest extends TestCase
 {
     use RefreshDatabase;
 
+    private $diffGenerator;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->withoutMiddleware();
+        
+        // Создаем мок для DiffGeneratorInterface
+        $this->diffGenerator = $this->createMock(DiffGeneratorInterface::class);
+        $this->diffGenerator->method('generateDiff')
+            ->willReturnMap([
+                ['', 'Test Page', 'title', '+ Test Page'],
+                ['', 'Test content', 'content', '+ Test content'],
+                ['Original Page', 'Updated Page', 'title', '- Original Page\n+ Updated Page'],
+                ['Original content', 'Updated content', 'content', '- Original content\n+ Updated content'],
+                ['', 'First Page', 'title', '+ First Page'],
+                ['', 'First content', 'content', '+ First content'],
+                ['', 'Second Page', 'title', '+ Second Page'],
+                ['', 'Second content', 'content', '+ Second content']
+            ]);
     }
 
     public function test_creating_new_page_dispatches_task_creation_jobs()
@@ -98,7 +115,7 @@ class PageVersioningWithTaskCreationTest extends TestCase
         // Симулируем выполнение CalculateVersionDifferenceJob
         $page = \App\Models\Page::where('title', 'Test Page')->first();
         $job = new CalculateVersionDifferenceJob($page->id, null);
-        $job->handle();
+        $job->handle($this->diffGenerator);
 
         // Проверяем, что GenerateTaskDescriptionJob был запущен
         Queue::assertPushed(GenerateTaskDescriptionJob::class);
@@ -109,6 +126,7 @@ class PageVersioningWithTaskCreationTest extends TestCase
             'new_version_title' => $page->title,
             'new_version_content' => $page->content,
             'is_new_page' => true,
+            'diff_output' => "+ {$page->title}\n+ {$page->content}",
         ];
         $descriptionJob = new GenerateTaskDescriptionJob($differenceData);
         $descriptionJob->handle(app(\App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorInterface::class));
@@ -167,5 +185,34 @@ class PageVersioningWithTaskCreationTest extends TestCase
 
         // Проверяем, что было запущено два Job'а через обсерверы
         Queue::assertPushed(CalculateVersionDifferenceJob::class, 2);
+    }
+
+    public function test_diff_output_is_passed_to_description_generator()
+    {
+        Queue::fake();
+
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        // Создаем страницу
+        $this->post('/pages', [
+            'title' => 'Test Page',
+            'content' => 'Test content',
+        ]);
+
+        // Получаем созданную страницу
+        $page = \App\Models\Page::where('title', 'Test Page')->first();
+
+        // Симулируем выполнение CalculateVersionDifferenceJob
+        $job = new CalculateVersionDifferenceJob($page->id, null);
+        $job->handle($this->diffGenerator);
+
+        // Проверяем, что GenerateTaskDescriptionJob получил diff_output
+        Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
+            $differenceData = $job->differenceData;
+            return isset($differenceData['diff_output']) &&
+                   str_contains($differenceData['diff_output'], '+ Test Page') &&
+                   str_contains($differenceData['diff_output'], '+ Test content');
+        });
     }
 }

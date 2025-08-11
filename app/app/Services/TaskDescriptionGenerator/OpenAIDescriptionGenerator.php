@@ -79,18 +79,35 @@ class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
     {
         $changes = [];
         
-        if (isset($differenceData['added_lines'])) {
-            $changes[] = "Добавлено строк: " . count($differenceData['added_lines']);
-            if (!empty($differenceData['added_lines'])) {
-                $changes[] = "Добавленный код:\n" . implode("\n", array_slice($differenceData['added_lines'], 0, 10));
+        // Use diff_output if available (new format)
+        if (isset($differenceData['diff_output']) && !empty($differenceData['diff_output'])) {
+            $changes[] = "Изменения в формате git diff:\n" . $differenceData['diff_output'];
+        } else {
+            // Fallback to old format for backward compatibility
+            if (isset($differenceData['added_lines'])) {
+                $changes[] = "Добавлено строк: " . count($differenceData['added_lines']);
+                if (!empty($differenceData['added_lines'])) {
+                    $changes[] = "Добавленный код:\n" . implode("\n", array_slice($differenceData['added_lines'], 0, 10));
+                }
+            }
+
+            if (isset($differenceData['removed_lines'])) {
+                $changes[] = "Удалено строк: " . count($differenceData['removed_lines']);
+                if (!empty($differenceData['removed_lines'])) {
+                    $changes[] = "Удаленный код:\n" . implode("\n", array_slice($differenceData['removed_lines'], 0, 10));
+                }
             }
         }
 
-        if (isset($differenceData['removed_lines'])) {
-            $changes[] = "Удалено строк: " . count($differenceData['removed_lines']);
-            if (!empty($differenceData['removed_lines'])) {
-                $changes[] = "Удаленный код:\n" . implode("\n", array_slice($differenceData['removed_lines'], 0, 10));
-            }
+        // Add page information
+        if (isset($differenceData['new_version_title'])) {
+            $changes[] = "Страница: " . $differenceData['new_version_title'];
+        }
+
+        if (isset($differenceData['is_new_page']) && $differenceData['is_new_page']) {
+            $changes[] = "Тип: Создание новой страницы";
+        } else {
+            $changes[] = "Тип: Обновление существующей страницы";
         }
 
         if (isset($differenceData['modified_files'])) {
@@ -101,7 +118,7 @@ class OpenAIDescriptionGenerator implements TaskDescriptionGeneratorInterface
             $changes[] = "Сообщение коммита: " . $differenceData['commit_message'];
         }
 
-        return "Создай краткое и информативное описание задачи на основе следующих изменений в коде:\n\n" . 
+        return "Создай краткое и информативное описание задачи на основе следующих изменений в документации:\n\n" . 
                implode("\n\n", $changes) . 
                "\n\nОписание должно быть понятным для разработчиков и содержать основную суть изменений.";
     }

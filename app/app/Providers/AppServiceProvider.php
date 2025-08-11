@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\DiffGenerator\DiffGeneratorInterface;
+use App\Services\DiffGenerator\DiffGeneratorService;
 use App\Services\TaskDescriptionGenerator\OpenAIDescriptionGenerator;
 use App\Services\TaskDescriptionGenerator\StubDescriptionGenerator;
 use App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorInterface;
@@ -32,6 +34,9 @@ class AppServiceProvider extends ServiceProvider
             
             return new StubDescriptionGenerator();
         });
+
+        // Регистрация сервиса генерации diff
+        $this->app->bind(DiffGeneratorInterface::class, DiffGeneratorService::class);
     }
 
     /**

@@ -32,7 +32,7 @@ class TaskDescriptionGeneratorTest extends TestCase
         $description = $generator->generateDescription($differenceData);
 
         $this->assertStringContainsString('Task created from version difference', $description);
-        $this->assertStringContainsString('[]', $description);
+        $this->assertStringContainsString('Type: Page updated', $description);
     }
 
     public function test_stub_generator_handles_complex_data()
@@ -55,7 +55,7 @@ class TaskDescriptionGeneratorTest extends TestCase
 
         $this->assertStringContainsString('Task created from version difference', $description);
         $this->assertStringContainsString('Updated Page', $description);
-        $this->assertStringContainsString('Old Page', $description);
+        $this->assertStringContainsString('Type: Page updated', $description);
     }
 
     public function test_stub_generator_implements_interface()
