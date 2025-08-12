@@ -46,7 +46,7 @@
         </div>
       </div>
 
-      <div class="grid gap-4 md:grid-cols-3">
+      <div class="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader>
             <CardTitle class="text-sm font-medium">Всего страниц</CardTitle>
@@ -54,6 +54,16 @@
           <CardContent>
             <div class="text-2xl font-bold">
               {{ project.pages ? project.pages.length : 0 }}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle class="text-sm font-medium">Репозитории</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold">
+              {{ project.repositories ? project.repositories.length : 0 }}
             </div>
           </CardContent>
         </Card>
@@ -169,6 +179,69 @@
           </Card>
         </div>
       </div>
+
+      <!-- Репозитории -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Репозитории</h3>
+          <Button 
+            size="sm"
+            @click="$inertia.visit(route('projects.edit', project.id))"
+          >
+            <Icon name="plus" class="mr-2 h-4 w-4" />
+            Управление репозиториями
+          </Button>
+        </div>
+
+        <div v-if="!project.repositories || project.repositories.length === 0">
+          <Card>
+            <CardContent class="text-center py-12">
+              <div class="mx-auto mb-4 h-12 w-12 text-muted-foreground">
+                <Icon name="git-branch" class="h-full w-full" />
+              </div>
+              <h4 class="mb-2 text-lg font-semibold">Нет репозиториев</h4>
+              <p class="mb-4 text-muted-foreground">
+                Добавьте репозитории для этого проекта
+              </p>
+              <Button @click="$inertia.visit(route('projects.edit', project.id))">
+                <Icon name="plus" class="mr-2 h-4 w-4" />
+                Добавить репозиторий
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Card 
+            v-for="repository in project.repositories" 
+            :key="repository.id"
+            class="hover:shadow-md transition-shadow"
+          >
+            <CardHeader>
+              <CardTitle class="text-base flex items-center">
+                <Icon name="git-branch" class="mr-2 h-4 w-4 text-muted-foreground" />
+                Репозиторий
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div class="space-y-2">
+                <a 
+                  :href="repository.url" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="text-primary hover:underline text-sm break-all flex items-center"
+                >
+                  {{ repository.url }}
+                  <Icon name="external-link" class="ml-1 h-3 w-3 flex-shrink-0" />
+                </a>
+                <div class="text-xs text-muted-foreground">
+                  Добавлен {{ formatDate(repository.created_at) }}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   </AppLayout>
 </template>
@@ -194,6 +267,14 @@ interface User {
   email: string
 }
 
+interface Repository {
+  id: number
+  url: string
+  options: any
+  created_at: string
+  updated_at: string
+}
+
 interface Page {
   id: number
   title: string
@@ -213,6 +294,7 @@ interface Project {
   created_at: string
   updated_at: string
   pages?: Page[]
+  repositories?: Repository[]
 }
 
 defineProps<{
