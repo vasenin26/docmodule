@@ -1,0 +1,50 @@
+<template>
+  <div class="font-mono text-sm border rounded-lg overflow-hidden">
+    <div class="bg-gray-100 px-4 py-2 border-b">
+      <span class="text-gray-600">Изменения в содержимом</span>
+    </div>
+    <div class="max-h-40 overflow-y-auto">
+      <div
+        v-for="(line, index) in diffLines"
+        :key="index"
+        :class="getLineClass(line)"
+        class="px-4 py-1 whitespace-pre-wrap"
+      >
+        {{ line }}
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import { generateGitStyleDiff, getDiffLineType } from '@/lib/diffUtils';
+
+interface Props {
+  oldContent: string;
+  newContent: string;
+}
+
+const props = defineProps<Props>();
+
+const diffLines = computed(() => {
+  const diff = generateGitStyleDiff(props.oldContent, props.newContent);
+  return diff.split('\n');
+});
+
+function getLineClass(line: string): string {
+  const type = getDiffLineType(line);
+  
+  switch (type) {
+    case 'header':
+      return 'bg-blue-50 text-blue-800 font-semibold';
+    case 'added':
+      return 'bg-green-50 text-green-800';
+    case 'removed':
+      return 'bg-red-50 text-red-800';
+    case 'context':
+    default:
+      return 'bg-gray-50 text-gray-700';
+  }
+}
+</script>

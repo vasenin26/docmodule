@@ -5,6 +5,7 @@ namespace Tests\Unit\Jobs;
 use App\Jobs\CalculateVersionDifferenceJob;
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Models\Page;
+use App\Models\PageDiffDescription;
 use App\Models\User;
 use App\Interfaces\DiffGeneratorInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -34,22 +35,20 @@ class CalculateVersionDifferenceJobTest extends TestCase
             'created_by' => $user->id,
         ]);
 
-        $this->diffGenerator->method('generateDiff')
-            ->willReturnMap([
-                ['', 'Test Page', 'title', "+ Test Page"],
-                ['', 'Test content', 'content', "+ Test content"]
-            ]);
-
         $job = new CalculateVersionDifferenceJob($page->id, null);
         $job->handle($this->diffGenerator);
 
-        Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) use ($page) {
-            $differenceData = $job->differenceData;
-            return $differenceData->newVersionTitle === 'Test Page' &&
-                   $differenceData->isNewPage === true &&
-                   $differenceData->diffOutput &&
-                   str_contains($differenceData->diffOutput, '+ Test Page') &&
-                   str_contains($differenceData->diffOutput, '+ Test content');
+        // Check that PageDiffDescription was created
+        $this->assertDatabaseHas('page_diff_descriptions', [
+            'page_id' => $page->id,
+            'created_by' => $user->id,
+            'generation_status' => PageDiffDescription::STATUS_PENDING,
+            'content' => null
+        ]);
+
+        // Check that GenerateTaskDescriptionJob was dispatched with correct ID
+        Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
+            return is_int($job->pageDiffDescriptionId);
         });
     }
 

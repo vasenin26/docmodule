@@ -11,6 +11,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Exception;
 
 class GenerateTaskDescriptionJob implements ShouldQueue
 {
@@ -36,21 +38,46 @@ class GenerateTaskDescriptionJob implements ShouldQueue
     public function handle(TaskDescriptionGeneratorInterface $descriptionGenerator, DiffGeneratorService $diffGenerator): void
     {
         $pageDiffDescription = PageDiffDescription::with(['page.previousVersion', 'page.creator'])->findOrFail($this->pageDiffDescriptionId);
-        $page = $pageDiffDescription->page;
+        
+        try {
+            // Устанавливаем статус "generating"
+            $pageDiffDescription->update([
+                'generation_status' => PageDiffDescription::STATUS_GENERATING
+            ]);
 
-        // Создаем DifferenceDataDTO на основе информации о странице
-        $differenceData = $this->createDifferenceDataDTO($page, $diffGenerator);
+            $page = $pageDiffDescription->page;
 
-        // Генерируем описание задачи
-        $description = $descriptionGenerator->generateDescription($differenceData);
+            // Создаем DifferenceDataDTO на основе информации о странице
+            $differenceData = $this->createDifferenceDataDTO($page, $diffGenerator);
 
-        // Сохраняем сгенерированное описание в базе данных
-        $pageDiffDescription->update([
-            'content' => $description
-        ]);
+            // Генерируем описание задачи
+            $description = $descriptionGenerator->generateDescription($differenceData);
 
-        // Запускаем следующий job в цепочке
-        CreateTaskInTrackerJob::dispatch($this->pageDiffDescriptionId);
+            // Сохраняем сгенерированное описание и обновляем статус
+            $pageDiffDescription->update([
+                'content' => $description,
+                'generation_status' => PageDiffDescription::STATUS_COMPLETED
+            ]);
+
+            // Запускаем следующий job в цепочке
+            CreateTaskInTrackerJob::dispatch($this->pageDiffDescriptionId);
+            
+        } catch (Exception $e) {
+            // Логируем ошибку
+            Log::error('Failed to generate task description', [
+                'page_diff_description_id' => $this->pageDiffDescriptionId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Устанавливаем статус "failed"
+            $pageDiffDescription->update([
+                'generation_status' => PageDiffDescription::STATUS_FAILED
+            ]);
+
+            // Перебрасываем исключение для обработки системой очередей
+            throw $e;
+        }
     }
 
     /**

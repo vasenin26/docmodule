@@ -29,6 +29,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Маршруты для задач
     Route::get('tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
+    Route::get('tasks/{task}/status', [TaskController::class, 'checkGenerationStatus'])->name('tasks.status');
 });
 
 require __DIR__.'/settings.php';

@@ -61,11 +61,14 @@
         <CardContent>
           <div class="prose prose-sm max-w-none">
             <MarkdownRenderer 
-              v-if="task.content" 
-              :content="task.content" 
+              v-if="taskContent" 
+              :content="taskContent" 
             />
             <div v-else class="text-muted-foreground italic">
-              Описание задачи еще не сгенерировано
+              <div class="flex items-center gap-2">
+                <div v-if="isPolling" class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <span>{{ getStatusMessage() }}</span>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -98,19 +101,11 @@
           <!-- Сравнение содержимого -->
           <div v-if="task.page.content !== task.page.previous_version.content">
             <Label class="text-sm font-medium">Изменение содержимого</Label>
-            <div class="mt-2 space-y-2">
-              <div class="p-2 bg-red-50 border border-red-200 rounded max-h-40 overflow-y-auto">
-                <span class="text-xs text-red-600 font-medium">Предыдущая версия:</span>
-                <div class="prose prose-sm mt-1">
-                  <MarkdownRenderer :content="task.page.previous_version.content" />
-                </div>
-              </div>
-              <div class="p-2 bg-green-50 border border-green-200 rounded max-h-40 overflow-y-auto">
-                <span class="text-xs text-green-600 font-medium">Текущая версия:</span>
-                <div class="prose prose-sm mt-1">
-                  <MarkdownRenderer :content="task.page.content" />
-                </div>
-              </div>
+            <div class="mt-2">
+              <DiffViewer 
+                :old-content="task.page.previous_version.content"
+                :new-content="task.page.content"
+              />
             </div>
           </div>
         </CardContent>
@@ -147,11 +142,13 @@
 </template>
 
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import Heading from '@/components/Heading.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import TaskExportButton from '@/components/TaskExportButton.vue'
+import DiffViewer from '@/components/DiffViewer.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -159,6 +156,7 @@ import { Label } from '@/components/ui/label'
 interface TaskData {
   id: number
   content: string
+  generation_status: string
   created_at: string
   updated_at: string
   page: {
@@ -184,9 +182,74 @@ interface TaskData {
   }
 }
 
-defineProps<{
+const props = defineProps<{
   task: TaskData
 }>()
+
+// Реактивные переменные для отслеживания статуса
+const generationStatus = ref<string>(props.task.generation_status || 'unknown')
+const taskContent = ref<string>(props.task.content || '')
+const isPolling = ref<boolean>(false)
+const pollInterval = ref<number | null>(null)
+
+// Функция проверки статуса генерации
+const checkGenerationStatus = async () => {
+  try {
+    const response = await fetch(route('tasks.status', props.task.id), {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+      },
+      credentials: 'same-origin'
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      generationStatus.value = data.status
+      taskContent.value = data.content || taskContent.value
+      
+      // Останавливаем опрос если генерация завершена или завершилась с ошибкой
+      if (generationStatus.value === 'completed' || generationStatus.value === 'failed') {
+        stopPolling()
+      }
+    } else {
+      console.error('Ошибка HTTP:', response.status, response.statusText)
+    }
+  } catch (error) {
+    console.error('Ошибка при запросе статуса:', error)
+  }
+}
+
+// Функция для запуска автоматического опроса
+const startPolling = () => {
+  if (!isPolling.value) {
+    isPolling.value = true
+    pollInterval.value = setInterval(checkGenerationStatus, 3000) // каждые 3 секунды
+  }
+}
+
+// Функция для остановки опроса
+const stopPolling = () => {
+  if (pollInterval.value) {
+    clearInterval(pollInterval.value)
+    pollInterval.value = null
+    isPolling.value = false
+  }
+}
+
+// Lifecycle hooks
+onMounted(() => {
+  // Начинаем опрос если содержимое пустое или статус не завершен
+  if (!taskContent.value || (generationStatus.value !== 'completed' && generationStatus.value !== 'failed')) {
+    startPolling()
+  }
+})
+
+onUnmounted(() => {
+  stopPolling()
+})
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleString('ru-RU', {
@@ -196,5 +259,19 @@ const formatDate = (date: string) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+// Функция для получения сообщения о статусе
+const getStatusMessage = () => {
+  switch (generationStatus.value) {
+    case 'pending':
+      return 'Описание задачи ожидает генерации...'
+    case 'generating':
+      return 'Описание задачи генерируется...'
+    case 'failed':
+      return 'Ошибка при генерации описания задачи'
+    default:
+      return 'Описание задачи еще не сгенерировано'
+  }
 }
 </script>

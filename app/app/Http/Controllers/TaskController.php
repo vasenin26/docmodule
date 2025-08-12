@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PageDiffDescription;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
@@ -34,6 +35,7 @@ class TaskController extends Controller implements HasMiddleware
             'task' => [
                 'id' => $task->id,
                 'content' => $task->content,
+                'generation_status' => $task->generation_status,
                 'created_at' => $task->created_at,
                 'updated_at' => $task->updated_at,
                 'page' => [
@@ -58,6 +60,18 @@ class TaskController extends Controller implements HasMiddleware
                     'email' => $task->creator->email,
                 ],
             ]
+        ]);
+    }
+
+    /**
+     * Check the generation status of a task.
+     */
+    public function checkGenerationStatus(PageDiffDescription $task): JsonResponse
+    {
+        return response()->json([
+            'status' => $task->generation_status,
+            'content' => $task->content,
+            'updated_at' => $task->updated_at,
         ]);
     }
 }
