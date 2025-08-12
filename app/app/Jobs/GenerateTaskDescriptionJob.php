@@ -4,6 +4,8 @@ namespace App\Jobs;
 
 use App\Common\DTO\DifferenceDataDTO;
 use App\Interfaces\TaskDescriptionGeneratorInterface;
+use App\Models\PageDiffDescription;
+use App\Services\DiffGenerator\DiffGeneratorService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -25,70 +27,78 @@ class GenerateTaskDescriptionJob implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        public DifferenceDataDTO $differenceData
+        public int $pageDiffDescriptionId
     ) {}
 
     /**
      * Execute the job.
      */
-    public function handle(TaskDescriptionGeneratorInterface $descriptionGenerator): void
+    public function handle(TaskDescriptionGeneratorInterface $descriptionGenerator, DiffGeneratorService $diffGenerator): void
     {
-        $description = $descriptionGenerator->generateDescription($this->differenceData);
+        $pageDiffDescription = PageDiffDescription::with(['page.previousVersion', 'page.creator'])->findOrFail($this->pageDiffDescriptionId);
+        $page = $pageDiffDescription->page;
 
-        // Generate task title based on difference data
-        $title = $this->generateTaskTitle();
+        // Создаем DifferenceDataDTO на основе информации о странице
+        $differenceData = $this->createDifferenceDataDTO($page, $diffGenerator);
 
-        // Dispatch the next job in the chain
-        CreateTaskInTrackerJob::dispatch($title, $description);
+        // Генерируем описание задачи
+        $description = $descriptionGenerator->generateDescription($differenceData);
+
+        // Сохраняем сгенерированное описание в базе данных
+        $pageDiffDescription->update([
+            'content' => $description
+        ]);
+
+        // Запускаем следующий job в цепочке
+        CreateTaskInTrackerJob::dispatch($this->pageDiffDescriptionId);
     }
 
     /**
-     * Generate task title based on difference data
+     * Создание DifferenceDataDTO на основе информации о странице
      */
-    private function generateTaskTitle(): string
+    private function createDifferenceDataDTO($page, DiffGeneratorService $diffGenerator): DifferenceDataDTO
     {
-        if ($this->differenceData->isNewPage) {
-            return 'New page created: ' . $this->differenceData->newVersionTitle;
+        $previousVersion = $page->previousVersion;
+        
+        if (!$previousVersion) {
+            // Новая страница
+            return new DifferenceDataDTO(
+                isNewPage: true,
+                newVersionId: $page->id,
+                newVersionTitle: $page->title,
+                newVersionContent: $page->content,
+                previousVersionId: null,
+                previousVersionTitle: null,
+                previousVersionContent: null,
+                titleChanged: false,
+                contentChanged: false,
+                diffOutput: null
+            );
         }
 
-        $title = 'Page updated: ' . $this->differenceData->newVersionTitle;
-
-        // Use diff_output if available for more detailed information
-        if ($this->differenceData->diffOutput && !empty($this->differenceData->diffOutput)) {
-            $diffLines = explode("\n", trim($this->differenceData->diffOutput));
-            $addedLines = 0;
-            $removedLines = 0;
-
-            foreach ($diffLines as $line) {
-                if (str_starts_with($line, '+')) {
-                    $addedLines++;
-                } elseif (str_starts_with($line, '-')) {
-                    $removedLines++;
-                }
-            }
-
-            $changes = [];
-            if ($addedLines > 0) {
-                $changes[] = "{$addedLines} line(s) added";
-            }
-            if ($removedLines > 0) {
-                $changes[] = "{$removedLines} line(s) removed";
-            }
-
-            if (!empty($changes)) {
-                $title .= ' (' . implode(', ', $changes) . ')';
-            }
-        } elseif ($this->differenceData->titleChanged || $this->differenceData->contentChanged) {
-            // Fallback to old logic for backward compatibility
-            if ($this->differenceData->titleChanged && $this->differenceData->contentChanged) {
-                $title .= ' (title and content changed)';
-            } elseif ($this->differenceData->titleChanged) {
-                $title .= ' (title changed)';
-            } elseif ($this->differenceData->contentChanged) {
-                $title .= ' (content changed)';
-            }
+        // Обновленная страница
+        $titleChanged = $page->title !== $previousVersion->title;
+        $contentChanged = $page->content !== $previousVersion->content;
+        
+        // Генерируем diff если есть изменения
+        $diffOutput = null;
+        if ($titleChanged || $contentChanged) {
+            $diffOutput = $diffGenerator->generateDiff($previousVersion->content, $page->content);
         }
 
-        return $title;
+        return new DifferenceDataDTO(
+            isNewPage: false,
+            newVersionId: $page->id,
+            newVersionTitle: $page->title,
+            newVersionContent: $page->content,
+            previousVersionId: $previousVersion->id,
+            previousVersionTitle: $previousVersion->title,
+            previousVersionContent: $previousVersion->content,
+            titleChanged: $titleChanged,
+            contentChanged: $contentChanged,
+            diffOutput: $diffOutput
+        );
     }
+
+
 }

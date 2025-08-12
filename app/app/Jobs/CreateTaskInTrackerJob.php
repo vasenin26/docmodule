@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Interfaces\TaskTrackerInterface;
+use App\Models\PageDiffDescription;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -24,8 +25,7 @@ class CreateTaskInTrackerJob implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        public string $title,
-        public string $description
+        public int $pageDiffDescriptionId
     ) {}
 
     /**
@@ -33,6 +33,44 @@ class CreateTaskInTrackerJob implements ShouldQueue
      */
     public function handle(TaskTrackerInterface $taskTracker): void
     {
-        $taskTracker->createTask($this->title, $this->description);
+        $pageDiffDescription = PageDiffDescription::with(['page.previousVersion'])->findOrFail($this->pageDiffDescriptionId);
+        $page = $pageDiffDescription->page;
+
+        // Генерируем заголовок задачи на основе информации о странице
+        $title = $this->generateTaskTitle($page);
+        
+        // Получаем описание из PageDiffDescription
+        $description = $pageDiffDescription->content;
+
+        // Создаем задачу в трекере
+        $taskTracker->createTask($title, $description);
+    }
+
+    /**
+     * Генерация заголовка задачи на основе информации о странице
+     */
+    private function generateTaskTitle($page): string
+    {
+        $previousVersion = $page->previousVersion;
+
+        if (!$previousVersion) {
+            return 'New page created: ' . $page->title;
+        }
+
+        $title = 'Page updated: ' . $page->title;
+
+        // Определяем, что именно изменилось
+        $titleChanged = $page->title !== $previousVersion->title;
+        $contentChanged = $page->content !== $previousVersion->content;
+
+        if ($titleChanged && $contentChanged) {
+            $title .= ' (title and content changed)';
+        } elseif ($titleChanged) {
+            $title .= ' (title changed)';
+        } elseif ($contentChanged) {
+            $title .= ' (content changed)';
+        }
+
+        return $title;
     }
 }

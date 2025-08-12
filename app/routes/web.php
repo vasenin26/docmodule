@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -22,6 +23,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('pages/{page}/draft/approve', [PageController::class, 'approveDraft'])->name('pages.draft.approve');
     Route::get('pages/{page}/draft', [PageController::class, 'getDraft'])->name('pages.draft.get');
     Route::delete('pages/{page}/draft', [PageController::class, 'deleteDraft'])->name('pages.draft.delete');
+    
+    // Маршруты для задач
+    Route::get('tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
 });
 
 require __DIR__.'/settings.php';

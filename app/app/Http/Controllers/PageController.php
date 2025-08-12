@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\CalculateVersionDifferenceJob;
 use App\Models\Page;
+use App\Models\PageDiffDescription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -228,9 +229,22 @@ class PageController extends Controller
         // Утверждаем черновик
         $draft->approveDraft();
         
-        // Запускаем Job для создания задачи в трекере при утверждении черновика
-        CalculateVersionDifferenceJob::dispatch($draft->id, $draft->previous_version_id);
+        // Ждем небольшое время, чтобы PageObserver успел создать PageDiffDescription
+        // В реальном приложении это должно быть обработано асинхронно
+        sleep(1);
         
+        // Находим созданную запись PageDiffDescription для этой страницы
+        $diffDescription = PageDiffDescription::where('page_id', $draft->id)
+            ->latest()
+            ->first();
+        
+        if ($diffDescription) {
+            // Перенаправляем на страницу задачи
+            return redirect()->route('tasks.show', $diffDescription->id)
+                ->with('success', 'Черновик утвержден. Задача создана.');
+        }
+        
+        // Fallback на старое поведение, если что-то пошло не так
         return redirect()->route('pages.show', $draft->id)
             ->with('success', 'Черновик утвержден.');
     }

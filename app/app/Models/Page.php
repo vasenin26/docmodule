@@ -77,6 +77,14 @@ class Page extends Model
     }
 
     /**
+     * Описания различий для создания задач
+     */
+    public function diffDescriptions(): HasMany
+    {
+        return $this->hasMany(PageDiffDescription::class);
+    }
+
+    /**
      * Все версии страницы (включая текущую)
      */
     public function versions(): HasMany
