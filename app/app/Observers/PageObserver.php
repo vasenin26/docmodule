@@ -12,8 +12,7 @@ class PageObserver
      */
     public function created(Page $page): void
     {
-        // Запускаем Job для создания задачи в трекере при создании новой страницы
-        CalculateVersionDifferenceJob::dispatch($page->id, $page->previous_version_id);
+        // Логика создания задач перенесена в контроллер
     }
 
     /**
@@ -21,6 +20,7 @@ class PageObserver
      */
     public function updated(Page $page): void
     {
+        // Логика создания задач перенесена в контроллер
     }
 
     /**

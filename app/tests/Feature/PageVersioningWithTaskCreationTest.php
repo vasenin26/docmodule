@@ -6,6 +6,7 @@ use App\Interfaces\DiffGeneratorInterface;
 use App\Jobs\CalculateVersionDifferenceJob;
 use App\Jobs\CreateTaskInTrackerJob;
 use App\Jobs\GenerateTaskDescriptionJob;
+use App\Models\Page;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -25,19 +26,26 @@ class PageVersioningWithTaskCreationTest extends TestCase
         // Создаем мок для DiffGeneratorInterface
         $this->diffGenerator = $this->createMock(DiffGeneratorInterface::class);
         $this->diffGenerator->method('generateDiff')
-            ->willReturnMap([
-                ['', 'Test Page', 'title', '+ Test Page'],
-                ['', 'Test content', 'content', '+ Test content'],
-                ['Original Page', 'Updated Page', 'title', '- Original Page\n+ Updated Page'],
-                ['Original content', 'Updated content', 'content', '- Original content\n+ Updated content'],
-                ['', 'First Page', 'title', '+ First Page'],
-                ['', 'First content', 'content', '+ First content'],
-                ['', 'Second Page', 'title', '+ Second Page'],
-                ['', 'Second content', 'content', '+ Second content']
-            ]);
+            ->willReturnCallback(function ($oldContent, $newContent, $type = 'content') {
+                if ($oldContent === '' && $newContent === 'Test Page') return '+ Test Page';
+                if ($oldContent === '' && $newContent === 'Test content') return '+ Test content';
+                if ($oldContent === 'Original Page' && $newContent === 'Updated Page') return '- Original Page\n+ Updated Page';
+                if ($oldContent === 'Original content' && $newContent === 'Updated content') return '- Original content\n+ Updated content';
+                if ($oldContent === '' && $newContent === 'First Page') return '+ First Page';
+                if ($oldContent === '' && $newContent === 'First content') return '+ First content';
+                if ($oldContent === '' && $newContent === 'Second Page') return '+ Second Page';
+                if ($oldContent === '' && $newContent === 'Second content') return '+ Second content';
+                if ($oldContent === '' && $newContent === 'Draft Title') return '+ Draft Title';
+                if ($oldContent === '' && $newContent === 'Draft content') return '+ Draft content';
+                if ($oldContent === 'Original Page' && $newContent === 'Draft Title') return '- Original Page\n+ Draft Title';
+                if ($oldContent === 'Original content' && $newContent === 'Draft content') return '- Original content\n+ Draft content';
+                
+                // Default fallback
+                return "+ {$newContent}";
+            });
     }
 
-    public function test_creating_new_page_dispatches_task_creation_jobs()
+    public function test_creating_page_does_not_dispatch_task_creation_jobs()
     {
         Queue::fake();
 
@@ -52,69 +60,31 @@ class PageVersioningWithTaskCreationTest extends TestCase
         $response->assertRedirect('/pages');
         $response->assertSessionHas('success');
 
-        // Проверяем, что Job был запущен через обсервер
-        Queue::assertPushed(CalculateVersionDifferenceJob::class, function ($job) {
-            return $job->newVersionId > 0 && $job->oldVersionId === null;
-        });
+        // Проверяем, что Job НЕ был запущен при создании страницы
+        Queue::assertNotPushed(CalculateVersionDifferenceJob::class);
     }
 
-    public function test_updating_page_dispatches_task_creation_jobs()
+
+
+    public function test_job_chain_executes_in_correct_order_when_draft_approved()
     {
         Queue::fake();
 
         $user = User::factory()->create();
         $this->actingAs($user);
 
-        // Создаем страницу
-        $page = $this->post('/pages', [
-            'title' => 'Original Page',
-            'content' => 'Original content',
-        ]);
+        // Создаем страницу и черновик
+        $page = Page::factory()->create(['created_by' => $user->id]);
+        $draft = $page->createDraft(['title' => 'Draft Title']);
 
-        // Получаем ID созданной страницы
-        $originalPage = \App\Models\Page::where('title', 'Original Page')->first();
-        $pageId = $originalPage->id;
+        // Утверждаем черновик
+        $response = $this->post(route('pages.draft.approve', $draft->id));
 
-        // Обновляем страницу
-        $response = $this->put("/pages/{$pageId}", [
-            'title' => 'Updated Page',
-            'content' => 'Updated content',
-        ]);
-
-        $response->assertRedirect('/pages');
-        $response->assertSessionHas('success');
-
-        // Проверяем, что была создана новая версия
-        $newVersion = \App\Models\Page::where('title', 'Updated Page')->first();
-        $this->assertNotNull($newVersion);
-        $this->assertNotEquals($pageId, $newVersion->id);
-        $this->assertEquals($pageId, $newVersion->previous_version_id);
-
-        // Проверяем, что Job был запущен через обсервер для новой версии
-        Queue::assertPushed(CalculateVersionDifferenceJob::class, function ($job) use ($newVersion, $pageId) {
-            return $job->newVersionId === $newVersion->id && $job->oldVersionId === $pageId;
-        });
-    }
-
-    public function test_job_chain_executes_in_correct_order()
-    {
-        Queue::fake();
-
-        $user = User::factory()->create();
-        $this->actingAs($user);
-
-        // Создаем страницу
-        $this->post('/pages', [
-            'title' => 'Test Page',
-            'content' => 'Test content',
-        ]);
-
-        // Проверяем, что CalculateVersionDifferenceJob был запущен через обсервер
+        // Проверяем, что CalculateVersionDifferenceJob был запущен при утверждении
         Queue::assertPushed(CalculateVersionDifferenceJob::class);
 
         // Симулируем выполнение CalculateVersionDifferenceJob
-        $page = \App\Models\Page::where('title', 'Test Page')->first();
-        $job = new CalculateVersionDifferenceJob($page->id, null);
+        $job = new CalculateVersionDifferenceJob($draft->id, $page->id);
         $job->handle($this->diffGenerator);
 
         // Проверяем, что GenerateTaskDescriptionJob был запущен
@@ -122,17 +92,15 @@ class PageVersioningWithTaskCreationTest extends TestCase
 
         // Симулируем выполнение GenerateTaskDescriptionJob
         $differenceData = new \App\Common\DTO\DifferenceDataDTO(
-            diffOutput: "+ {$page->title}\n+ {$page->content}",
-            newVersionTitle: $page->title,
-            isNewPage: true
+            diffOutput: "+ Draft Title\n+ Draft content",
+            newVersionTitle: $draft->title,
+            isNewPage: false
         );
         $descriptionJob = new GenerateTaskDescriptionJob($differenceData);
         $descriptionJob->handle(app(\App\Interfaces\TaskDescriptionGeneratorInterface::class));
 
         // Проверяем, что CreateTaskInTrackerJob был запущен
-        Queue::assertPushed(CreateTaskInTrackerJob::class, function ($job) {
-            return $job->title === 'New page created: Test Page';
-        });
+        Queue::assertPushed(CreateTaskInTrackerJob::class);
     }
 
     public function test_task_creation_does_not_block_page_operations()
@@ -158,30 +126,32 @@ class PageVersioningWithTaskCreationTest extends TestCase
             'content' => 'Test content',
         ]);
 
-        // Проверяем, что Job был запущен через обсервер
-        Queue::assertPushed(CalculateVersionDifferenceJob::class);
+        // Проверяем, что Job НЕ был запущен при создании страницы
+        Queue::assertNotPushed(CalculateVersionDifferenceJob::class);
     }
 
-    public function test_multiple_page_operations_create_multiple_tasks()
+    public function test_multiple_draft_approvals_create_multiple_tasks()
     {
         Queue::fake();
 
         $user = User::factory()->create();
         $this->actingAs($user);
 
-        // Создаем первую страницу
-        $this->post('/pages', [
-            'title' => 'First Page',
-            'content' => 'First content',
-        ]);
+        // Создаем первую страницу и черновик
+        $page1 = Page::factory()->create(['created_by' => $user->id]);
+        $draft1 = $page1->createDraft(['title' => 'First Draft']);
 
-        // Создаем вторую страницу
-        $this->post('/pages', [
-            'title' => 'Second Page',
-            'content' => 'Second content',
-        ]);
+        // Создаем вторую страницу и черновик
+        $page2 = Page::factory()->create(['created_by' => $user->id]);
+        $draft2 = $page2->createDraft(['title' => 'Second Draft']);
 
-        // Проверяем, что было запущено два Job'а через обсерверы
+        // Утверждаем первый черновик
+        $this->post(route('pages.draft.approve', $draft1->id));
+
+        // Утверждаем второй черновик
+        $this->post(route('pages.draft.approve', $draft2->id));
+
+        // Проверяем, что было запущено два Job'а при утверждении черновиков
         Queue::assertPushed(CalculateVersionDifferenceJob::class, 2);
     }
 
@@ -192,25 +162,23 @@ class PageVersioningWithTaskCreationTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user);
 
-        // Создаем страницу
-        $this->post('/pages', [
-            'title' => 'Test Page',
-            'content' => 'Test content',
-        ]);
+        // Создаем страницу и черновик
+        $page = Page::factory()->create(['created_by' => $user->id]);
+        $draft = $page->createDraft(['title' => 'Draft Title', 'content' => 'Draft content']);
 
-        // Получаем созданную страницу
-        $page = \App\Models\Page::where('title', 'Test Page')->first();
+        // Утверждаем черновик
+        $this->post(route('pages.draft.approve', $draft->id));
 
         // Симулируем выполнение CalculateVersionDifferenceJob
-        $job = new CalculateVersionDifferenceJob($page->id, null);
+        $job = new CalculateVersionDifferenceJob($draft->id, $page->id);
         $job->handle($this->diffGenerator);
 
         // Проверяем, что GenerateTaskDescriptionJob получил diff_output
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
             $differenceData = $job->differenceData;
             return $differenceData->diffOutput &&
-                   str_contains($differenceData->diffOutput, '+ Test Page') &&
-                   str_contains($differenceData->diffOutput, '+ Test content');
+                   str_contains($differenceData->diffOutput, '+ Draft Title') &&
+                   str_contains($differenceData->diffOutput, '+ Draft content');
         });
     }
 }

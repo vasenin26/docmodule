@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\CalculateVersionDifferenceJob;
 use App\Models\Page;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -226,6 +227,9 @@ class PageController extends Controller
         
         // Утверждаем черновик
         $draft->approveDraft();
+        
+        // Запускаем Job для создания задачи в трекере при утверждении черновика
+        CalculateVersionDifferenceJob::dispatch($draft->id, $draft->previous_version_id);
         
         return redirect()->route('pages.show', $draft->id)
             ->with('success', 'Черновик утвержден.');
