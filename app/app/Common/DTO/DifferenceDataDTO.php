@@ -11,7 +11,12 @@ readonly class DifferenceDataDTO
         public array   $addedLines = [],
         public array   $removedLines = [],
         public bool    $titleChanged = false,
-        public bool    $contentChanged = false
+        public bool    $contentChanged = false,
+        public ?int    $newVersionId = null,
+        public ?string $newVersionContent = null,
+        public ?int    $previousVersionId = null,
+        public ?string $previousVersionTitle = null,
+        public ?string $previousVersionContent = null
     ) {}
 
     /**
@@ -26,7 +31,12 @@ readonly class DifferenceDataDTO
             addedLines: $data['added_lines'] ?? [],
             removedLines: $data['removed_lines'] ?? [],
             titleChanged: $data['title_changed'] ?? false,
-            contentChanged: $data['content_changed'] ?? false
+            contentChanged: $data['content_changed'] ?? false,
+            newVersionId: $data['new_version_id'] ?? null,
+            newVersionContent: $data['new_version_content'] ?? null,
+            previousVersionId: $data['previous_version_id'] ?? null,
+            previousVersionTitle: $data['previous_version_title'] ?? null,
+            previousVersionContent: $data['previous_version_content'] ?? null
         );
     }
 
@@ -43,6 +53,11 @@ readonly class DifferenceDataDTO
             'removed_lines' => $this->removedLines,
             'title_changed' => $this->titleChanged,
             'content_changed' => $this->contentChanged,
+            'new_version_id' => $this->newVersionId,
+            'new_version_content' => $this->newVersionContent,
+            'previous_version_id' => $this->previousVersionId,
+            'previous_version_title' => $this->previousVersionTitle,
+            'previous_version_content' => $this->previousVersionContent,
         ];
     }
 }
