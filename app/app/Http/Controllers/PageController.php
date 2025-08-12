@@ -35,6 +35,12 @@ class PageController extends Controller
 
         $pages = $query->orderBy('created_at', 'desc')->paginate(20);
 
+        // Добавляем информацию о черновиках для каждой страницы
+        $pages->getCollection()->transform(function ($page) {
+            $page->hasActiveDraft = $page->hasActiveDraft();
+            return $page;
+        });
+
         return Inertia::render('pages/Index', [
             'pages' => $pages,
             'filters' => $request->only(['search', 'parent_id']),
@@ -91,6 +97,9 @@ class PageController extends Controller
         $page = Page::with(['creator', 'children.creator', 'parent'])
             ->findOrFail($id);
 
+        // Добавляем информацию о черновике
+        $page->currentDraft = $page->getCurrentDraft();
+
         return Inertia::render('pages/Show', [
             'page' => $page,
         ]);
@@ -101,10 +110,13 @@ class PageController extends Controller
      */
     public function edit(string $id)
     {
-        $page = Page::where('current', true)->findOrFail($id);
+        $page = Page::findOrFail($id);
+        $currentDraft = $page->getCurrentDraft();
 
         return Inertia::render('pages/Edit', [
             'page' => $page,
+            'currentDraft' => $currentDraft,
+            'hasActiveDraft' => $currentDraft !== null,
             'errors' => (object) [],
         ]);
     }
@@ -120,15 +132,27 @@ class PageController extends Controller
         ]);
 
         $page = Page::where('current', true)->findOrFail($id);
+        $currentDraft = $page->getCurrentDraft();
 
-        // Создаем новую версию страницы с корректной установкой previous_version_id
-        $newVersion = $page->createNewVersion([
-            'title' => $request->title,
-            'content' => $request->content,
-        ]);
-
-        return redirect()->route('pages.index')
-            ->with('success', 'Страница успешно обновлена.');
+        if ($currentDraft) {
+            // Обновляем существующий черновик
+            $currentDraft->update([
+                'title' => $request->title,
+                'content' => $request->content,
+            ]);
+            
+            return redirect()->back()
+                ->with('success', 'Черновик обновлен.');
+        } else {
+            // Создаем новый черновик
+            $draft = $page->createDraft([
+                'title' => $request->title,
+                'content' => $request->content,
+            ]);
+            
+            return redirect()->back()
+                ->with('success', 'Черновик создан.');
+        }
     }
 
     /**
@@ -186,5 +210,57 @@ class PageController extends Controller
 
         return redirect()->route('pages.index')
             ->with('success', 'Версия страницы восстановлена.');
+    }
+
+    /**
+     * Утвердить черновик
+     */
+    public function approveDraft(string $id)
+    {
+        $draft = Page::findOrFail($id);
+        
+        // Проверяем, является ли страница черновиком
+        if (!$draft->isDraft()) {
+            return redirect()->back()->with('error', 'Страница не является черновиком.');
+        }
+        
+        // Утверждаем черновик
+        $draft->approveDraft();
+        
+        return redirect()->route('pages.show', $draft->id)
+            ->with('success', 'Черновик утвержден.');
+    }
+
+    /**
+     * Получить данные черновика
+     */
+    public function getDraft(string $id)
+    {
+        $page = Page::where('current', true)->findOrFail($id);
+        $draft = $page->getCurrentDraft();
+        
+        if (!$draft) {
+            return response()->json(['error' => 'Черновик не найден'], 404);
+        }
+        
+        return response()->json($draft);
+    }
+
+    /**
+     * Удалить черновик
+     */
+    public function deleteDraft(string $id)
+    {
+        $page = Page::where('current', true)->findOrFail($id);
+        $draft = $page->getCurrentDraft();
+        
+        if (!$draft) {
+            return redirect()->back()->with('error', 'Черновик не найден.');
+        }
+        
+        $draft->delete();
+        
+        return redirect('/')
+            ->with('success', 'Черновик удален.');
     }
 }

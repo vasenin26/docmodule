@@ -160,7 +160,7 @@ class Page extends Model
     }
 
     /**
-     * Получить все текущие страницы (без дочерних)
+     * Получить все текущие страницы (без дочерних, исключая черновики)
      */
     public static function getCurrentPages(): \Illuminate\Database\Eloquent\Collection
     {
@@ -172,7 +172,7 @@ class Page extends Model
     }
 
     /**
-     * Получить дерево страниц
+     * Получить дерево страниц (исключая черновики)
      */
     public static function getPageTree(): \Illuminate\Database\Eloquent\Collection
     {
@@ -181,5 +181,120 @@ class Page extends Model
             ->with(['creator', 'children.creator'])
             ->orderBy('created_at', 'desc')
             ->get();
+    }
+
+    /**
+     * Получить текущий черновик страницы
+     */
+    public function getCurrentDraft(): ?Page
+    {
+        $baseId = $this->base_id ?? $this->id;
+        
+        // Находим черновики (не текущие версии с тем же base_id)
+        return static::where('base_id', $baseId)
+            ->where('current', false)
+            ->where('previous_version_id', '=', $this->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+    }
+
+    /**
+     * Проверить, является ли версия черновиком
+     */
+    public function isDraft(): bool
+    {
+        if ($this->current) {
+            return false;
+        }
+        
+        // Если это первая версия (base_id = null), то это не черновик
+        if (!$this->base_id) {
+            return false;
+        }
+        
+        // Находим текущую версию
+        $currentVersion = static::where('base_id', $this->base_id)
+            ->where('current', true)
+            ->first();
+            
+        if (!$currentVersion) {
+            return false;
+        }
+        
+        // Черновик - это не текущая версия с тем же base_id
+        return $this->id !== $currentVersion->id;
+    }
+
+    /**
+     * Проверить, есть ли активный черновик
+     */
+    public function hasActiveDraft(): bool
+    {
+        return $this->getCurrentDraft() !== null;
+    }
+
+    /**
+     * Создать черновик от текущей версии
+     */
+    public function createDraft(array $data = []): Page
+    {
+        $draft = $this->replicate();
+        $draft->base_id = $this->base_id ?? $this->id;
+        $draft->previous_version_id = $this->id;
+        $draft->current = false; // Ключевое отличие от createNewVersion
+        $draft->fill($data);
+        $draft->save();
+        
+        // Если это первая версия, устанавливаем base_id
+        if (!$this->base_id) {
+            $this->update(['base_id' => $this->id]);
+            $draft->update(['base_id' => $this->id]);
+        }
+        
+        return $draft;
+    }
+
+    /**
+     * Утвердить черновик
+     */
+    public function approveDraft(): void
+    {
+        // Убираем флаг current у всех других версий
+        $baseId = $this->base_id ?? $this->id;
+        Page::where('base_id', $baseId)
+            ->update(['current' => false]);
+        
+        // Делаем черновик текущей версией
+        $this->update(['current' => true]);
+        
+        // Обновляем base_id у черновика, если он еще не установлен
+        if (!$this->base_id) {
+            $this->update(['base_id' => $this->id]);
+        }
+    }
+
+    /**
+     * Получить последнюю утвержденную версию
+     */
+    public function getLatestApprovedVersion(): ?Page
+    {
+        return $this->versions()
+            ->where('current', true)
+            ->first();
+    }
+
+    /**
+     * Scope для получения только черновиков
+     */
+    public function scopeDrafts($query)
+    {
+        return $query->where('current', false)
+            ->whereNotNull('previous_version_id')
+            ->where('created_at', '>', function($subquery) {
+                $subquery->select('created_at')
+                    ->from('pages as p2')
+                    ->whereColumn('p2.base_id', 'pages.base_id')
+                    ->where('p2.current', true);
+            });
     }
 }

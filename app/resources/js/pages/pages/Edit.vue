@@ -19,11 +19,35 @@
     </template>
 
     <div class="max-w-4xl">
+      <!-- Предупреждение о существующем черновике -->
+      <!-- <div v-if="hasActiveDraft" class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-6">
+        <p class="text-sm text-yellow-800">
+          <strong>Внимание:</strong> У этой страницы есть активный черновик. 
+          Вы можете продолжить редактирование черновика или создать новый.
+        </p>
+        <div class="mt-2 flex gap-2">
+          <Button @click="continueDraft" variant="outline" size="sm">
+            Продолжить черновик
+          </Button>
+          <Button @click="createNewDraft" variant="outline" size="sm">
+            Создать новый черновик
+          </Button>
+        </div>
+      </div> -->
+
+      <!-- Информация о черновике -->
+      <div v-if="currentDraft" class="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-6">
+        <p class="text-sm text-blue-800">
+          <strong>Редактирование черновика:</strong> 
+          Создан {{ formatDate(currentDraft.created_at) }}
+        </p>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>{{ page?.title || 'Загрузка...' }}</CardTitle>
-          <CardDescription>
-            Редактирование страницы документации. При сохранении будет создана новая версия.
+          <CardDescription v-if="!currentDraft">
+            Редактирование страницы документации. При сохранении будет создан черновик.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -60,18 +84,13 @@
             <MarkdownPreview :content="form.content" />
             </div>
 
-            <!-- Информация о версионировании -->
-            <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p class="text-sm text-blue-800">
-                <strong>Внимание:</strong> При сохранении будет создана новая версия страницы. 
-                Предыдущие версии сохранятся и будут доступны в истории версий.
-              </p>
-            </div>
-
             <!-- Кнопки -->
             <div class="flex items-center gap-4">
               <Button type="submit" :disabled="processing">
-                {{ processing ? 'Сохранение...' : 'Сохранить изменения' }}
+                {{ processing ? 'Сохранение...' : (currentDraft ? 'Обновить черновик' : 'Создать черновик') }}
+              </Button>
+              <Button v-if="currentDraft" type="button" @click="approveDraft" variant="default">
+                Утвердить черновик
               </Button>
               <Button type="button" variant="outline" @click="cancel">
                 Отмена
@@ -104,18 +123,30 @@ interface Page {
   id: number
   title: string
   content: string
+  current: boolean
+}
+
+interface Draft {
+  id: number
+  title: string
+  content: string
+  created_at: string
+  updated_at: string
 }
 
 const props = withDefaults(defineProps<{
   page: Page
+  currentDraft?: Draft
+  hasActiveDraft?: boolean
   errors?: Record<string, string>
 }>(), {
   errors: () => ({}),
+  hasActiveDraft: false,
 })
 
 const form = useForm({
-  title: props.page?.title || '',
-  content: props.page?.content || '',
+  title: props.currentDraft?.title || props.page?.title || '',
+  content: props.currentDraft?.content || props.page?.content || '',
 })
 
 const processing = ref(false)
@@ -132,7 +163,29 @@ const submit = () => {
   })
 }
 
+const continueDraft = () => {
+  if (props.currentDraft) {
+    form.title = props.currentDraft.title
+    form.content = props.currentDraft.content
+  }
+}
+
+const createNewDraft = () => {
+  form.title = props.page.title
+  form.content = props.page.content
+}
+
+const approveDraft = () => {
+  if (props.currentDraft) {
+    router.post(route('pages.draft.approve', props.currentDraft.id))
+  }
+}
+
 const cancel = () => {
   router.visit(route('pages.show', props.page?.id))
+}
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleString('ru-RU')
 }
 </script>

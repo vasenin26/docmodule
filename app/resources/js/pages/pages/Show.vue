@@ -29,6 +29,31 @@
     </template>
 
     <div class="max-w-4xl space-y-6">
+      <!-- Информация о черновике -->
+      <div v-if="page.currentDraft" class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-yellow-800">
+              <strong>Активный черновик:</strong> 
+              Создан {{ formatDate(page.currentDraft.created_at) }}
+            </p>
+            <p class="text-xs text-yellow-600 mt-1">
+              Последнее обновление: {{ formatDate(page.currentDraft.updated_at) }}
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <Button as-child variant="outline" size="sm">
+              <Link :href="route('pages.edit', page.id)">
+                Продолжить редактирование
+              </Link>
+            </Button>
+            <Button @click="approveDraft" variant="default" size="sm">
+              Утвердить
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <!-- Родительская страница -->
       <div v-if="page.parent" class="p-4 bg-muted/50 rounded-lg">
         <p class="text-sm text-muted-foreground mb-2">Родительская страница:</p>
@@ -164,7 +189,7 @@
 </template>
 
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import Heading from '@/components/Heading.vue'
 import Button from '@/components/ui/button/Button.vue'
@@ -180,6 +205,14 @@ interface Creator {
   name: string
 }
 
+interface Draft {
+  id: number
+  title: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+
 interface Page {
   id: number
   title: string
@@ -192,11 +225,18 @@ interface Page {
   base_id?: number
   previous_version_id?: number
   current: boolean
+  currentDraft?: Draft
 }
 
 const props = defineProps<{
   page: Page
 }>()
+
+const approveDraft = () => {
+  if (props.page.currentDraft) {
+    router.post(route('pages.draft.approve', props.page.currentDraft.id))
+  }
+}
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('ru-RU', {

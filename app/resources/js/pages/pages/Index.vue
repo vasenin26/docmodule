@@ -57,6 +57,10 @@
                       <span v-if="page.children && page.children.length > 0" class="text-xs text-muted-foreground">
                         ({{ page.children.length }} дочерних)
                       </span>
+                      <!-- Индикатор черновика -->
+                      <span v-if="page.hasActiveDraft" class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                        Черновик
+                      </span>
                     </div>
                   </td>
                   <td class="p-4 text-sm text-muted-foreground">
@@ -85,7 +89,7 @@
                       </Button>
                       <Button as-child size="sm" variant="outline">
                         <Link :href="route('pages.edit', page.id)">
-                          Редактировать
+                          {{ page.hasActiveDraft ? 'Продолжить' : 'Редактировать' }}
                         </Link>
                       </Button>
                       <Button as-child size="sm" variant="outline">
@@ -154,6 +158,7 @@ interface Page {
     name: string
   }
   children: Page[]
+  hasActiveDraft?: boolean
 }
 
 interface PagesData {

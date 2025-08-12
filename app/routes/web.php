@@ -17,6 +17,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('pages', PageController::class);
     Route::get('pages/{page}/versions', [PageController::class, 'versions'])->name('pages.versions');
     Route::post('pages/{page}/restore/{version}', [PageController::class, 'restore'])->name('pages.restore');
+    
+    // Новые маршруты для черновиков
+    Route::post('pages/{page}/draft/approve', [PageController::class, 'approveDraft'])->name('pages.draft.approve');
+    Route::get('pages/{page}/draft', [PageController::class, 'getDraft'])->name('pages.draft.get');
+    Route::delete('pages/{page}/draft', [PageController::class, 'deleteDraft'])->name('pages.draft.delete');
 });
 
 require __DIR__.'/settings.php';
