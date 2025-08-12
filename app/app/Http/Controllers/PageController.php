@@ -96,7 +96,7 @@ class PageController extends Controller
      */
     public function show(string $id)
     {
-        $page = Page::with(['creator', 'children.creator', 'parent'])
+        $page = Page::with(['creator', 'children.creator', 'parent', 'diffDescriptions.creator'])
             ->findOrFail($id);
 
         // Добавляем информацию о черновике

@@ -74,6 +74,44 @@
         </CardContent>
       </Card>
 
+      <!-- Описания задач -->
+      <Card v-if="page.diff_descriptions && page.diff_descriptions.length > 0">
+        <CardHeader>
+          <CardTitle>Связанные задачи</CardTitle>
+          <CardDescription>
+            Задачи, созданные на основе изменений в данной версии страницы
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div class="space-y-4">
+            <div
+              v-for="taskDescription in page.diff_descriptions"
+              :key="taskDescription.id"
+              class="p-4 border rounded-lg"
+            >
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <p class="text-sm text-muted-foreground mb-2">
+                    Создано {{ formatDate(taskDescription.created_at) }}
+                    <span v-if="taskDescription.creator">
+                      пользователем {{ taskDescription.creator.name }}
+                    </span>
+                  </p>
+                  <div class="prose prose-sm max-w-none">
+                    <MarkdownRenderer :content="taskDescription.content" />
+                  </div>
+                </div>
+                <Button as-child variant="outline" size="sm" class="ml-4">
+                  <Link :href="route('tasks.show', taskDescription.id)">
+                    Перейти к задаче
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <!-- Дочерние страницы -->
       <Card>
         <CardHeader>
@@ -205,6 +243,13 @@ interface Creator {
   name: string
 }
 
+interface TaskDescription {
+  id: number
+  content: string
+  created_at: string
+  creator?: Creator
+}
+
 interface Draft {
   id: number
   title: string
@@ -226,6 +271,7 @@ interface Page {
   previous_version_id?: number
   current: boolean
   currentDraft?: Draft
+  diff_descriptions?: TaskDescription[]
 }
 
 const props = defineProps<{
