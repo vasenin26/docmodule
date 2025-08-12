@@ -9,6 +9,7 @@ use App\Services\DiffGenerator\DiffGeneratorService;
 use App\Services\LLMGenerator\LMStudioGenerator;
 use App\Services\TaskDescriptionGenerator\LLMDescriptionGenerator;
 use App\Services\TaskDescriptionGenerator\StubDescriptionGenerator;
+use App\Services\TaskManagementService;
 use App\Services\TaskTracker\Integration\FakeIntegration;
 use App\Services\TaskTracker\TaskTrackerService;
 use Illuminate\Support\ServiceProvider;
@@ -39,6 +40,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Регистрация сервиса генерации diff
         $this->app->bind(DiffGeneratorInterface::class, DiffGeneratorService::class);
+        
+        // Регистрация сервиса управления задачами
+        $this->app->singleton(TaskManagementService::class);
     }
 
     /**

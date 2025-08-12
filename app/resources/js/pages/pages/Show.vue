@@ -9,6 +9,13 @@
           </p>
         </div>
         <div class="flex items-center gap-2">
+          <Button 
+            v-if="canCreateTask" 
+            @click="createTask" 
+            variant="default"
+          >
+            Создать задачу
+          </Button>
           <Button as-child>
             <Link :href="route('pages.edit', page.id)">
               Редактировать
@@ -227,6 +234,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import Heading from '@/components/Heading.vue'
@@ -277,6 +285,17 @@ interface Page {
 const props = defineProps<{
   page: Page
 }>()
+
+const canCreateTask = computed(() => {
+  return props.page.current && 
+         (!props.page.diff_descriptions || props.page.diff_descriptions.length === 0) &&
+         !props.page.currentDraft &&
+         props.page.previous_version_id !== null
+})
+
+const createTask = () => {
+  router.post(route('pages.create-task', props.page.id))
+}
 
 const approveDraft = () => {
   if (props.page.currentDraft) {

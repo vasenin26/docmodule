@@ -84,6 +84,15 @@
             <MarkdownPreview :content="form.content" />
             </div>
 
+            <!-- Checkbox для создания задачи -->
+            <div v-if="currentDraft" class="flex items-center space-x-2">
+              <Checkbox
+                id="createTask"
+                v-model="form.createTask"
+              />
+              <Label for="createTask">Создать задачу при утверждении</Label>
+            </div>
+
             <!-- Кнопки -->
             <div class="flex items-center gap-4">
               <Button type="submit" :disabled="processing">
@@ -118,6 +127,7 @@ import Input from '@/components/ui/input/Input.vue'
 import Label from '@/components/ui/label/Label.vue'
 import InputError from '@/components/InputError.vue'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
+import Checkbox from '@/components/ui/checkbox/Checkbox.vue'
 
 interface Page {
   id: number
@@ -147,6 +157,7 @@ const props = withDefaults(defineProps<{
 const form = useForm({
   title: props.currentDraft?.title || props.page?.title || '',
   content: props.currentDraft?.content || props.page?.content || '',
+  createTask: false,
 })
 
 const processing = ref(false)
@@ -177,7 +188,9 @@ const createNewDraft = () => {
 
 const approveDraft = () => {
   if (props.currentDraft) {
-    router.post(route('pages.draft.approve', props.currentDraft.id))
+    router.post(route('pages.draft.approve', props.currentDraft.id), {
+      create_task: form.createTask
+    })
   }
 }
 

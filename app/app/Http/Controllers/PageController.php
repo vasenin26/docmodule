@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\CalculateVersionDifferenceJob;
 use App\Models\Page;
 use App\Models\PageDiffDescription;
+use App\Services\TaskManagementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -217,7 +218,7 @@ class PageController extends Controller
     /**
      * Утвердить черновик
      */
-    public function approveDraft(string $id)
+    public function approveDraft(Request $request, string $id, TaskManagementService $taskService)
     {
         $draft = Page::findOrFail($id);
         
@@ -228,23 +229,25 @@ class PageController extends Controller
         
         // Утверждаем черновик
         $draft->approveDraft();
-        
-        // Ждем небольшое время, чтобы PageObserver успел создать PageDiffDescription
-        // В реальном приложении это должно быть обработано асинхронно
-        sleep(1);
-        
-        // Находим созданную запись PageDiffDescription для этой страницы
-        $diffDescription = PageDiffDescription::where('page_id', $draft->id)
-            ->latest()
-            ->first();
-        
-        if ($diffDescription) {
-            // Перенаправляем на страницу задачи
-            return redirect()->route('tasks.show', $diffDescription->id)
-                ->with('success', 'Черновик утвержден. Задача создана.');
+
+        // Создаем задачу только если пользователь это указал
+        if ($request->boolean('create_task')) {
+            try {
+                // Создаем PageDiffDescription синхронно и запускаем Jobs асинхронно
+                $diffDescription = $taskService->createTaskForPage($draft);
+                
+                // Сразу перенаправляем на страницу задачи
+                // Jobs будут обрабатывать контент в фоне
+                return redirect()->route('tasks.show', $diffDescription->id)
+                    ->with('success', 'Черновик утвержден. Задача создана и обрабатывается.');
+                    
+            } catch (\Exception $e) {
+                return redirect()->route('pages.show', $draft->id)
+                    ->with('error', 'Черновик утвержден, но не удалось создать задачу: ' . $e->getMessage());
+            }
         }
-        
-        // Fallback на старое поведение, если что-то пошло не так
+
+        // Переадресация на страницу просмотра если задача не создавалась
         return redirect()->route('pages.show', $draft->id)
             ->with('success', 'Черновик утвержден.');
     }
@@ -280,5 +283,26 @@ class PageController extends Controller
         
         return redirect('/')
             ->with('success', 'Черновик удален.');
+    }
+
+    /**
+     * Создать задачу для страницы
+     */
+    public function createTask(string $id, TaskManagementService $taskService)
+    {
+        $page = Page::where('current', true)->findOrFail($id);
+        
+        try {
+            // Создаем PageDiffDescription синхронно и запускаем Jobs асинхронно
+            $diffDescription = $taskService->createTaskForPage($page);
+            
+            // Сразу перенаправляем на страницу задачи
+            // Jobs будут обрабатывать контент в фоне
+            return redirect()->route('tasks.show', $diffDescription->id)
+                ->with('success', 'Задача создана и обрабатывается.');
+                
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 }

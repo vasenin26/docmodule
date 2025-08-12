@@ -2,10 +2,7 @@
 
 namespace App\Observers;
 
-use App\Jobs\CalculateVersionDifferenceJob;
-use App\Jobs\GenerateTaskDescriptionJob;
 use App\Models\Page;
-use App\Models\PageDiffDescription;
 
 class PageObserver
 {
@@ -22,10 +19,8 @@ class PageObserver
      */
     public function updated(Page $page): void
     {
-        // Проверяем, было ли изменение статуса с черновика на утвержденную версию
-        if ($page->wasChanged('current') && $page->current && $page->isDirty('current')) {
-            $this->handlePageApproval($page);
-        }
+        // Удаляем автоматическое создание задач
+        // Observer используется только для аудита и служебных целей
     }
 
     /**
@@ -60,19 +55,5 @@ class PageObserver
         // Можно добавить логику для обработки принудительного удаления страниц
     }
 
-    /**
-     * Обработка утверждения страницы
-     */
-    private function handlePageApproval(Page $page): void
-    {
-        // Создаем запись PageDiffDescription для утвержденной страницы
-        $diffDescription = PageDiffDescription::create([
-            'page_id' => $page->id,
-            'content' => '', // Будет заполнено job'ом
-            'created_by' => auth()->id() ?? $page->created_by, // Используем текущего пользователя или создателя страницы
-        ]);
 
-        // Запускаем цепочку job'ов с ID созданной записи
-        GenerateTaskDescriptionJob::dispatch($diffDescription->id);
-    }
 }

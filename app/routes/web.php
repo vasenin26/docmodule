@@ -24,6 +24,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('pages/{page}/draft', [PageController::class, 'getDraft'])->name('pages.draft.get');
     Route::delete('pages/{page}/draft', [PageController::class, 'deleteDraft'])->name('pages.draft.delete');
     
+    // Маршрут для создания задачи
+    Route::post('pages/{page}/create-task', [PageController::class, 'createTask'])->name('pages.create-task');
+    
     // Маршруты для задач
     Route::get('tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
 });
