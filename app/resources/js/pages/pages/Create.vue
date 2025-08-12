@@ -4,8 +4,8 @@
       <div class="flex items-center justify-between">
         <Heading title="Создать страницу" />
         <Button as-child variant="outline">
-          <Link :href="route('pages.index')">
-            Назад к списку
+          <Link :href="project ? route('projects.show', project.id) : route('pages.index')">
+            {{ project ? 'Назад к проекту' : 'Назад к списку' }}
           </Link>
         </Button>
       </div>
@@ -21,6 +21,32 @@
         </CardHeader>
         <CardContent>
           <form @submit.prevent="submit" class="space-y-6">
+            <!-- Проект -->
+            <div v-if="project" class="p-4 bg-muted/50 rounded-lg">
+              <p class="text-sm text-muted-foreground mb-2">Проект:</p>
+              <p class="font-medium">{{ project.title }}</p>
+            </div>
+
+            <!-- Выбор проекта (если не указан в URL) -->
+            <div v-else-if="projects && projects.length > 0" class="space-y-2">
+              <Label for="project_id">Проект</Label>
+              <select
+                id="project_id"
+                v-model="form.project_id"
+                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option :value="null">Без проекта</option>
+                <option 
+                  v-for="proj in projects" 
+                  :key="proj.id" 
+                  :value="proj.id"
+                >
+                  {{ proj.title }}
+                </option>
+              </select>
+              <InputError v-if="errors.project_id" :message="errors.project_id" />
+            </div>
+
             <!-- Родительская страница -->
             <div v-if="parentPage" class="p-4 bg-muted/50 rounded-lg">
               <p class="text-sm text-muted-foreground mb-2">Родительская страница:</p>
@@ -99,8 +125,15 @@ interface ParentPage {
   title: string
 }
 
+interface Project {
+  id: number
+  title: string
+}
+
 const props = withDefaults(defineProps<{
   parentPage?: ParentPage
+  project?: Project
+  projects?: Project[]
   errors?: Record<string, string>
 }>(), {
   errors: () => ({}),
@@ -110,13 +143,20 @@ const form = useForm({
   title: '',
   content: '',
   parent_id: props.parentPage?.id || null,
+  project_id: props.project?.id || null,
 })
 
 const processing = ref(false)
 
 const submit = () => {
   processing.value = true
-  form.post(route('pages.store'), {
+  
+  // Определяем URL для отправки формы
+  const submitUrl = props.project 
+    ? route('projects.pages.store', props.project.id)
+    : route('pages.store')
+  
+  form.post(submitUrl, {
     onSuccess: () => {
       processing.value = false
     },
@@ -127,6 +167,10 @@ const submit = () => {
 }
 
 const cancel = () => {
-  router.visit(route('pages.index'))
+  if (props.project) {
+    router.visit(route('projects.show', props.project.id))
+  } else {
+    router.visit(route('pages.index'))
+  }
 }
 </script>

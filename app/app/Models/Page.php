@@ -22,6 +22,7 @@ class Page extends Model
         'previous_version_id',
         'parent_id',
         'current',
+        'project_id',
     ];
 
     protected $casts = [
@@ -34,6 +35,14 @@ class Page extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Проект, к которому принадлежит страница
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     /**

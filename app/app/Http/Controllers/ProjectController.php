@@ -1,0 +1,127 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Project;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+
+class ProjectController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(): Response
+    {
+        $projects = Project::where('owner_id', Auth::id())
+            ->with(['owner'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('projects/Index', [
+            'projects' => $projects
+        ]);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create(): Response
+    {
+        return Inertia::render('projects/Create');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        $project = Project::create([
+            'title' => $validated['title'],
+            'owner_id' => Auth::id(),
+        ]);
+
+        return redirect()->route('projects.show', $project)
+            ->with('success', 'Проект успешно создан');
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Project $project): Response
+    {
+        // Проверяем доступ к проекту
+        if ($project->owner_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $project->load(['owner', 'pages' => function ($query) {
+            $query->where('current', true)
+                ->whereNull('parent_id')
+                ->with(['creator', 'children'])
+                ->orderBy('created_at', 'desc');
+        }]);
+
+        return Inertia::render('projects/Show', [
+            'project' => $project
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Project $project): Response
+    {
+        // Проверяем доступ к проекту
+        if ($project->owner_id !== Auth::id()) {
+            abort(403);
+        }
+
+        return Inertia::render('projects/Edit', [
+            'project' => $project
+        ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, Project $project): RedirectResponse
+    {
+        // Проверяем доступ к проекту
+        if ($project->owner_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        $project->update($validated);
+
+        return redirect()->route('projects.show', $project)
+            ->with('success', 'Проект успешно обновлен');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Project $project): RedirectResponse
+    {
+        // Проверяем доступ к проекту
+        if ($project->owner_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $project->delete();
+
+        return redirect()->route('projects.index')
+            ->with('success', 'Проект успешно удален');
+    }
+}

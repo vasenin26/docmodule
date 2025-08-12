@@ -1,11 +1,21 @@
 <template>
-  <AppLayout title="Страницы документации">
+  <AppLayout :title="project ? `Страницы проекта ${project.title}` : 'Страницы документации'">
     <template #header>
       <div class="flex items-center justify-between">
-        <Heading title="Страницы документации" />
+        <div>
+          <Heading :title="project ? `Страницы проекта ${project.title}` : 'Страницы документации'" />
+          <p v-if="project" class="text-sm text-muted-foreground mt-1">
+            Проект #{{ project.id }}
+          </p>
+        </div>
         <div class="flex items-center gap-2">
+          <Button v-if="project" as-child variant="outline">
+            <Link :href="route('projects.show', project.id)">
+              К проекту
+            </Link>
+          </Button>
           <Button as-child>
-            <Link :href="route('pages.create')">
+            <Link :href="project ? route('projects.pages.create', project.id) : route('pages.create')">
               Создать страницу
             </Link>
           </Button>
@@ -43,6 +53,7 @@
               <thead class="border-b bg-muted/50">
                 <tr>
                   <th class="p-4 text-left font-medium">Название</th>
+                  <th class="p-4 text-left font-medium">Проект</th>
                   <th class="p-4 text-left font-medium">Создатель</th>
                   <th class="p-4 text-left font-medium">Дата создания</th>
                   <th class="p-4 text-left font-medium">Дочерние страницы</th>
@@ -61,6 +72,19 @@
                       <span v-if="page.hasActiveDraft" class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
                         Черновик
                       </span>
+                    </div>
+                  </td>
+                  <td class="p-4 text-sm">
+                    <div v-if="page.project">
+                      <Link 
+                        :href="route('projects.show', page.project.id)"
+                        class="text-blue-600 hover:underline"
+                      >
+                        {{ page.project.title }}
+                      </Link>
+                    </div>
+                    <div v-else class="text-muted-foreground">
+                      Без проекта
                     </div>
                   </td>
                   <td class="p-4 text-sm text-muted-foreground">
@@ -149,6 +173,11 @@ import Card from '@/components/ui/card/Card.vue'
 import CardContent from '@/components/ui/card/CardContent.vue'
 import Input from '@/components/ui/input/Input.vue'
 
+interface Project {
+  id: number
+  title: string
+}
+
 interface Page {
   id: number
   title: string
@@ -157,6 +186,7 @@ interface Page {
   creator: {
     name: string
   }
+  project?: Project
   children: Page[]
   hasActiveDraft?: boolean
 }
@@ -172,6 +202,7 @@ interface PagesData {
 
 const props = defineProps<{
   pages: PagesData
+  project?: Project
   filters: {
     search?: string
     parent_id?: number
@@ -189,7 +220,11 @@ const formatDate = (date: string) => {
 }
 
 const search = () => {
-  router.get(route('pages.index'), {
+  const searchRoute = props.project 
+    ? route('projects.pages.index', props.project.id)
+    : route('pages.index')
+    
+  router.get(searchRoute, {
     search: searchQuery.value,
     parent_id: props.filters.parent_id,
   }, {
@@ -200,7 +235,11 @@ const search = () => {
 
 const clearSearch = () => {
   searchQuery.value = ''
-  router.get(route('pages.index'), {
+  const searchRoute = props.project 
+    ? route('projects.pages.index', props.project.id)
+    : route('pages.index')
+    
+  router.get(searchRoute, {
     parent_id: props.filters.parent_id,
   }, {
     preserveState: true,

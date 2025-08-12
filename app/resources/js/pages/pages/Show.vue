@@ -27,8 +27,8 @@
             </Link>
           </Button>
           <Button as-child variant="outline">
-            <Link :href="route('pages.index')">
-              Назад к списку
+            <Link :href="page.project ? route('projects.show', page.project.id) : route('pages.index')">
+              {{ page.project ? 'Назад к проекту' : 'Назад к списку' }}
             </Link>
           </Button>
         </div>
@@ -68,6 +68,26 @@
           {{ page.parent.title }}
         </Link>
       </div>
+
+      <!-- Информация о проекте -->
+      <Card v-if="page.project">
+        <CardHeader>
+          <CardTitle class="text-lg">Проект</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="font-medium">{{ page.project.title }}</p>
+              <p class="text-sm text-muted-foreground">ID: {{ page.project.id }}</p>
+            </div>
+            <Button as-child variant="outline" size="sm">
+              <Link :href="route('projects.show', page.project.id)">
+                Перейти к проекту
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <!-- Содержимое страницы -->
       <Card>

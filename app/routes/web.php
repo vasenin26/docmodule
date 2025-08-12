@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -13,8 +14,17 @@ Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// Маршруты для страниц документации
+// Маршруты для проектов и страниц документации
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Маршруты проектов
+    Route::resource('projects', ProjectController::class);
+    
+    // Маршруты страниц в контексте проекта
+    Route::get('projects/{project}/pages', [PageController::class, 'index'])->name('projects.pages.index');
+    Route::get('projects/{project}/pages/create', [PageController::class, 'create'])->name('projects.pages.create');
+    Route::post('projects/{project}/pages', [PageController::class, 'store'])->name('projects.pages.store');
+    
+    // Общие маршруты для страниц
     Route::resource('pages', PageController::class);
     Route::get('pages/{page}/versions', [PageController::class, 'versions'])->name('pages.versions');
     Route::post('pages/{page}/restore/{version}', [PageController::class, 'restore'])->name('pages.restore');

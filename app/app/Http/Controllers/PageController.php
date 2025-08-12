@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\CalculateVersionDifferenceJob;
 use App\Models\Page;
 use App\Models\PageDiffDescription;
+use App\Models\Project;
 use App\Services\TaskManagementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,10 +16,19 @@ class PageController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request, Project $project = null)
     {
         $query = Page::where('current', true)
-            ->with(['creator', 'children.creator']);
+            ->with(['creator', 'children.creator', 'project']);
+
+        // Фильтрация по проекту (если это страницы в контексте проекта)
+        if ($project) {
+            // Проверяем доступ к проекту
+            if ($project->owner_id !== Auth::id()) {
+                abort(403);
+            }
+            $query->where('project_id', $project->id);
+        }
 
         // Фильтрация по родительской странице
         if ($request->has('parent_id')) {
@@ -44,17 +54,25 @@ class PageController extends Controller
             return $page;
         });
 
-        return Inertia::render('pages/Index', [
+        $viewName = $project ? 'pages/Index' : 'pages/Index';
+        
+        return Inertia::render($viewName, [
             'pages' => $pages,
             'filters' => $request->only(['search', 'parent_id']),
+            'project' => $project,
         ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create(Request $request)
+    public function create(Request $request, Project $project = null)
     {
+        // Проверяем доступ к проекту, если он указан
+        if ($project && $project->owner_id !== Auth::id()) {
+            abort(403);
+        }
+
         $parentPage = null;
         if ($request->has('parent_id')) {
             $parentPage = Page::where('current', true)
@@ -62,34 +80,73 @@ class PageController extends Controller
                 ->first();
         }
 
+        // Получаем список проектов пользователя для выбора
+        $projects = Project::where('owner_id', Auth::id())
+            ->orderBy('title')
+            ->get();
+
         return Inertia::render('pages/Create', [
             'parentPage' => $parentPage,
+            'project' => $project,
+            'projects' => $projects,
         ]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request, Project $project = null)
     {
-        $request->validate([
+        $validation = [
             'title' => 'required|string|max:255',
             'content' => 'nullable|string',
             'parent_id' => 'nullable|exists:pages,id',
-        ]);
+        ];
+
+        // Если проект не указан в URL, валидируем project_id из формы
+        if (!$project) {
+            $validation['project_id'] = 'nullable|exists:projects,id';
+        }
+
+        $validated = $request->validate($validation);
+
+        // Определяем project_id
+        $projectId = null;
+        if ($project) {
+            // Проверяем доступ к проекту
+            if ($project->owner_id !== Auth::id()) {
+                abort(403);
+            }
+            $projectId = $project->id;
+        } elseif ($request->has('project_id') && $request->project_id) {
+            // Проверяем доступ к проекту из формы
+            $selectedProject = Project::where('id', $request->project_id)
+                ->where('owner_id', Auth::id())
+                ->first();
+            if ($selectedProject) {
+                $projectId = $selectedProject->id;
+            }
+        }
 
         $page = Page::create([
-            'title' => $request->title,
-            'content' => $request->content,
+            'title' => $validated['title'],
+            'content' => $validated['content'],
             'created_by' => Auth::id(),
-            'parent_id' => $request->parent_id,
+            'parent_id' => $validated['parent_id'] ?? null,
+            'project_id' => $projectId,
             'base_id' => null, // Для первой версии base_id = null
             'previous_version_id' => null, // Для первой версии previous_version_id = null
             'current' => true,
         ]);
 
-        return redirect()->route('pages.index')
-            ->with('success', 'Страница успешно создана.');
+        // Определяем куда перенаправить
+        if ($project) {
+            return redirect()->route('projects.show', $project)
+                ->with('success', 'Страница успешно создана.');
+        } else {
+            return redirect()->route('pages.index')
+                ->with('success', 'Страница успешно создана.');
+        }
     }
 
     /**
@@ -97,7 +154,7 @@ class PageController extends Controller
      */
     public function show(string $id)
     {
-        $page = Page::with(['creator', 'children.creator', 'parent', 'diffDescriptions.creator'])
+        $page = Page::with(['creator', 'children.creator', 'parent', 'project', 'diffDescriptions.creator'])
             ->findOrFail($id);
 
         // Добавляем информацию о черновике
