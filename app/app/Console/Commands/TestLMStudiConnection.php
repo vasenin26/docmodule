@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use OpenAI as OpenAIFactory;
+use App\Interfaces\LLMGenerator;
 
 class TestLMStudiConnection extends Command
 {
@@ -12,7 +12,7 @@ class TestLMStudiConnection extends Command
      *
      * @var string
      */
-    protected $signature = 'app:test-l-m-studi-connection';
+    protected $signature = 'app:llm';
 
     /**
      * The console command description.
@@ -24,21 +24,8 @@ class TestLMStudiConnection extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(LLMGenerator $llmGenerator)
     {
-        $client = OpenAIFactory::factory()
-            ->withApiKey('sk-proj-1234567890')
-            ->withBaseUri('http://host.docker.internal:1234/v1') 
-            ->make();
-
-        $result = $client->chat()->create([
-            'model' => 'gpt-4o',
-            'messages' => [
-                ['role' => 'user', 'content' => 'Привет! Расскажи мне про LLM'],
-            ],
-        ]);
-        
-        echo $result->choices[0]->message->content; // Hello! How can I assist you today?
-            
+        return $llmGenerator->generate('Сколько времени?');
     }
 }
