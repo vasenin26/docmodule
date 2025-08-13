@@ -26,11 +26,9 @@ class LLMDescriptionGenerator implements TaskDescriptionGeneratorInterface
     {
         try {
             $prompt = $this->buildPrompt($differenceData);
+            $result = $this->llmGenerator->generate($prompt, $this->getSystemPrompt());
 
-            $description = $this->llmGenerator->generate($prompt, $this->getSystemPrompt());
-
-            return trim($description);
-
+            return trim($result->answer);
         } catch (\Exception $e) {
             Log::error('Failed to generate task description with OpenAI', [
                 'error' => $e->getMessage(),
@@ -88,7 +86,7 @@ class LLMDescriptionGenerator implements TaskDescriptionGeneratorInterface
             "- На русском языке\n" .
             "- Без технических деталей, если они не критичны\n" .
             "- Задача должна быть в формате markdown\n" .
-            "Отвечай только описанием задачи, без дополнительных комментариев.";
+            "Сохрани описание в хранилище.";
     }
 
     /**

@@ -26,6 +26,22 @@ class TestLMStudiConnection extends Command
      */
     public function handle(LLMGenerator $llmGenerator)
     {
-        return $llmGenerator->generate('Сколько времени?');
+        $result = $llmGenerator->generate('Сколько времени?');
+
+        foreach ($result->messages as $message) {
+            echo "----- " .$message['role'] ." -----\n";
+
+            if(!empty($message['toolCalls'])) {
+                foreach ($message['toolCalls'] as $toolCall) {
+                    echo 'Call ' . $toolCall->function->name . " with " .$toolCall->function->arguments. "\n";
+                }
+            }
+
+            if(!empty($message['content'])) {
+                echo 'Message: ' . $message['content'] . "\n";
+            }
+        }
+
+        echo "Answer:" . $result->answer . "\n";
     }
 }

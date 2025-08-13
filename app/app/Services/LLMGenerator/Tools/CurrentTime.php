@@ -5,7 +5,7 @@ namespace App\Services\LLMGenerator\Tools;
 class CurrentTime implements ToolInterface
 {
 
-    public function execute(...$args): string
+    public function execute($args): string
     {
         return (new \DateTime())->format('Y-m-d H:i:s');
     }
@@ -16,7 +16,7 @@ class CurrentTime implements ToolInterface
             'type' => 'function',
             'function' => [
                 'name' => $name,
-                'description' => 'Return current time'
+                'description' => 'Return current date and time',
             ]
         ];
     }
