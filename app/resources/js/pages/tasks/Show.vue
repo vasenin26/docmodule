@@ -19,9 +19,11 @@
       </div>
     </template>
 
-    <div class="max-w-4xl space-y-6">
-      <!-- Информация о странице -->
-      <Card>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl">
+      <!-- Основное содержимое -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Информация о странице -->
+        <Card>
         <CardHeader>
           <CardTitle>Информация о странице</CardTitle>
           <CardDescription>
@@ -60,9 +62,9 @@
         </CardHeader>
         <CardContent>
           <div class="prose prose-sm max-w-none">
-            <MarkdownRenderer 
-              v-if="taskContent" 
-              :content="taskContent" 
+            <MarkdownRenderer
+              v-if="taskContent"
+              :content="taskContent"
             />
             <div v-else class="text-muted-foreground italic">
               <div class="flex items-center gap-2">
@@ -102,7 +104,7 @@
           <div v-if="task.page.content !== task.page.previous_version.content">
             <Label class="text-sm font-medium">Изменение содержимого</Label>
             <div class="mt-2">
-              <DiffViewer 
+              <DiffViewer
                 :old-content="task.page.previous_version.content"
                 :new-content="task.page.content"
               />
@@ -137,6 +139,43 @@
           </div>
         </CardContent>
       </Card>
+      </div>
+
+      <!-- Боковая панель с чатом -->
+      <div class="lg:col-span-1">
+        <Card v-if="task.llm_chat" class="h-fit">
+          <CardHeader>
+            <CardTitle class="text-lg">История LLM</CardTitle>
+            <CardDescription>
+              Процесс генерации описания задачи
+            </CardDescription>
+          </CardHeader>
+          <CardContent class="p-0">
+            <AgentChat
+              :messages="task.llm_chat.messages"
+              :loading="isPolling && generationStatus === 'generating'"
+            />
+          </CardContent>
+        </Card>
+
+        <!-- Заглушка для отсутствующего чата -->
+        <Card v-else class="h-fit">
+          <CardHeader>
+            <CardTitle class="text-lg">История LLM</CardTitle>
+            <CardDescription>
+              Процесс генерации описания задачи
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div class="flex items-center justify-center py-8 text-center">
+              <div class="text-gray-500">
+                <div class="text-sm">История LLM недоступна</div>
+                <div class="text-xs mt-1">Чат будет доступен после окончания генерации</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   </AppLayout>
 </template>
@@ -149,9 +188,11 @@ import Heading from '@/components/Heading.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import TaskExportButton from '@/components/TaskExportButton.vue'
 import DiffViewer from '@/components/DiffViewer.vue'
+import AgentChat from '@/components/AgentChat.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
+import type { LLMChat } from '@/types'
 
 interface TaskData {
   id: number
@@ -180,6 +221,7 @@ interface TaskData {
     name: string
     email: string
   }
+  llm_chat?: LLMChat | null
 }
 
 const props = defineProps<{
@@ -204,12 +246,12 @@ const checkGenerationStatus = async () => {
       },
       credentials: 'same-origin'
     })
-    
+
     if (response.ok) {
       const data = await response.json()
       generationStatus.value = data.status
       taskContent.value = data.content || taskContent.value
-      
+
       // Останавливаем опрос если генерация завершена или завершилась с ошибкой
       if (generationStatus.value === 'completed' || generationStatus.value === 'failed') {
         stopPolling()

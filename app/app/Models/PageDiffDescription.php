@@ -15,6 +15,7 @@ class PageDiffDescription extends Model
         'content',
         'created_by',
         'generation_status',
+        'llm_chat_id',
     ];
 
     protected $casts = [
@@ -43,6 +44,14 @@ class PageDiffDescription extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Связь с моделью LLMChat
+     */
+    public function llmChat(): BelongsTo
+    {
+        return $this->belongsTo(LLMChat::class, 'llm_chat_id');
     }
 
     /**
