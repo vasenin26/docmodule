@@ -38,7 +38,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
     public function handle(TaskDescriptionGeneratorInterface $descriptionGenerator, DiffGeneratorService $diffGenerator): void
     {
         $pageDiffDescription = PageDiffDescription::with(['page.previousVersion', 'page.creator'])->findOrFail($this->pageDiffDescriptionId);
-        
+
         try {
             // Устанавливаем статус "generating"
             $pageDiffDescription->update([
@@ -55,13 +55,13 @@ class GenerateTaskDescriptionJob implements ShouldQueue
 
             // Сохраняем сгенерированное описание и обновляем статус
             $pageDiffDescription->update([
-                'content' => $description,
+                'content' => $description->answer,
                 'generation_status' => PageDiffDescription::STATUS_COMPLETED
             ]);
 
             // Запускаем следующий job в цепочке
             CreateTaskInTrackerJob::dispatch($this->pageDiffDescriptionId);
-            
+
         } catch (Exception $e) {
             // Логируем ошибку
             Log::error('Failed to generate task description', [
@@ -86,7 +86,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
     private function createDifferenceDataDTO($page, DiffGeneratorService $diffGenerator): DifferenceDataDTO
     {
         $previousVersion = $page->previousVersion;
-        
+
         if (!$previousVersion) {
             // Новая страница
             return new DifferenceDataDTO(
@@ -106,7 +106,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
         // Обновленная страница
         $titleChanged = $page->title !== $previousVersion->title;
         $contentChanged = $page->content !== $previousVersion->content;
-        
+
         // Генерируем diff если есть изменения
         $diffOutput = null;
         if ($titleChanged || $contentChanged) {
