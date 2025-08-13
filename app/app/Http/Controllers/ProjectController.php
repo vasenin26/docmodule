@@ -62,7 +62,7 @@ class ProjectController extends Controller
             abort(403);
         }
 
-        $project->load(['owner', 'pages' => function ($query) {
+        $project->load(['owner', 'repositories', 'pages' => function ($query) {
             $query->where('current', true)
                 ->whereNull('parent_id')
                 ->with(['creator', 'children'])
@@ -83,6 +83,8 @@ class ProjectController extends Controller
         if ($project->owner_id !== Auth::id()) {
             abort(403);
         }
+
+        $project->load(['repositories']);
 
         return Inertia::render('projects/Edit', [
             'project' => $project

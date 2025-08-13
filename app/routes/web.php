@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -18,6 +19,12 @@ Route::get('dashboard', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Маршруты проектов
     Route::resource('projects', ProjectController::class);
+    
+    // Маршруты репозиториев проектов
+    Route::post('projects/{project}/repositories', [RepositoryController::class, 'store'])
+        ->name('projects.repositories.store');
+    Route::delete('projects/{project}/repositories/{repository}', [RepositoryController::class, 'destroy'])
+        ->name('projects.repositories.destroy');
     
     // Маршруты страниц в контексте проекта
     Route::get('projects/{project}/pages', [PageController::class, 'index'])->name('projects.pages.index');
