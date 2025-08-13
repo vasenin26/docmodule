@@ -9,6 +9,8 @@ class LLMChat extends Model
 {
     use HasFactory;
 
+    protected $table = 'llm_chats';
+
     protected $fillable = [
         'messages',
     ];

@@ -99,7 +99,7 @@ class LLMDescriptionGenerator implements TaskDescriptionGeneratorInterface
     /**
      * Generate fallback description when OpenAI API fails
      */
-    private function generateFallbackDescription(DifferenceDataDTO $differenceData): string
+    private function generateFallbackDescription(DifferenceDataDTO $differenceData): LLMGenerationResult
     {
         $description = 'Задача создана на основе изменений в документации.';
 
@@ -117,6 +117,6 @@ class LLMDescriptionGenerator implements TaskDescriptionGeneratorInterface
             $description .= "\nТип: Страница обновлена";
         }
 
-        return $description;
+        return new LLMGenerationResult($description, null);
     }
 }

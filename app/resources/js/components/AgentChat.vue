@@ -53,8 +53,11 @@
 
           <!-- Содержимое сообщения -->
           <div class="text-sm">
+            <div v-if="!message.content" class="text-gray-500 italic">
+              Сообщение без текстового содержимого
+            </div>
             <div 
-              v-if="isLongMessage(message.content) && !expandedMessages.has(index)"
+              v-else-if="isLongMessage(message.content) && !expandedMessages.has(index)"
               class="space-y-2"
             >
               <div class="whitespace-pre-wrap">{{ getTruncatedContent(message.content) }}</div>
@@ -169,11 +172,12 @@ function getMessageClass(role: string): string {
 }
 
 // Функции для работы с контентом
-function isLongMessage(content: string): boolean {
-  return content.length > MAX_MESSAGE_LENGTH;
+function isLongMessage(content: string | null): boolean {
+  return content !== null && content.length > MAX_MESSAGE_LENGTH;
 }
 
-function getTruncatedContent(content: string): string {
+function getTruncatedContent(content: string | null): string {
+  if (!content) return '';
   return content.substring(0, MAX_MESSAGE_LENGTH) + '...';
 }
 

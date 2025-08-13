@@ -37,7 +37,7 @@ export interface User {
 
 export interface LLMMessage {
     role: 'user' | 'assistant' | 'system';
-    content: string;
+    content: string | null;
     timestamp: string;
 }
 

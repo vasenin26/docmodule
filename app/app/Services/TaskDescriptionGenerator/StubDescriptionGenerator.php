@@ -35,6 +35,6 @@ class StubDescriptionGenerator implements TaskDescriptionGeneratorInterface
             $description .= "\nType: Page updated";
         }
 
-        return new LLMGenerationResult($description, 0);
+        return new LLMGenerationResult($description, null);
     }
 }
