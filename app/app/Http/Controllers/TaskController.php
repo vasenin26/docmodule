@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GenerateTaskDescriptionJob;
 use App\Models\PageDiffDescription;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -78,6 +79,35 @@ class TaskController extends Controller implements HasMiddleware
             'status' => $task->generation_status,
             'content' => $task->content,
             'updated_at' => $task->updated_at,
+        ]);
+    }
+
+    /**
+     * Restart generation of task description.
+     */
+    public function restartGeneration(PageDiffDescription $task): JsonResponse
+    {
+        // Проверить, что генерация не выполняется в данный момент
+        if ($task->generation_status === PageDiffDescription::STATUS_GENERATING) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Генерация уже выполняется'
+            ], 400);
+        }
+
+        // Сбросить статус и контент
+        $task->update([
+            'generation_status' => PageDiffDescription::STATUS_PENDING,
+            'content' => null,
+            'llm_chat_id' => null
+        ]);
+
+        // Запустить новую генерацию
+        GenerateTaskDescriptionJob::dispatch($task->id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Генерация перезапущена'
         ]);
     }
 }

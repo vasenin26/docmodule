@@ -9,6 +9,18 @@
           </p>
         </div>
         <div class="flex items-center gap-2">
+          <!-- Кнопка перезапуска генерации -->
+          <Button 
+            v-if="canRestartGeneration"
+            @click="restartGeneration"
+            :disabled="isRestartingGeneration"
+            variant="outline"
+            size="sm"
+          >
+            <span v-if="isRestartingGeneration">Перезапуск...</span>
+            <span v-else>Перезапустить генерацию</span>
+          </Button>
+          
           <TaskExportButton />
           <Button as-child variant="outline">
             <Link :href="route('pages.show', task.page.id)">
@@ -19,9 +31,9 @@
       </div>
     </template>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Основное содержимое -->
-      <div class="lg:col-span-2 space-y-6">
+      <div class="lg:col-span-1 space-y-6">
         <!-- Информация о странице -->
         <Card>
         <CardHeader>
@@ -63,7 +75,7 @@
         <CardContent>
           <div class="prose prose-sm max-w-none">
             <MarkdownRenderer
-              v-if="taskContent"
+              v-if="taskContent && taskContent.trim().length > 0"
               :content="taskContent"
             />
             <div v-else class="text-muted-foreground italic">
@@ -143,7 +155,7 @@
 
       <!-- Боковая панель с чатом -->
       <div class="lg:col-span-1">
-        <Card v-if="task.llm_chat" class="h-fit">
+        <Card v-if="task.llm_chat" class="h-full">
           <CardHeader>
             <CardTitle class="text-lg">История LLM</CardTitle>
             <CardDescription>
@@ -181,7 +193,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import Heading from '@/components/Heading.vue'
@@ -230,9 +242,16 @@ const props = defineProps<{
 
 // Реактивные переменные для отслеживания статуса
 const generationStatus = ref<string>(props.task.generation_status || 'unknown')
-const taskContent = ref<string>(props.task.content || '')
+const taskContent = ref<string | null>(props.task.content || null)
 const isPolling = ref<boolean>(false)
 const pollInterval = ref<number | null>(null)
+
+// Переменные для кнопки перезапуска
+const isRestartingGeneration = ref<boolean>(false)
+
+const canRestartGeneration = computed(() => {
+  return generationStatus.value !== 'generating'
+})
 
 // Функция проверки статуса генерации
 const checkGenerationStatus = async () => {
@@ -250,7 +269,7 @@ const checkGenerationStatus = async () => {
     if (response.ok) {
       const data = await response.json()
       generationStatus.value = data.status
-      taskContent.value = data.content || taskContent.value
+      taskContent.value = data.content || null
 
       // Останавливаем опрос если генерация завершена или завершилась с ошибкой
       if (generationStatus.value === 'completed' || generationStatus.value === 'failed') {
@@ -278,6 +297,44 @@ const stopPolling = () => {
     clearInterval(pollInterval.value)
     pollInterval.value = null
     isPolling.value = false
+  }
+}
+
+// Функция перезапуска генерации
+const restartGeneration = async () => {
+  if (!canRestartGeneration.value || isRestartingGeneration.value) {
+    return
+  }
+
+  isRestartingGeneration.value = true
+
+  try {
+    const response = await fetch(route('tasks.restart-generation', props.task.id), {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+      },
+      credentials: 'same-origin'
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success) {
+        // Сбросить состояние и начать опрос заново
+        generationStatus.value = 'pending'
+        taskContent.value = null
+        startPolling()
+      }
+    } else {
+      console.error('Ошибка при перезапуске генерации:', response.status, response.statusText)
+    }
+  } catch (error) {
+    console.error('Ошибка при перезапуске генерации:', error)
+  } finally {
+    isRestartingGeneration.value = false
   }
 }
 

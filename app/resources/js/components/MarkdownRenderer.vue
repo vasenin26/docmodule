@@ -7,7 +7,7 @@ import { computed } from 'vue'
 import { marked } from 'marked'
 
 interface Props {
-  content: string
+  content: string | null
 }
 
 const props = defineProps<Props>()

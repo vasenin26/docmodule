@@ -47,6 +47,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Маршруты для задач
     Route::get('tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
     Route::get('tasks/{task}/status', [TaskController::class, 'checkGenerationStatus'])->name('tasks.status');
+    Route::post('tasks/{task}/restart-generation', [TaskController::class, 'restartGeneration'])->name('tasks.restart-generation');
 });
 
 require __DIR__.'/settings.php';
