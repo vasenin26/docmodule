@@ -29,7 +29,7 @@ class TaskController extends Controller implements HasMiddleware
     public function show(PageDiffDescription $task): Response
     {
         // Загружаем связанные данные
-        $task->load(['page.creator', 'page.previousVersion', 'creator']);
+        $task->load(['page.creator', 'page.previousVersion', 'creator', 'llmChat']);
 
         return Inertia::render('tasks/Show', [
             'task' => [
@@ -59,6 +59,12 @@ class TaskController extends Controller implements HasMiddleware
                     'name' => $task->creator->name,
                     'email' => $task->creator->email,
                 ],
+                'llm_chat' => $task->llmChat ? [
+                    'id' => $task->llmChat->id,
+                    'messages' => $task->llmChat->messages,
+                    'created_at' => $task->llmChat->created_at,
+                    'updated_at' => $task->llmChat->updated_at,
+                ] : null,
             ]
         ]);
     }

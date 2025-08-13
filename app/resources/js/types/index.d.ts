@@ -35,4 +35,29 @@ export interface User {
     updated_at: string;
 }
 
+export interface LLMMessage {
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    timestamp: string;
+}
+
+export interface LLMChat {
+    id: number;
+    messages: LLMMessage[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface PageDiffDescription {
+    id: number;
+    page_id: number;
+    content: string | null;
+    created_by: number;
+    generation_status: string;
+    llm_chat_id?: number | null;
+    llm_chat?: LLMChat | null;
+    created_at: string;
+    updated_at: string;
+}
+
 export type BreadcrumbItemType = BreadcrumbItem;
