@@ -46,9 +46,6 @@
                 {{ getRoleLabel(message.role) }}
               </span>
             </div>
-            <span class="text-xs text-gray-500">
-              {{ formatTimestamp(message.timestamp) }}
-            </span>
           </div>
 
           <!-- Содержимое сообщения -->
@@ -114,6 +111,8 @@ function getRoleLabel(role: string): string {
       return 'Ассистент';
     case 'system':
       return 'Система';
+    case 'tool':
+      return 'Инструмент';
     default:
       return 'Неизвестно';
   }
