@@ -51,17 +51,17 @@ class GenerateTaskDescriptionJob implements ShouldQueue
             $differenceData = $this->createDifferenceDataDTO($page, $diffGenerator);
 
             // Генерируем описание задачи
-            $description = $descriptionGenerator->generateDescription($differenceData);
+            $generationResult = $descriptionGenerator->generateDescription($differenceData);
 
             // Сохраняем сгенерированное описание и обновляем статус
             $pageDiffDescription->update([
-                'content' => $description->answer,
-                'generation_status' => PageDiffDescription::STATUS_COMPLETED
+                'content' => $generationResult->result,
+                'generation_status' => PageDiffDescription::STATUS_COMPLETED,
+                'llm_chat_id' => $generationResult->chatId
             ]);
 
             // Запускаем следующий job в цепочке
             CreateTaskInTrackerJob::dispatch($this->pageDiffDescriptionId);
-
         } catch (Exception $e) {
             // Логируем ошибку
             Log::error('Failed to generate task description', [

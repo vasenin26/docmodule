@@ -3,6 +3,7 @@
 namespace App\Services\TaskDescriptionGenerator;
 
 use App\Common\DTO\DifferenceDataDTO;
+use App\Common\DTO\LLMGenerationResult;
 use App\Interfaces\TaskDescriptionGeneratorInterface;
 
 class StubDescriptionGenerator implements TaskDescriptionGeneratorInterface
@@ -14,7 +15,7 @@ class StubDescriptionGenerator implements TaskDescriptionGeneratorInterface
      * @param DifferenceDataDTO $differenceData Data about the difference between versions
      * @return string Generated task description
      */
-    public function generateDescription(DifferenceDataDTO $differenceData): string
+    public function generateDescription(DifferenceDataDTO $differenceData): LLMGenerationResult
     {
         $description = 'Task created from version difference.';
 
@@ -34,6 +35,6 @@ class StubDescriptionGenerator implements TaskDescriptionGeneratorInterface
             $description .= "\nType: Page updated";
         }
 
-        return $description;
+        return new LLMGenerationResult($description, 0);
     }
 }

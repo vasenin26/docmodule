@@ -3,9 +3,11 @@
 namespace App\Services\TaskDescriptionGenerator;
 
 use App\Common\DTO\DifferenceDataDTO;
+use App\Common\DTO\LLMGenerationResult;
 use App\Common\DTO\LLMResultDTO;
 use App\Interfaces\LLMGenerator;
 use App\Interfaces\TaskDescriptionGeneratorInterface;
+use App\Models\LLMChat;
 use Illuminate\Support\Facades\Log;
 
 class LLMDescriptionGenerator implements TaskDescriptionGeneratorInterface
@@ -23,11 +25,17 @@ class LLMDescriptionGenerator implements TaskDescriptionGeneratorInterface
      * @param DifferenceDataDTO $differenceData Data about the difference between versions
      * @return string Generated task description
      */
-    public function generateDescription(DifferenceDataDTO $differenceData): LLMResultDTO
+    public function generateDescription(DifferenceDataDTO $differenceData): LLMGenerationResult
     {
         try {
             $prompt = $this->buildPrompt($differenceData);
-            return $this->llmGenerator->generate($prompt, $this->getSystemPrompt());
+            $llmResult = $this->llmGenerator->generate($prompt, $this->getSystemPrompt());
+
+            $chat = LLMChat::create([
+                'messages' => $llmResult->messages
+            ]);
+
+            return new LLMGenerationResult($llmResult->answer, $chat->id);
         } catch (\Exception $e) {
             Log::error('Failed to generate task description with OpenAI', [
                 'error' => $e->getMessage(),

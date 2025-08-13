@@ -3,7 +3,7 @@
 namespace App\Interfaces;
 
 use App\Common\DTO\DifferenceDataDTO;
-use App\Common\DTO\LLMResultDTO;
+use App\Common\DTO\LLMGenerationResult;
 
 interface TaskDescriptionGeneratorInterface
 {
@@ -13,5 +13,5 @@ interface TaskDescriptionGeneratorInterface
      * @param DifferenceDataDTO $differenceData Data about the difference between versions
      * @return string Generated task description
      */
-    public function generateDescription(DifferenceDataDTO $differenceData): LLMResultDTO;
+    public function generateDescription(DifferenceDataDTO $differenceData): LLMGenerationResult;
 }
