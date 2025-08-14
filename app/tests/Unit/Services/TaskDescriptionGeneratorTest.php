@@ -17,10 +17,10 @@ class TaskDescriptionGeneratorTest extends TestCase
             isNewPage: true
         );
 
-        $description = $generator->generateDescription($differenceData);
+        $result = $generator->generateDescription($differenceData);
 
-        $this->assertStringContainsString('Task created from version difference', $description);
-        $this->assertStringContainsString('Test Page', $description);
+        $this->assertStringContainsString('Task created from version difference', $result->result);
+        $this->assertStringContainsString('Test Page', $result->result);
     }
 
     public function test_stub_generator_handles_empty_data()
@@ -29,10 +29,10 @@ class TaskDescriptionGeneratorTest extends TestCase
 
         $differenceData = new DifferenceDataDTO();
 
-        $description = $generator->generateDescription($differenceData);
+        $result = $generator->generateDescription($differenceData);
 
-        $this->assertStringContainsString('Task created from version difference', $description);
-        $this->assertStringContainsString('Type: Page updated', $description);
+        $this->assertStringContainsString('Task created from version difference', $result->result);
+        $this->assertStringContainsString('Type: Page updated', $result->result);
     }
 
     public function test_stub_generator_handles_complex_data()
@@ -46,11 +46,11 @@ class TaskDescriptionGeneratorTest extends TestCase
             contentChanged: true
         );
 
-        $description = $generator->generateDescription($differenceData);
+        $result = $generator->generateDescription($differenceData);
 
-        $this->assertStringContainsString('Task created from version difference', $description);
-        $this->assertStringContainsString('Updated Page', $description);
-        $this->assertStringContainsString('Type: Page updated', $description);
+        $this->assertStringContainsString('Task created from version difference', $result->result);
+        $this->assertStringContainsString('Updated Page', $result->result);
+        $this->assertStringContainsString('Type: Page updated', $result->result);
     }
 
     public function test_stub_generator_implements_interface()
