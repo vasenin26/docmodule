@@ -44,6 +44,7 @@ export interface LLMMessage {
 export interface LLMChat {
     id: number;
     messages: LLMMessage[];
+    tokens?: number | null;
     created_at: string;
     updated_at: string;
 }

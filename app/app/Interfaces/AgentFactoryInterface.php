@@ -4,5 +4,5 @@ namespace App\Interfaces;
 
 interface AgentFactoryInterface
 {
-    public  function getDescriptionGenerator(int $projectId): TaskDescriptionGeneratorInterface;
+    public  function getDescriptionGenerator(?int $projectId): TaskDescriptionGeneratorInterface;
 }

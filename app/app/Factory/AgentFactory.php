@@ -16,7 +16,7 @@ class AgentFactory implements AgentFactoryInterface
     {
     }
 
-    public function getDescriptionGenerator(int $projectId): TaskDescriptionGeneratorInterface
+    public function getDescriptionGenerator(?int $projectId): TaskDescriptionGeneratorInterface
     {
         return new LLMDescriptionGenerator($this->llmGenerator);
     }

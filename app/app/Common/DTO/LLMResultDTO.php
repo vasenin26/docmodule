@@ -6,7 +6,8 @@ readonly class LLMResultDTO
 {
     public function __construct(
         public string $answer,
-        public array $messages
+        public array $messages,
+        public ?int $tokens = null
     )
     {
     }

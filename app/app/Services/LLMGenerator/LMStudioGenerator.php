@@ -84,16 +84,35 @@ class LMStudioGenerator implements LLMGenerator
 
         echo count($messages);
 
-        // Логируем использование токенов для мониторинга расходов
-        Log::info('OpenAI API usage', [
-            'prompt_tokens' => $result->usage->promptTokens,
-            'completion_tokens' => $result->usage->completionTokens,
-            'total_tokens' => $result->usage->totalTokens,
-        ]);
+        // Извлекаем информацию о токенах с безопасной обработкой
+        $totalTokens = null;
+        try {
+            if (isset($result->usage) && isset($result->usage->totalTokens)) {
+                $totalTokens = $result->usage->totalTokens;
+                
+                // Логируем использование токенов для мониторинга расходов
+                Log::info('OpenAI API usage', [
+                    'prompt_tokens' => $result->usage->promptTokens,
+                    'completion_tokens' => $result->usage->completionTokens,
+                    'total_tokens' => $result->usage->totalTokens,
+                ]);
+            } else {
+                // Если информация о токенах недоступна, устанавливаем 0
+                $totalTokens = 0;
+                Log::warning('Информация о токенах недоступна в ответе OpenAI API');
+            }
+        } catch (\Exception $e) {
+            // В случае ошибки при извлечении токенов, устанавливаем 0
+            $totalTokens = 0;
+            Log::error('Ошибка при извлечении информации о токенах', [
+                'error' => $e->getMessage()
+            ]);
+        }
 
         return new LLMResultDTO(
             $answer,
-            $messages
+            $messages,
+            $totalTokens
         );
     }
 }
