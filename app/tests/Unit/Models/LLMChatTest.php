@@ -11,24 +11,33 @@ class LLMChatTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function it_can_create_llm_chat_with_tokens()
+    public function it_can_create_llm_chat_with_detailed_tokens()
     {
         $messages = [
             ['role' => 'user', 'content' => 'Test message'],
             ['role' => 'assistant', 'content' => 'Test response'],
         ];
-        $tokens = 150;
+        $promptTokens = 50;
+        $completionTokens = 100;
+        $totalTokens = 150;
 
         $chat = LLMChat::create([
             'messages' => $messages,
-            'tokens' => $tokens,
+            'prompt_tokens' => $promptTokens,
+            'completion_tokens' => $completionTokens,
+            'total_tokens' => $totalTokens,
         ]);
 
         $this->assertEquals($messages, $chat->messages);
-        $this->assertEquals($tokens, $chat->tokens);
+        $this->assertEquals($promptTokens, $chat->prompt_tokens);
+        $this->assertEquals($completionTokens, $chat->completion_tokens);
+        $this->assertEquals($totalTokens, $chat->total_tokens);
         $this->assertTrue($chat->hasMessages());
         $this->assertTrue($chat->isTokensCalculated());
-        $this->assertEquals($tokens, $chat->getTokensOrZero());
+        $this->assertEquals($promptTokens, $chat->getPromptTokensOrZero());
+        $this->assertEquals($completionTokens, $chat->getCompletionTokensOrZero());
+        $this->assertEquals($totalTokens, $chat->getTotalTokensOrZero());
+        $this->assertEquals($totalTokens, $chat->getTokensOrZero()); // Legacy method
     }
 
     /** @test */
@@ -43,10 +52,15 @@ class LLMChatTest extends TestCase
         ]);
 
         $this->assertEquals($messages, $chat->messages);
-        $this->assertNull($chat->tokens);
+        $this->assertNull($chat->prompt_tokens);
+        $this->assertNull($chat->completion_tokens);
+        $this->assertNull($chat->total_tokens);
         $this->assertTrue($chat->hasMessages());
         $this->assertFalse($chat->isTokensCalculated());
-        $this->assertEquals(0, $chat->getTokensOrZero());
+        $this->assertEquals(0, $chat->getPromptTokensOrZero());
+        $this->assertEquals(0, $chat->getCompletionTokensOrZero());
+        $this->assertEquals(0, $chat->getTotalTokensOrZero());
+        $this->assertEquals(0, $chat->getTokensOrZero()); // Legacy method
     }
 
     /** @test */
@@ -58,7 +72,7 @@ class LLMChatTest extends TestCase
 
         $chat = LLMChat::create([
             'messages' => $originalMessages,
-            'tokens' => 100,
+            'total_tokens' => 100,
         ]);
 
         $this->expectException(\Exception::class);
@@ -80,13 +94,13 @@ class LLMChatTest extends TestCase
 
         $chat = LLMChat::create([
             'messages' => $messages,
-            'tokens' => null,
+            'total_tokens' => null,
         ]);
 
         // Должно разрешить обновление токенов
-        $chat->update(['tokens' => 200]);
+        $chat->update(['total_tokens' => 200]);
 
-        $this->assertEquals(200, $chat->fresh()->tokens);
+        $this->assertEquals(200, $chat->fresh()->total_tokens);
         $this->assertEquals($messages, $chat->fresh()->messages);
     }
 
@@ -95,12 +109,13 @@ class LLMChatTest extends TestCase
     {
         $chat = LLMChat::create([
             'messages' => [],
-            'tokens' => 50,
+            'total_tokens' => 50,
         ]);
 
         $this->assertFalse($chat->hasMessages());
         $this->assertTrue($chat->isTokensCalculated());
-        $this->assertEquals(50, $chat->getTokensOrZero());
+        $this->assertEquals(50, $chat->getTotalTokensOrZero());
+        $this->assertEquals(50, $chat->getTokensOrZero()); // Legacy method
 
         // Должно разрешить обновление пустых сообщений
         $newMessages = [
@@ -128,26 +143,46 @@ class LLMChatTest extends TestCase
     /** @test */
     public function is_tokens_calculated_works_correctly()
     {
-        $chatWithTokens = new LLMChat(['tokens' => 100]);
-        $this->assertTrue($chatWithTokens->isTokensCalculated());
+        $chatWithTotalTokens = new LLMChat(['total_tokens' => 100]);
+        $this->assertTrue($chatWithTotalTokens->isTokensCalculated());
 
-        $chatWithZeroTokens = new LLMChat(['tokens' => 0]);
+        $chatWithPromptTokens = new LLMChat(['prompt_tokens' => 50]);
+        $this->assertTrue($chatWithPromptTokens->isTokensCalculated());
+
+        $chatWithCompletionTokens = new LLMChat(['completion_tokens' => 75]);
+        $this->assertTrue($chatWithCompletionTokens->isTokensCalculated());
+
+        $chatWithZeroTokens = new LLMChat(['total_tokens' => 0]);
         $this->assertTrue($chatWithZeroTokens->isTokensCalculated());
 
-        $chatWithoutTokens = new LLMChat(['tokens' => null]);
+        $chatWithoutTokens = new LLMChat(['total_tokens' => null, 'prompt_tokens' => null, 'completion_tokens' => null]);
         $this->assertFalse($chatWithoutTokens->isTokensCalculated());
     }
 
     /** @test */
     public function get_tokens_or_zero_returns_correct_values()
     {
-        $chatWithTokens = new LLMChat(['tokens' => 150]);
-        $this->assertEquals(150, $chatWithTokens->getTokensOrZero());
+        // Test detailed token methods
+        $chatWithDetailedTokens = new LLMChat([
+            'prompt_tokens' => 50,
+            'completion_tokens' => 100,
+            'total_tokens' => 150
+        ]);
+        $this->assertEquals(50, $chatWithDetailedTokens->getPromptTokensOrZero());
+        $this->assertEquals(100, $chatWithDetailedTokens->getCompletionTokensOrZero());
+        $this->assertEquals(150, $chatWithDetailedTokens->getTotalTokensOrZero());
+        $this->assertEquals(150, $chatWithDetailedTokens->getTokensOrZero()); // Legacy method
 
-        $chatWithZeroTokens = new LLMChat(['tokens' => 0]);
-        $this->assertEquals(0, $chatWithZeroTokens->getTokensOrZero());
+        // Test with zero tokens
+        $chatWithZeroTokens = new LLMChat(['total_tokens' => 0]);
+        $this->assertEquals(0, $chatWithZeroTokens->getTotalTokensOrZero());
+        $this->assertEquals(0, $chatWithZeroTokens->getTokensOrZero()); // Legacy method
 
-        $chatWithoutTokens = new LLMChat(['tokens' => null]);
-        $this->assertEquals(0, $chatWithoutTokens->getTokensOrZero());
+        // Test without tokens
+        $chatWithoutTokens = new LLMChat(['total_tokens' => null]);
+        $this->assertEquals(0, $chatWithoutTokens->getPromptTokensOrZero());
+        $this->assertEquals(0, $chatWithoutTokens->getCompletionTokensOrZero());
+        $this->assertEquals(0, $chatWithoutTokens->getTotalTokensOrZero());
+        $this->assertEquals(0, $chatWithoutTokens->getTokensOrZero()); // Legacy method
     }
 }

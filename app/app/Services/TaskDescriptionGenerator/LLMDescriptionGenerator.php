@@ -33,7 +33,9 @@ class LLMDescriptionGenerator implements TaskDescriptionGeneratorInterface
 
             $chat = LLMChat::create([
                 'messages' => $llmResult->messages,
-                'tokens' => $llmResult->tokens
+                'prompt_tokens' => $llmResult->prompt_tokens,
+                'completion_tokens' => $llmResult->completion_tokens,
+                'total_tokens' => $llmResult->total_tokens
             ]);
 
             return new LLMGenerationResult($llmResult->answer, $chat->id);

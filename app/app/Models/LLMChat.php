@@ -13,7 +13,9 @@ class LLMChat extends Model
 
     protected $fillable = [
         'messages',
-        'tokens',
+        'prompt_tokens',
+        'completion_tokens', 
+        'total_tokens',
     ];
 
     protected $casts = [
@@ -47,22 +49,55 @@ class LLMChat extends Model
     }
 
     /**
-     * Проверка был ли рассчитан размер токенов
+     * Проверка был ли рассчитан размер токенов (любого типа)
      * 
      * @return bool
      */
     public function isTokensCalculated(): bool
     {
-        return $this->tokens !== null;
+        return $this->prompt_tokens !== null || 
+               $this->completion_tokens !== null || 
+               $this->total_tokens !== null;
     }
 
     /**
-     * Получение токенов с fallback на 0
+     * Получение токенов запроса с fallback на 0
+     * 
+     * @return int
+     */
+    public function getPromptTokensOrZero(): int
+    {
+        return $this->prompt_tokens ?? 0;
+    }
+
+    /**
+     * Получение токенов ответа с fallback на 0
+     * 
+     * @return int
+     */
+    public function getCompletionTokensOrZero(): int
+    {
+        return $this->completion_tokens ?? 0;
+    }
+
+    /**
+     * Получение общих токенов с fallback на 0
+     * 
+     * @return int
+     */
+    public function getTotalTokensOrZero(): int
+    {
+        return $this->total_tokens ?? 0;
+    }
+
+    /**
+     * Получение токенов с fallback на 0 (legacy метод)
+     * @deprecated Используйте getTotalTokensOrZero()
      * 
      * @return int
      */
     public function getTokensOrZero(): int
     {
-        return $this->tokens ?? 0;
+        return $this->getTotalTokensOrZero();
     }
 }

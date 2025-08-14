@@ -84,25 +84,34 @@ class LMStudioGenerator implements LLMGenerator
 
         echo count($messages);
 
-        // Извлекаем информацию о токенах с безопасной обработкой
+        // Извлекаем детализированную информацию о токенах
+        $promptTokens = null;
+        $completionTokens = null; 
         $totalTokens = null;
+
         try {
-            if (isset($result->usage) && isset($result->usage->totalTokens)) {
-                $totalTokens = $result->usage->totalTokens;
+            if (isset($result->usage)) {
+                $promptTokens = $result->usage->promptTokens ?? null;
+                $completionTokens = $result->usage->completionTokens ?? null;
+                $totalTokens = $result->usage->totalTokens ?? null;
                 
                 // Логируем использование токенов для мониторинга расходов
                 Log::info('OpenAI API usage', [
-                    'prompt_tokens' => $result->usage->promptTokens,
-                    'completion_tokens' => $result->usage->completionTokens,
-                    'total_tokens' => $result->usage->totalTokens,
+                    'prompt_tokens' => $promptTokens,
+                    'completion_tokens' => $completionTokens,
+                    'total_tokens' => $totalTokens,
                 ]);
             } else {
-                // Если информация о токенах недоступна, устанавливаем 0
+                // Если информация о токенах недоступна, устанавливаем 0 для всех полей
+                $promptTokens = 0;
+                $completionTokens = 0;
                 $totalTokens = 0;
                 Log::warning('Информация о токенах недоступна в ответе OpenAI API');
             }
         } catch (\Exception $e) {
-            // В случае ошибки при извлечении токенов, устанавливаем 0
+            // В случае ошибки устанавливаем 0 для всех полей
+            $promptTokens = 0;
+            $completionTokens = 0;
             $totalTokens = 0;
             Log::error('Ошибка при извлечении информации о токенах', [
                 'error' => $e->getMessage()
@@ -112,6 +121,8 @@ class LMStudioGenerator implements LLMGenerator
         return new LLMResultDTO(
             $answer,
             $messages,
+            $promptTokens,
+            $completionTokens,
             $totalTokens
         );
     }
