@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Factory\AgentFactory;
+use App\Interfaces\AgentFactoryInterface;
 use App\Interfaces\DiffGeneratorInterface;
 use App\Interfaces\LLMGenerator;
 use App\Interfaces\TaskDescriptionGeneratorInterface;
@@ -27,18 +29,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TaskTrackerInterface::class, FakeIntegration::class);
         $this->app->singleton(TaskTrackerService::class);
 
-        // Регистрация сервисов генерации описания задач
-        // Используем OpenAI генератор, если настроен API ключ, иначе заглушку
-        $this->app->bind(TaskDescriptionGeneratorInterface::class, function ($app) {
-            $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
-
-            if ($apiKey) {
-                $llmGenerator = new LMStudioGenerator($app->get(ToolsFactory::class));
-                return new LLMDescriptionGenerator($llmGenerator);
-            }
-
-            return new StubDescriptionGenerator();
-        });
+        $this->app->bind(AgentFactoryInterface::class, AgentFactory::class);
 
         // Регистрация сервиса генерации diff
         $this->app->bind(DiffGeneratorInterface::class, DiffGeneratorService::class);
