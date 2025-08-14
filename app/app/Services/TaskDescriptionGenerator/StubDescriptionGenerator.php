@@ -4,7 +4,7 @@ namespace App\Services\TaskDescriptionGenerator;
 
 use App\Common\DTO\DifferenceDataDTO;
 use App\Common\DTO\LLMGenerationResult;
-use App\Interfaces\TaskDescriptionGeneratorInterface;
+use App\Interfaces\ContentGenerator\TaskDescriptionGeneratorInterface;
 
 class StubDescriptionGenerator implements TaskDescriptionGeneratorInterface
 {

@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Common\DTO\DifferenceDataDTO;
-use App\Interfaces\DiffGeneratorInterface;
+use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Models\Page;
 use App\Models\PageDiffDescription;
 use Illuminate\Bus\Queueable;

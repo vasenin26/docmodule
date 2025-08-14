@@ -3,15 +3,16 @@
 namespace App\Services\LLMGenerator;
 
 use App\Common\DTO\LLMResultDTO;
-use App\Interfaces\LLMGenerator;
-use OpenAI;
+use App\Interfaces\Factory\ToolServiceFactoryInterface;
+use App\Interfaces\LLM\LLMGenerator;
 use Illuminate\Support\Facades\Log;
+use OpenAI;
 
 class LMStudioGenerator implements LLMGenerator
 {
 
     public function __construct(
-        private ToolsFactory $toolsFactory
+        private ToolServiceFactoryInterface $toolsFactory
     )
     {
     }
@@ -34,13 +35,15 @@ class LMStudioGenerator implements LLMGenerator
             ->withBaseUri('http://host.docker.internal:1234/v1')
             ->make();
 
+        $tools = $this->toolsFactory->all();
+
         do {
             $answer = null;
 
             $result = $client->chat()->create([
                 'model' => 'gpt-4o',
                 'messages' => $messages,
-                'tools' => $this->toolsFactory->getMeta()
+                'tools' => $tools->getMeta()
             ]);
 
             $lastMessage = $result->choices[0]->message;
@@ -56,7 +59,7 @@ class LMStudioGenerator implements LLMGenerator
                 $messages[] = ['role' => 'user', 'content' => 'Store answer with tools for finish'];
             } else {
                 foreach ($toolCalls as $toolCall) {
-                    $toolResult = $this->toolsFactory->callTool($toolCall->function->name, $toolCall->function->arguments);
+                    $toolResult = $tools->callTool($toolCall->function->name, $toolCall->function->arguments);
 
                     if(is_array($toolResult)) {
                         $messages[] = [
@@ -74,7 +77,7 @@ class LMStudioGenerator implements LLMGenerator
                         'content' => json_encode($toolResult)
                     ];
 
-                    if ($toolCall->function->name === ToolsFactory::RESULT_TOOL) {
+                    if ($tools->isResultFunction($toolCall->function->name)) {
                         $answer = $toolResult;
                     }
                 }
@@ -86,7 +89,7 @@ class LMStudioGenerator implements LLMGenerator
 
         // Извлекаем детализированную информацию о токенах
         $promptTokens = null;
-        $completionTokens = null; 
+        $completionTokens = null;
         $totalTokens = null;
 
         try {
@@ -94,7 +97,7 @@ class LMStudioGenerator implements LLMGenerator
                 $promptTokens = $result->usage->promptTokens ?? null;
                 $completionTokens = $result->usage->completionTokens ?? null;
                 $totalTokens = $result->usage->totalTokens ?? null;
-                
+
                 // Логируем использование токенов для мониторинга расходов
                 Log::info('OpenAI API usage', [
                     'prompt_tokens' => $promptTokens,

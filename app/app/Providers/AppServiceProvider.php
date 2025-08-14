@@ -3,19 +3,17 @@
 namespace App\Providers;
 
 use App\Factory\AgentFactory;
-use App\Interfaces\AgentFactoryInterface;
-use App\Interfaces\DiffGeneratorInterface;
-use App\Interfaces\LLMGenerator;
-use App\Interfaces\TaskDescriptionGeneratorInterface;
+use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
+use App\Interfaces\Factory\AgentFactoryInterface;
+use App\Interfaces\Factory\ToolServiceFactoryInterface;
+use App\Interfaces\LLM\LLMGenerator;
 use App\Interfaces\TaskTrackerInterface;
 use App\Services\DiffGenerator\DiffGeneratorService;
 use App\Services\LLMGenerator\LMStudioGenerator;
-use App\Services\LLMGenerator\ToolsFactory;
-use App\Services\TaskDescriptionGenerator\LLMDescriptionGenerator;
-use App\Services\TaskDescriptionGenerator\StubDescriptionGenerator;
 use App\Services\TaskManagementService;
 use App\Services\TaskTracker\Integration\FakeIntegration;
 use App\Services\TaskTracker\TaskTrackerService;
+use App\Services\ToolsService\ToolsService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -34,10 +32,8 @@ class AppServiceProvider extends ServiceProvider
         // Регистрация сервиса генерации diff
         $this->app->bind(DiffGeneratorInterface::class, DiffGeneratorService::class);
 
-        // Регистрация ToolsFactory
-        $this->app->singleton(ToolsFactory::class);
-
         // Регистрация LLM генератора
+        $this->app->bind(ToolServiceFactoryInterface::class, ToolsService::class);
         $this->app->bind(LLMGenerator::class, LMStudioGenerator::class);
 
         // Регистрация сервиса управления задачами

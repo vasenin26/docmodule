@@ -2,12 +2,12 @@
 
 namespace Tests\Unit\Jobs;
 
+use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Jobs\CalculateVersionDifferenceJob;
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Models\Page;
 use App\Models\PageDiffDescription;
 use App\Models\User;
-use App\Interfaces\DiffGeneratorInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -57,7 +57,7 @@ class CalculateVersionDifferenceJobNewTest extends TestCase
         Queue::fake();
 
         $user = User::factory()->create();
-        
+
         $oldPage = Page::factory()->create([
             'title' => 'Old Title',
             'content' => 'Old content',

@@ -58,7 +58,7 @@ class TaskDescriptionGeneratorTest extends TestCase
         $generator = new StubDescriptionGenerator();
 
         $this->assertInstanceOf(
-            \App\Interfaces\TaskDescriptionGeneratorInterface::class,
+            \App\Interfaces\ContentGenerator\TaskDescriptionGeneratorInterface::class,
             $generator
         );
     }

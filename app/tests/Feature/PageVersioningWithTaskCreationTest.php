@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Interfaces\DiffGeneratorInterface;
+use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Jobs\CalculateVersionDifferenceJob;
 use App\Jobs\CreateTaskInTrackerJob;
 use App\Jobs\GenerateTaskDescriptionJob;
@@ -39,7 +39,7 @@ class PageVersioningWithTaskCreationTest extends TestCase
                 if ($oldContent === '' && $newContent === 'Draft content') return '+ Draft content';
                 if ($oldContent === 'Original Page' && $newContent === 'Draft Title') return '- Original Page\n+ Draft Title';
                 if ($oldContent === 'Original content' && $newContent === 'Draft content') return '- Original content\n+ Draft content';
-                
+
                 // Default fallback
                 return "+ {$newContent}";
             });
@@ -97,7 +97,7 @@ class PageVersioningWithTaskCreationTest extends TestCase
             isNewPage: false
         );
         $descriptionJob = new GenerateTaskDescriptionJob($differenceData);
-        $descriptionJob->handle(app(\App\Interfaces\TaskDescriptionGeneratorInterface::class));
+        $descriptionJob->handle(app(\App\Interfaces\ContentGenerator\TaskDescriptionGeneratorInterface::class));
 
         // Проверяем, что CreateTaskInTrackerJob был запущен
         Queue::assertPushed(CreateTaskInTrackerJob::class);

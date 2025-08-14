@@ -2,22 +2,24 @@
 
 namespace App\Factory;
 
-use App\Interfaces\AgentFactoryInterface;
-use App\Interfaces\LLMGenerator;
-use App\Interfaces\TaskDescriptionGeneratorInterface;
-use App\Services\LLMGenerator\ToolsFactory;
-use App\Services\TaskDescriptionGenerator\LLMDescriptionGenerator;
+use App\Interfaces\ContentGenerator\TaskDescriptionGeneratorInterface;
+use App\Interfaces\Factory\AgentFactoryInterface;
+use App\Interfaces\Factory\TaskDescriptionGeneratorFactoryInterface;
 
 class AgentFactory implements AgentFactoryInterface
 {
     public function __construct(
-        private LLMGenerator $llmGenerator
+        private readonly TaskDescriptionGeneratorFactoryInterface $descriptionGeneratorFactory,
     )
     {
     }
 
     public function getDescriptionGenerator(?int $projectId): TaskDescriptionGeneratorInterface
     {
-        return new LLMDescriptionGenerator($this->llmGenerator);
+        if(is_null($projectId)) {
+            return $this->descriptionGeneratorFactory->getSimpleGenerator();
+        } else {
+            return $this->descriptionGeneratorFactory->getProjectGenerator($projectId);
+        }
     }
 }

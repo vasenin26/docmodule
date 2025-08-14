@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Interfaces;
+namespace App\Interfaces\Factory;
+
+use App\Interfaces\ContentGenerator\TaskDescriptionGeneratorInterface;
 
 interface AgentFactoryInterface
 {

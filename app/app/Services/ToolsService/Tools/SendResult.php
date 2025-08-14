@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Services\LLMGenerator\Tools;
+namespace App\Services\ToolsService\Tools;
+
+use App\Interfaces\ToolInterface;
 
 class SendResult implements ToolInterface
 {

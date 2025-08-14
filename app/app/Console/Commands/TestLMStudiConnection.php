@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Interfaces\LLM\LLMGenerator;
 use Illuminate\Console\Command;
-use App\Interfaces\LLMGenerator;
 
 class TestLMStudiConnection extends Command
 {

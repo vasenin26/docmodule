@@ -4,9 +4,8 @@ namespace App\Services\TaskDescriptionGenerator;
 
 use App\Common\DTO\DifferenceDataDTO;
 use App\Common\DTO\LLMGenerationResult;
-use App\Common\DTO\LLMResultDTO;
-use App\Interfaces\LLMGenerator;
-use App\Interfaces\TaskDescriptionGeneratorInterface;
+use App\Interfaces\ContentGenerator\TaskDescriptionGeneratorInterface;
+use App\Interfaces\LLM\LLMGenerator;
 use App\Models\LLMChat;
 use Illuminate\Support\Facades\Log;
 

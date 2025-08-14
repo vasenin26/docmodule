@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Interfaces;
+namespace App\Interfaces\LLM;
 
 use App\Common\DTO\LLMResultDTO;
 

@@ -2,12 +2,12 @@
 
 namespace Tests\Unit\Jobs;
 
+use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Jobs\CalculateVersionDifferenceJob;
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Models\Page;
 use App\Models\PageDiffDescription;
 use App\Models\User;
-use App\Interfaces\DiffGeneratorInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -150,7 +150,7 @@ class CalculateVersionDifferenceJobTest extends TestCase
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
             $differenceData = $job->differenceData;
             $diffOutput = $differenceData->diffOutput;
-            
+
             return str_contains($diffOutput, '- Line 3') &&
                    str_contains($diffOutput, '+ Line 4') &&
                    str_contains($diffOutput, '+ Line 5') &&
@@ -189,7 +189,7 @@ class CalculateVersionDifferenceJobTest extends TestCase
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
             $differenceData = $job->differenceData;
             $diffOutput = $differenceData->diffOutput;
-            
+
             return str_contains($diffOutput, '- Old Title') &&
                    str_contains($diffOutput, '+ New Title') &&
                    !str_contains($diffOutput, 'Same content');
@@ -226,7 +226,7 @@ class CalculateVersionDifferenceJobTest extends TestCase
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
             $differenceData = $job->differenceData;
             $diffOutput = $differenceData->diffOutput;
-            
+
             return str_contains($diffOutput, '+ New content') &&
                    !str_contains($diffOutput, '-');
         });
@@ -262,7 +262,7 @@ class CalculateVersionDifferenceJobTest extends TestCase
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
             $differenceData = $job->differenceData;
             $diffOutput = $differenceData->diffOutput;
-            
+
             // Check that lines start with + or -
             $lines = explode("\n", trim($diffOutput));
             foreach ($lines as $line) {
@@ -272,7 +272,7 @@ class CalculateVersionDifferenceJobTest extends TestCase
                     }
                 }
             }
-            
+
             return str_contains($diffOutput, '- Old content') &&
                    str_contains($diffOutput, '+ New content');
         });

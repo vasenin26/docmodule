@@ -2,7 +2,7 @@
 
 namespace App\Services\DiffGenerator;
 
-use App\Interfaces\DiffGeneratorInterface;
+use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 
 class DiffGeneratorService implements DiffGeneratorInterface
 {
