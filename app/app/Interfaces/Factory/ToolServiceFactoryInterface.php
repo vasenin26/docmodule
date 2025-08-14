@@ -6,5 +6,5 @@ use App\Interfaces\LLM\LLMTools;
 
 interface ToolServiceFactoryInterface
 {
-    public function all(): LLMTools;
+    public function withAllTools(): LLMTools;
 }

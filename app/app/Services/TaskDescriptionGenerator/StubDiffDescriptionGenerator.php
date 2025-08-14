@@ -4,9 +4,9 @@ namespace App\Services\TaskDescriptionGenerator;
 
 use App\Common\DTO\DifferenceDataDTO;
 use App\Common\DTO\LLMGenerationResult;
-use App\Interfaces\ContentGenerator\TaskDescriptionGeneratorInterface;
+use App\Interfaces\ContentGenerator\DiffDescriptionGeneratorInterface;
 
-class StubDescriptionGenerator implements TaskDescriptionGeneratorInterface
+class StubDiffDescriptionGenerator implements DiffDescriptionGeneratorInterface
 {
     /**
      * Generate task description based on version difference data
@@ -15,7 +15,7 @@ class StubDescriptionGenerator implements TaskDescriptionGeneratorInterface
      * @param DifferenceDataDTO $differenceData Data about the difference between versions
      * @return string Generated task description
      */
-    public function generateDescription(DifferenceDataDTO $differenceData): LLMGenerationResult
+    public function generate(DifferenceDataDTO $differenceData): LLMGenerationResult
     {
         $description = 'Task created from version difference.';
 

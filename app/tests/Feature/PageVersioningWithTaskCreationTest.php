@@ -97,7 +97,7 @@ class PageVersioningWithTaskCreationTest extends TestCase
             isNewPage: false
         );
         $descriptionJob = new GenerateTaskDescriptionJob($differenceData);
-        $descriptionJob->handle(app(\App\Interfaces\ContentGenerator\TaskDescriptionGeneratorInterface::class));
+        $descriptionJob->handle(app(\App\Interfaces\ContentGenerator\DiffDescriptionGeneratorInterface::class));
 
         // Проверяем, что CreateTaskInTrackerJob был запущен
         Queue::assertPushed(CreateTaskInTrackerJob::class);

@@ -2,9 +2,9 @@
 
 namespace App\Interfaces\Factory;
 
-use App\Interfaces\ContentGenerator\TaskDescriptionGeneratorInterface;
+use App\Interfaces\ContentGenerator\DiffDescriptionGeneratorInterface;
 
 interface AgentFactoryInterface
 {
-    public  function getDescriptionGenerator(?int $projectId): TaskDescriptionGeneratorInterface;
+    public  function getDescriptionGenerator(?int $projectId): DiffDescriptionGeneratorInterface;
 }

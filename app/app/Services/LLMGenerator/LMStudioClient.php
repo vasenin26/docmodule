@@ -4,11 +4,11 @@ namespace App\Services\LLMGenerator;
 
 use App\Common\DTO\LLMResultDTO;
 use App\Interfaces\Factory\ToolServiceFactoryInterface;
-use App\Interfaces\LLM\LLMGenerator;
+use App\Interfaces\LLM\ContentGenerator;
 use Illuminate\Support\Facades\Log;
 use OpenAI;
 
-class LMStudioGenerator implements LLMGenerator
+class LMStudioClient implements ContentGenerator
 {
 
     public function __construct(
@@ -35,7 +35,7 @@ class LMStudioGenerator implements LLMGenerator
             ->withBaseUri('http://host.docker.internal:1234/v1')
             ->make();
 
-        $tools = $this->toolsFactory->all();
+        $tools = $this->toolsFactory->withAllTools();
 
         do {
             $answer = null;

@@ -2,7 +2,7 @@
 
 namespace App\Factory;
 
-use App\Interfaces\ContentGenerator\TaskDescriptionGeneratorInterface;
+use App\Interfaces\ContentGenerator\DiffDescriptionGeneratorInterface;
 use App\Interfaces\Factory\AgentFactoryInterface;
 use App\Interfaces\Factory\TaskDescriptionGeneratorFactoryInterface;
 
@@ -14,7 +14,7 @@ class AgentFactory implements AgentFactoryInterface
     {
     }
 
-    public function getDescriptionGenerator(?int $projectId): TaskDescriptionGeneratorInterface
+    public function getDescriptionGenerator(?int $projectId): DiffDescriptionGeneratorInterface
     {
         if(is_null($projectId)) {
             return $this->descriptionGeneratorFactory->getSimpleGenerator();

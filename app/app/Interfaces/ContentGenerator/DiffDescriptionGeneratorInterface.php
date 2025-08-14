@@ -5,7 +5,7 @@ namespace App\Interfaces\ContentGenerator;
 use App\Common\DTO\DifferenceDataDTO;
 use App\Common\DTO\LLMGenerationResult;
 
-interface TaskDescriptionGeneratorInterface
+interface DiffDescriptionGeneratorInterface
 {
     /**
      * Generate task description based on version difference data
@@ -13,5 +13,5 @@ interface TaskDescriptionGeneratorInterface
      * @param DifferenceDataDTO $differenceData Data about the difference between versions
      * @return string Generated task description
      */
-    public function generateDescription(DifferenceDataDTO $differenceData): LLMGenerationResult;
+    public function generate(DifferenceDataDTO $differenceData): LLMGenerationResult;
 }

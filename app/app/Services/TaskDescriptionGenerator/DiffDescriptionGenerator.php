@@ -4,16 +4,16 @@ namespace App\Services\TaskDescriptionGenerator;
 
 use App\Common\DTO\DifferenceDataDTO;
 use App\Common\DTO\LLMGenerationResult;
-use App\Interfaces\ContentGenerator\TaskDescriptionGeneratorInterface;
-use App\Interfaces\LLM\LLMGenerator;
+use App\Interfaces\ContentGenerator\DiffDescriptionGeneratorInterface;
+use App\Interfaces\LLM\ContentGenerator;
 use App\Models\LLMChat;
 use Illuminate\Support\Facades\Log;
 
-class LLMDescriptionGenerator implements TaskDescriptionGeneratorInterface
+class DiffDescriptionGenerator implements DiffDescriptionGeneratorInterface
 {
 
     public function __construct(
-        private LLMGenerator $llmGenerator
+        private ContentGenerator $llmGenerator
     )
     {
     }
@@ -24,7 +24,7 @@ class LLMDescriptionGenerator implements TaskDescriptionGeneratorInterface
      * @param DifferenceDataDTO $differenceData Data about the difference between versions
      * @return string Generated task description
      */
-    public function generateDescription(DifferenceDataDTO $differenceData): LLMGenerationResult
+    public function generate(DifferenceDataDTO $differenceData): LLMGenerationResult
     {
         try {
             $prompt = $this->buildPrompt($differenceData);

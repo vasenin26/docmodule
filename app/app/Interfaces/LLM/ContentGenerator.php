@@ -4,7 +4,7 @@ namespace App\Interfaces\LLM;
 
 use App\Common\DTO\LLMResultDTO;
 
-interface LLMGenerator
+interface ContentGenerator
 {
     public function generate(string $prompt, string $systemPrompt = ''): LLMResultDTO;
 

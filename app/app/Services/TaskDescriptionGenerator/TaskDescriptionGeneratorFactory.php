@@ -2,25 +2,25 @@
 
 namespace App\Services\TaskDescriptionGenerator;
 
-use App\Interfaces\ContentGenerator\TaskDescriptionGeneratorInterface;
+use App\Interfaces\ContentGenerator\DiffDescriptionGeneratorInterface;
 use App\Interfaces\Factory\TaskDescriptionGeneratorFactoryInterface;
-use App\Interfaces\LLM\LLMGenerator;
+use App\Interfaces\LLM\ContentGenerator;
 
 class TaskDescriptionGeneratorFactory implements TaskDescriptionGeneratorFactoryInterface
 {
     public function __construct(
-        private LLMGenerator $llmGenerator
+        private ContentGenerator $contentGenerator
     )
     {
     }
 
-    public function getProjectGenerator(int $projectId): TaskDescriptionGeneratorInterface
+    public function getProjectGenerator(int $projectId): DiffDescriptionGeneratorInterface
     {
-        return new LLMDescriptionGenerator($this->llmGenerator);
+        return new DiffDescriptionGenerator($this->contentGenerator);
     }
 
-    public function getSimpleGenerator(): TaskDescriptionGeneratorInterface
+    public function getSimpleGenerator(): DiffDescriptionGeneratorInterface
     {
-        return new LLMDescriptionGenerator($this->llmGenerator);
+        return new DiffDescriptionGenerator($this->contentGenerator);
     }
 }

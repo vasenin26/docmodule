@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Interfaces\LLM\LLMGenerator;
+use App\Interfaces\LLM\ContentGenerator;
 use Illuminate\Console\Command;
 
 class TestLMStudiConnection extends Command
@@ -24,7 +24,7 @@ class TestLMStudiConnection extends Command
     /**
      * Execute the console command.
      */
-    public function handle(LLMGenerator $llmGenerator)
+    public function handle(ContentGenerator $llmGenerator)
     {
         $result = $llmGenerator->generate('Сколько времени?');
 

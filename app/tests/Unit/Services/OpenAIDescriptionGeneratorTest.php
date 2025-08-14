@@ -2,19 +2,19 @@
 
 namespace Tests\Unit\Services;
 
-use App\Services\TaskDescriptionGenerator\LLMDescriptionGenerator;
+use App\Services\TaskDescriptionGenerator\DiffDescriptionGenerator;
 use PHPUnit\Framework\Attributes\Skip;
 use OpenAI\Testing\ClientFake;
 use OpenAI\Responses\Chat\CreateResponse;
 use Tests\TestCase;
-use App\Services\LLMGenerator\LMStudioGenerator;
+use App\Services\LLMGenerator\LMStudioClient;
 
 class OpenAIDescriptionGeneratorTest extends TestCase
 {
     public function test_generates_description_with_openai_api()
     {
         // Arrange
-        $llmGenerator = new LMStudioGenerator();
+        $llmGenerator = new LMStudioClient();
 
         $differenceData = [
             'added_lines' => [
@@ -28,8 +28,8 @@ class OpenAIDescriptionGeneratorTest extends TestCase
         ];
 
         // Act
-        $generator = new LLMDescriptionGenerator($llmGenerator);
-        $description = $generator->generateDescription($differenceData);
+        $generator = new DiffDescriptionGenerator($llmGenerator);
+        $description = $generator->generate($differenceData);
 
         // Assert
         $this->assertEquals('Добавлена новая функция авторизации пользователей', $description);

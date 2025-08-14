@@ -13,7 +13,7 @@ class ToolServiceFactory implements ToolServiceFactoryInterface
     {
     }
 
-    public function all(): LLMTools
+    public function withAllTools(): LLMTools
     {
         return new ToolsService(
             $this->factory->sendResult(),

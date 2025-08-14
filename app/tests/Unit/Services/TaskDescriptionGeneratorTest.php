@@ -3,21 +3,21 @@
 namespace Tests\Unit\Services;
 
 use App\Common\DTO\DifferenceDataDTO;
-use App\Services\TaskDescriptionGenerator\StubDescriptionGenerator;
+use App\Services\TaskDescriptionGenerator\StubDiffDescriptionGenerator;
 use Tests\TestCase;
 
 class TaskDescriptionGeneratorTest extends TestCase
 {
     public function test_stub_generator_returns_basic_description()
     {
-        $generator = new StubDescriptionGenerator();
+        $generator = new StubDiffDescriptionGenerator();
 
         $differenceData = new DifferenceDataDTO(
             newVersionTitle: 'Test Page',
             isNewPage: true
         );
 
-        $result = $generator->generateDescription($differenceData);
+        $result = $generator->generate($differenceData);
 
         $this->assertStringContainsString('Task created from version difference', $result->result);
         $this->assertStringContainsString('Test Page', $result->result);
@@ -25,11 +25,11 @@ class TaskDescriptionGeneratorTest extends TestCase
 
     public function test_stub_generator_handles_empty_data()
     {
-        $generator = new StubDescriptionGenerator();
+        $generator = new StubDiffDescriptionGenerator();
 
         $differenceData = new DifferenceDataDTO();
 
-        $result = $generator->generateDescription($differenceData);
+        $result = $generator->generate($differenceData);
 
         $this->assertStringContainsString('Task created from version difference', $result->result);
         $this->assertStringContainsString('Type: Page updated', $result->result);
@@ -37,7 +37,7 @@ class TaskDescriptionGeneratorTest extends TestCase
 
     public function test_stub_generator_handles_complex_data()
     {
-        $generator = new StubDescriptionGenerator();
+        $generator = new StubDiffDescriptionGenerator();
 
         $differenceData = new DifferenceDataDTO(
             newVersionTitle: 'Updated Page',
@@ -46,7 +46,7 @@ class TaskDescriptionGeneratorTest extends TestCase
             contentChanged: true
         );
 
-        $result = $generator->generateDescription($differenceData);
+        $result = $generator->generate($differenceData);
 
         $this->assertStringContainsString('Task created from version difference', $result->result);
         $this->assertStringContainsString('Updated Page', $result->result);
@@ -55,10 +55,10 @@ class TaskDescriptionGeneratorTest extends TestCase
 
     public function test_stub_generator_implements_interface()
     {
-        $generator = new StubDescriptionGenerator();
+        $generator = new StubDiffDescriptionGenerator();
 
         $this->assertInstanceOf(
-            \App\Interfaces\ContentGenerator\TaskDescriptionGeneratorInterface::class,
+            \App\Interfaces\ContentGenerator\DiffDescriptionGeneratorInterface::class,
             $generator
         );
     }

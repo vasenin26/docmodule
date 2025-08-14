@@ -52,7 +52,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
 
             // Генерируем описание задачи
             $descriptionGenerator = $agentFactory->getDescriptionGenerator($page->projectId);
-            $generationResult = $descriptionGenerator->generateDescription($differenceData);
+            $generationResult = $descriptionGenerator->generate($differenceData);
 
             // Сохраняем сгенерированное описание и обновляем статус
             $pageDiffDescription->update([

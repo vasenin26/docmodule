@@ -4,7 +4,7 @@ namespace Tests\Unit\Jobs;
 
 use App\Factory\AgentFactory;
 use App\Interfaces\Factory\AgentFactoryInterface;
-use App\Services\TaskDescriptionGenerator\StubDescriptionGenerator;
+use App\Services\TaskDescriptionGenerator\StubDiffDescriptionGenerator;
 use Mockery;
 use Tests\TestCase;
 
@@ -15,7 +15,7 @@ class GenerateTaskDescriptionJobTest extends TestCase
     {
         // Тестируем что AgentFactory правильно используется в новой архитектуре
         $agentFactory = Mockery::mock(AgentFactoryInterface::class);
-        $stubGenerator = new StubDescriptionGenerator();
+        $stubGenerator = new StubDiffDescriptionGenerator();
 
         $agentFactory->shouldReceive('getDescriptionGenerator')
             ->with(1)
@@ -24,17 +24,17 @@ class GenerateTaskDescriptionJobTest extends TestCase
 
         $generator = $agentFactory->getDescriptionGenerator(1);
 
-        $this->assertInstanceOf(StubDescriptionGenerator::class, $generator);
+        $this->assertInstanceOf(StubDiffDescriptionGenerator::class, $generator);
     }
 
     public function test_agent_factory_provides_correct_generator()
     {
         // Тестируем что реальная AgentFactory работает корректно
-        $llmGenerator = Mockery::mock(\App\Interfaces\LLM\LLMGenerator::class);
+        $llmGenerator = Mockery::mock(\App\Interfaces\LLM\ContentGenerator::class);
         $agentFactory = new AgentFactory($llmGenerator);
 
         $generator = $agentFactory->getDescriptionGenerator(1);
 
-        $this->assertInstanceOf(\App\Services\TaskDescriptionGenerator\LLMDescriptionGenerator::class, $generator);
+        $this->assertInstanceOf(\App\Services\TaskDescriptionGenerator\DiffDescriptionGenerator::class, $generator);
     }
 }
