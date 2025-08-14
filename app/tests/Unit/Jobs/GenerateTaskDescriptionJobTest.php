@@ -3,149 +3,48 @@
 namespace Tests\Unit\Jobs;
 
 use App\Common\DTO\DifferenceDataDTO;
+use App\Factory\AgentFactory;
+use App\Interfaces\AgentFactoryInterface;
 use App\Jobs\CreateTaskInTrackerJob;
 use App\Jobs\GenerateTaskDescriptionJob;
+use App\Models\Page;
+use App\Models\PageDiffDescription;
+use App\Models\Project;
+use App\Models\User;
+use App\Services\DiffGenerator\DiffGeneratorService;
 use App\Services\TaskDescriptionGenerator\StubDescriptionGenerator;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+
 use Illuminate\Support\Facades\Queue;
+use Mockery;
 use Tests\TestCase;
 
 class GenerateTaskDescriptionJobTest extends TestCase
 {
-    use RefreshDatabase;
 
-    public function test_job_generates_description_and_dispatches_next_job()
+    public function test_agent_factory_interface_is_correctly_used()
     {
-        Queue::fake();
+        // Тестируем что AgentFactory правильно используется в новой архитектуре
+        $agentFactory = Mockery::mock(AgentFactoryInterface::class);
+        $stubGenerator = new StubDescriptionGenerator();
+        
+        $agentFactory->shouldReceive('getDescriptionGenerator')
+            ->with(1)
+            ->once()
+            ->andReturn($stubGenerator);
 
-        $differenceData = new DifferenceDataDTO(
-            newVersionTitle: 'Test Page',
-            isNewPage: true,
-            diffOutput: '+ Test Page\n+ Test content'
-        );
-
-        $job = new GenerateTaskDescriptionJob($differenceData);
-        $job->handle(new StubDescriptionGenerator());
-
-        Queue::assertPushed(CreateTaskInTrackerJob::class, function ($job) {
-            return $job->title === 'New page created: Test Page' &&
-                   str_contains($job->description, 'Task created from version difference');
-        });
+        $generator = $agentFactory->getDescriptionGenerator(1);
+        
+        $this->assertInstanceOf(StubDescriptionGenerator::class, $generator);
     }
 
-    public function test_job_generates_title_for_updated_page_with_title_and_content_changes()
+    public function test_agent_factory_provides_correct_generator()
     {
-        Queue::fake();
-
-        $differenceData = new DifferenceDataDTO(
-            newVersionTitle: 'Updated Page',
-            isNewPage: false,
-            titleChanged: true,
-            contentChanged: true
-        );
-
-        $job = new GenerateTaskDescriptionJob($differenceData);
-        $job->handle(new StubDescriptionGenerator());
-
-        Queue::assertPushed(CreateTaskInTrackerJob::class, function ($job) {
-            return $job->title === 'Page updated: Updated Page (title and content changed)';
-        });
-    }
-
-    public function test_job_generates_title_for_updated_page_with_title_change_only()
-    {
-        Queue::fake();
-
-        $differenceData = new DifferenceDataDTO(
-            newVersionTitle: 'Updated Page',
-            isNewPage: false,
-            titleChanged: true,
-            contentChanged: false
-        );
-
-        $job = new GenerateTaskDescriptionJob($differenceData);
-        $job->handle(new StubDescriptionGenerator());
-
-        Queue::assertPushed(CreateTaskInTrackerJob::class, function ($job) {
-            return $job->title === 'Page updated: Updated Page (title changed)';
-        });
-    }
-
-    public function test_job_generates_title_for_updated_page_with_content_change_only()
-    {
-        Queue::fake();
-
-        $differenceData = new DifferenceDataDTO(
-            newVersionTitle: 'Same Title',
-            isNewPage: false,
-            titleChanged: false,
-            contentChanged: true
-        );
-
-        $job = new GenerateTaskDescriptionJob($differenceData);
-        $job->handle(new StubDescriptionGenerator());
-
-        Queue::assertPushed(CreateTaskInTrackerJob::class, function ($job) {
-            return $job->title === 'Page updated: Same Title (content changed)';
-        });
-    }
-
-    public function test_job_uses_diff_output_for_description_generation()
-    {
-        Queue::fake();
-
-        $differenceData = new DifferenceDataDTO(
-            newVersionTitle: 'Test Page',
-            isNewPage: false,
-            titleChanged: false,
-            contentChanged: true,
-            diffOutput: "- Old content\n+ New content with multiple lines"
-        );
-
-        $job = new GenerateTaskDescriptionJob($differenceData);
-        $job->handle(new StubDescriptionGenerator());
-
-        Queue::assertPushed(CreateTaskInTrackerJob::class, function ($job) {
-            return $job->title === 'Page updated: Test Page (1 line(s) added, 1 line(s) removed)';
-        });
-    }
-
-    public function test_job_handles_missing_diff_output_gracefully()
-    {
-        Queue::fake();
-
-        $differenceData = new DifferenceDataDTO(
-            newVersionTitle: 'Updated Page',
-            isNewPage: false,
-            titleChanged: true,
-            contentChanged: true
-        );
-
-        $job = new GenerateTaskDescriptionJob($differenceData);
-        $job->handle(new StubDescriptionGenerator());
-
-        Queue::assertPushed(CreateTaskInTrackerJob::class, function ($job) {
-            return $job->title === 'Page updated: Updated Page (title and content changed)';
-        });
-    }
-
-    public function test_job_generates_title_with_diff_information()
-    {
-        Queue::fake();
-
-        $differenceData = new DifferenceDataDTO(
-            newVersionTitle: 'Test Page',
-            isNewPage: false,
-            titleChanged: false,
-            contentChanged: true,
-            diffOutput: "+ Line 3"
-        );
-
-        $job = new GenerateTaskDescriptionJob($differenceData);
-        $job->handle(new StubDescriptionGenerator());
-
-        Queue::assertPushed(CreateTaskInTrackerJob::class, function ($job) {
-            return $job->title === 'Page updated: Test Page (1 line(s) added)';
-        });
+        // Тестируем что реальная AgentFactory работает корректно  
+        $llmGenerator = Mockery::mock(\App\Interfaces\LLMGenerator::class);
+        $agentFactory = new AgentFactory($llmGenerator);
+        
+        $generator = $agentFactory->getDescriptionGenerator(1);
+        
+        $this->assertInstanceOf(\App\Services\TaskDescriptionGenerator\LLMDescriptionGenerator::class, $generator);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Common\DTO\DifferenceDataDTO;
+use App\Interfaces\AgentFactoryInterface;
 use App\Interfaces\TaskDescriptionGeneratorInterface;
 use App\Models\PageDiffDescription;
 use App\Services\DiffGenerator\DiffGeneratorService;
@@ -35,7 +36,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(TaskDescriptionGeneratorInterface $descriptionGenerator, DiffGeneratorService $diffGenerator): void
+    public function handle(AgentFactoryInterface $agentFactory, DiffGeneratorService $diffGenerator): void
     {
         $pageDiffDescription = PageDiffDescription::with(['page.previousVersion', 'page.creator'])->findOrFail($this->pageDiffDescriptionId);
 
@@ -51,6 +52,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
             $differenceData = $this->createDifferenceDataDTO($page, $diffGenerator);
 
             // Генерируем описание задачи
+            $descriptionGenerator = $agentFactory->getDescriptionGenerator($page->projectId);
             $generationResult = $descriptionGenerator->generateDescription($differenceData);
 
             // Сохраняем сгенерированное описание и обновляем статус
@@ -90,16 +92,16 @@ class GenerateTaskDescriptionJob implements ShouldQueue
         if (!$previousVersion) {
             // Новая страница
             return new DifferenceDataDTO(
-                isNewPage: true,
-                newVersionId: $page->id,
+                diffOutput: null,
                 newVersionTitle: $page->title,
+                isNewPage: true,
+                titleChanged: false,
+                contentChanged: false,
+                newVersionId: $page->id,
                 newVersionContent: $page->content,
                 previousVersionId: null,
                 previousVersionTitle: null,
-                previousVersionContent: null,
-                titleChanged: false,
-                contentChanged: false,
-                diffOutput: null
+                previousVersionContent: null
             );
         }
 
@@ -114,16 +116,16 @@ class GenerateTaskDescriptionJob implements ShouldQueue
         }
 
         return new DifferenceDataDTO(
-            isNewPage: false,
-            newVersionId: $page->id,
+            diffOutput: $diffOutput,
             newVersionTitle: $page->title,
+            isNewPage: false,
+            titleChanged: $titleChanged,
+            contentChanged: $contentChanged,
+            newVersionId: $page->id,
             newVersionContent: $page->content,
             previousVersionId: $previousVersion->id,
             previousVersionTitle: $previousVersion->title,
-            previousVersionContent: $previousVersion->content,
-            titleChanged: $titleChanged,
-            contentChanged: $contentChanged,
-            diffOutput: $diffOutput
+            previousVersionContent: $previousVersion->content
         );
     }
 
