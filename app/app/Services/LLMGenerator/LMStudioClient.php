@@ -55,11 +55,7 @@ class LMStudioClient implements ContentGenerator
 
             $messages[] = (array)$lastMessage;
 
-            echo "agent: " . $lastMessage->content . "; tools: " . join(', ', array_map(fn($toolCall) => $toolCall->function->name, $toolCalls));
-            echo "\n";
-
             if (empty($toolCalls)) {
-                $messages[] = ['role' => 'assistant', 'content' => $lastMessage->content];
                 $messages[] = ['role' => 'user', 'content' => 'Store answer with tools for finish'];
             } else {
                 foreach ($toolCalls as $toolCall) {
@@ -88,8 +84,6 @@ class LMStudioClient implements ContentGenerator
             }
 
         } while (is_null($answer));
-
-        echo count($messages);
 
         // Извлекаем детализированную информацию о токенах
         $promptTokens = null;
