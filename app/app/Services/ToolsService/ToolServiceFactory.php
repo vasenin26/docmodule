@@ -2,9 +2,10 @@
 
 namespace App\Services\ToolsService;
 
+use App\Interfaces\Factory\ToolServiceFactoryInterface;
 use App\Interfaces\LLM\LLMTools;
 
-class ToolServiceFactory
+class ToolServiceFactory implements ToolServiceFactoryInterface
 {
     public function __construct(
         private ToolsFactory $factory
