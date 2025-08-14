@@ -18,7 +18,8 @@ class ToolServiceFactory implements ToolServiceFactoryInterface
         return new ToolsService(
             $this->factory->sendResult(),
             [
-                'time' => $this->factory->time()
+                'time' => $this->factory->time(),
+                'git.readFile' => $this->factory->gitReadFile()
             ]
         );
     }

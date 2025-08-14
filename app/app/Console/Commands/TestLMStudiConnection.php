@@ -26,7 +26,7 @@ class TestLMStudiConnection extends Command
      */
     public function handle(ContentGenerator $llmGenerator)
     {
-        $result = $llmGenerator->generate('Сколько времени?');
+        $result = $llmGenerator->generate('Прочитай файл https://github.com/vasenin26/savemyass/blob/master/Makefile и верни содержимое');
 
         foreach ($result->messages as $message) {
             echo "----- " .$message['role'] ." -----\n";
