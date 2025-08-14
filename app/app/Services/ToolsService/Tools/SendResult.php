@@ -7,15 +7,9 @@ use App\Interfaces\ToolInterface;
 class SendResult implements ToolInterface
 {
 
-    public function execute($args): ?string
+    public function execute(array $args): ?string
     {
-        $content = json_decode($args);
-
-        if(json_last_error() !== JSON_ERROR_NONE) {
-            return null;
-        }
-
-        return $content->content ?? null;
+        return $args['content'] ?? null;
     }
 
     public function getProps($name): array

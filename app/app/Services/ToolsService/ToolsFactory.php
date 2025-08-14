@@ -6,6 +6,7 @@ use App\Interfaces\GitRepoProviderInterface;
 use App\Interfaces\ToolInterface;
 use App\Services\ToolsService\Tools\CurrentTime;
 use App\Services\ToolsService\Tools\Git\ReadFile;
+use App\Services\ToolsService\Tools\Git\SearchFileByName;
 use App\Services\ToolsService\Tools\SendResult;
 
 class ToolsFactory
@@ -30,5 +31,10 @@ class ToolsFactory
     public function gitReadFile(): ToolInterface
     {
         return new ReadFile($this->gitRepoProvider);
+    }
+
+    public function gitSearchFileByName(): ToolInterface
+    {
+        return new SearchFileByName($this->gitRepoProvider);
     }
 }

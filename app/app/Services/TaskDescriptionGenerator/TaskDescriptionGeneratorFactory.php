@@ -5,6 +5,8 @@ namespace App\Services\TaskDescriptionGenerator;
 use App\Interfaces\ContentGenerator\DiffDescriptionGeneratorInterface;
 use App\Interfaces\Factory\TaskDescriptionGeneratorFactoryInterface;
 use App\Interfaces\LLM\ContentGenerator;
+use App\Models\Project;
+use Illuminate\Support\Facades\Log;
 
 class TaskDescriptionGeneratorFactory implements TaskDescriptionGeneratorFactoryInterface
 {
@@ -16,7 +18,10 @@ class TaskDescriptionGeneratorFactory implements TaskDescriptionGeneratorFactory
 
     public function getProjectGenerator(int $projectId): DiffDescriptionGeneratorInterface
     {
-        return new DiffDescriptionGenerator($this->contentGenerator);
+        $project = Project::findOrFail($projectId);
+        $repos = $project->repositories->all();
+
+        return new DiffDescriptionGenerator($this->contentGenerator, $repos);
     }
 
     public function getSimpleGenerator(): DiffDescriptionGeneratorInterface

@@ -25,6 +25,8 @@ class GenerateTaskDescriptionJob implements ShouldQueue
      */
     public $tries = 3;
 
+    public $timeout = 600;
+
     /**
      * Create a new job instance.
      */
@@ -51,7 +53,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
             $differenceData = $this->createDifferenceDataDTO($page, $diffGenerator);
 
             // Генерируем описание задачи
-            $descriptionGenerator = $agentFactory->getDescriptionGenerator($page->projectId);
+            $descriptionGenerator = $agentFactory->getDescriptionGenerator($page->project_id);
             $generationResult = $descriptionGenerator->generate($differenceData);
 
             // Сохраняем сгенерированное описание и обновляем статус

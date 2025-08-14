@@ -153,7 +153,7 @@
 </template>
 
 <script setup lang="ts">
-import AgentChat from '@/components/AgentChat.vue';
+import AgentChat from '@/components/AgentChat/AgentChat.vue';
 import DiffViewer from '@/components/DiffViewer.vue';
 import Heading from '@/components/Heading.vue';
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';

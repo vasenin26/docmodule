@@ -30,9 +30,13 @@ class LMStudioClient implements ContentGenerator
 
     public function processMessages(array $messages): LLMResultDTO
     {
+//        $client = OpenAI::factory()
+//            ->withApiKey('sk-proj-1234567890')
+//            ->withBaseUri('http://host.docker.internal:1234/v1')
+//            ->make();
         $client = OpenAI::factory()
-            ->withApiKey('sk-proj-1234567890')
-            ->withBaseUri('http://host.docker.internal:1234/v1')
+            ->withApiKey('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')
+            ->withBaseUri('https://api.openai.com/v1')
             ->make();
 
         $tools = $this->toolsFactory->withAllTools();

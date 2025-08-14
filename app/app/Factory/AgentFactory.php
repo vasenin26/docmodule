@@ -5,6 +5,7 @@ namespace App\Factory;
 use App\Interfaces\ContentGenerator\DiffDescriptionGeneratorInterface;
 use App\Interfaces\Factory\AgentFactoryInterface;
 use App\Interfaces\Factory\TaskDescriptionGeneratorFactoryInterface;
+use Illuminate\Support\Facades\Log;
 
 class AgentFactory implements AgentFactoryInterface
 {

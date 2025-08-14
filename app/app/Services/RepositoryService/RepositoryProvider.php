@@ -5,6 +5,7 @@ namespace App\Services\RepositoryService;
 use App\Interfaces\GitRepoProviderInterface;
 use CzProject\GitPhp\Git;
 use CzProject\GitPhp\GitRepository;
+use Illuminate\Support\Facades\Log;
 
 class RepositoryProvider implements GitRepoProviderInterface
 {
@@ -13,10 +14,12 @@ class RepositoryProvider implements GitRepoProviderInterface
     {
         $parsed_url = parse_url($url);
         $domain = $parsed_url['host'];
-        $path = rtrim($parsed_url['path'], '/');
+        $path = trim($parsed_url['path'], '/');
         $path = preg_replace('/\.git$/', '', $path);
 
         $fullPath = '/var/repos/' . $domain . '/' . $path;
+
+        Log::info($fullPath);
 
         $git = new Git();
 

@@ -7,13 +7,19 @@ use App\Common\DTO\LLMGenerationResult;
 use App\Interfaces\ContentGenerator\DiffDescriptionGeneratorInterface;
 use App\Interfaces\LLM\ContentGenerator;
 use App\Models\LLMChat;
+use App\Models\Repository;
 use Illuminate\Support\Facades\Log;
 
 class DiffDescriptionGenerator implements DiffDescriptionGeneratorInterface
 {
 
+    /**
+     * @param ContentGenerator $llmGenerator
+     * @param array<Repository> $repositories
+     */
     public function __construct(
-        private ContentGenerator $llmGenerator
+        private ContentGenerator $llmGenerator,
+        private array            $repositories = [],
     )
     {
     }
@@ -85,7 +91,7 @@ class DiffDescriptionGenerator implements DiffDescriptionGeneratorInterface
      */
     private function getSystemPrompt(): string
     {
-        return "Ты - опытный менеджер продукта, который создает краткие и информативные описания задач на основе изменений в документации. " .
+        $prompt = "Ты - опытный менеджер продукта, который создает краткие и информативные описания задач на основе изменений в документации. " .
             "Твоя задача сформировать задачу для разработчиков на основе изменений в документации. " .
             "На основе различия необходимо сформировать описание требуемых изменений необходимых для того, чтобы привести кодовую базу к состоянию удовлетворяющему новую версию документации." .
             "Описание должно быть:\n" .
@@ -93,8 +99,22 @@ class DiffDescriptionGenerator implements DiffDescriptionGeneratorInterface
             "- Понятным для  разработчиков\n" .
             "- На русском языке\n" .
             "- Без технических деталей, если они не критичны\n" .
-            "- Задача должна быть в формате markdown\n" .
-            "Сохрани описание в хранилище.";
+            "- Задача должна быть в формате markdown\n";
+
+        if (!empty($this->repositories)) {
+            $prompt .= "Проект включает следующие репозитории: \n";
+
+            foreach ($this->repositories as $repository) {
+                $prompt .= '- ' . $repository->url . "\n";
+            }
+
+            $prompt .= "\n Исследуй репозиторий чтобы получить дополнительную " .
+                "информацию о продукте и создать лучшее описание задачи. \n\n";
+        }
+
+        $prompt .= "\n\nСохрани описание в хранилище.";
+
+        return $prompt;
     }
 
     /**

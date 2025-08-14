@@ -42,7 +42,13 @@ class ToolsService implements LLMTools
 
     public function callTool(string $toolName, string $args): ?string
     {
-        return $this->map[$toolName]->execute($args);
+        $params = json_decode($args, true);
+
+        if(json_last_error() !== JSON_ERROR_NONE){
+            $params = [];
+        }
+
+        return $this->map[$toolName]->execute($params);
     }
 
     public function isResultFunction(string $name): bool

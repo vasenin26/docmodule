@@ -15,20 +15,18 @@ class ReadFile implements ToolInterface
     }
 
     //read file from git repository
-    public function execute($args): ?string
+    public function execute(array $args): ?string
     {
-        $content = json_decode($args, true);
-
-        if(json_last_error() !== JSON_ERROR_NONE) {
-            return null;
-        }
-
-        list('url' => $url, 'path' => $path) = $content;
+        list('url' => $url, 'path' => $path) = $args;
 
         $repo = $this->repoProvider->getRepo($url);
         $fullPath = $repo->getRepositoryPath() . '/' . trim($path, '/');
 
         $content = file_get_contents($fullPath);
+
+        if ($content === false) {
+            return null;
+        }
 
         return $content;
     }
@@ -52,7 +50,7 @@ class ReadFile implements ToolInterface
                             'description' => 'Path to file',
                         ]
                     ],
-                    'required' => ['content'],
+                    'required' => ['url', 'path'],
                 ]
             ]
         ];

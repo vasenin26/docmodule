@@ -39,6 +39,12 @@ export interface LLMMessage {
     role: 'user' | 'assistant' | 'system';
     content: string | null;
     timestamp: string;
+    toolCalls?: {
+        id: string;
+        function: {
+            name: string
+        }
+    }[];
 }
 
 export interface LLMChat {

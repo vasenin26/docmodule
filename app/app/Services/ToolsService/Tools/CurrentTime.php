@@ -7,7 +7,7 @@ use App\Interfaces\ToolInterface;
 class CurrentTime implements ToolInterface
 {
 
-    public function execute($args): string
+    public function execute(array $args): string
     {
         return (new \DateTime())->format('Y-m-d H:i:s');
     }
