@@ -57,7 +57,7 @@
               v-else-if="isLongMessage(message.content) && !expandedMessages.has(index)"
               class="space-y-2"
             >
-              <div class="whitespace-pre-wrap">{{ getTruncatedContent(message.content) }}</div>
+              <div class="whitespace-pre-wrap break-words overflow-x-hidden">{{ getTruncatedContent(message.content) }}</div>
               <button
                 @click="toggleMessageExpansion(index)"
                 class="text-blue-600 hover:text-blue-800 text-xs font-medium"
@@ -66,7 +66,7 @@
               </button>
             </div>
             <div v-else class="space-y-2">
-              <div class="whitespace-pre-wrap">{{ message.content }}</div>
+              <div class="whitespace-pre-wrap break-words overflow-x-hidden">{{ message.content }}</div>
               <button
                 v-if="isLongMessage(message.content)"
                 @click="toggleMessageExpansion(index)"
