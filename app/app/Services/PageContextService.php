@@ -1,0 +1,270 @@
+<?php
+
+namespace App\Services;
+
+use App\Interfaces\PageContextServiceInterface;
+use App\Models\Page;
+use App\Models\Actualization;
+use App\Models\PageDiffDescription;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+
+class PageContextService implements PageContextServiceInterface
+{
+    private readonly int $projectId;
+
+    public function __construct(
+        int $projectId
+    ) {
+        $this->projectId = $projectId;
+        Log::info('PageContextService created for project', ['project_id' => $projectId]);
+    }
+
+    public function getProjectId(): int
+    {
+        return $this->projectId;
+    }
+
+    public function getPageById(int $pageId): ?Page
+    {
+        Log::debug('Getting page by ID', ['page_id' => $pageId, 'project_id' => $this->projectId]);
+        
+        $cacheKey = "page_context_{$this->projectId}_page_{$pageId}";
+        
+        return Cache::remember($cacheKey, 300, function () use ($pageId) {
+            $page = Page::where('id', $pageId)
+                ->where('project_id', $this->projectId)
+                ->where('current', true)
+                ->with(['creator', 'project', 'parent', 'children'])
+                ->first();
+                
+            if (!$page) {
+                Log::warning('Page not found or not accessible', [
+                    'page_id' => $pageId, 
+                    'project_id' => $this->projectId
+                ]);
+            }
+            
+            return $page;
+        });
+    }
+
+    public function getCurrentPages(): Collection
+    {
+        Log::debug('Getting current pages for project', ['project_id' => $this->projectId]);
+        
+        $cacheKey = "page_context_{$this->projectId}_current_pages";
+        
+        return Cache::remember($cacheKey, 600, function () {
+            return Page::where('project_id', $this->projectId)
+                ->where('current', true)
+                ->with(['creator', 'parent', 'children'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
+    }
+
+    public function getAllProjectPages(): Collection
+    {
+        Log::debug('Getting all project pages', ['project_id' => $this->projectId]);
+        
+        $cacheKey = "page_context_{$this->projectId}_all_pages";
+        
+        return Cache::remember($cacheKey, 600, function () {
+            return Page::where('project_id', $this->projectId)
+                ->where('current', true)
+                ->with(['creator', 'project', 'parent', 'children', 'actualizations'])
+                ->orderBy('title')
+                ->get();
+        });
+    }
+
+    public function getPageHierarchy(?int $rootPageId = null): Collection
+    {
+        Log::debug('Getting page hierarchy', [
+            'root_page_id' => $rootPageId, 
+            'project_id' => $this->projectId
+        ]);
+        
+        $cacheKey = "page_context_{$this->projectId}_hierarchy_" . ($rootPageId ?? 'root');
+        
+        return Cache::remember($cacheKey, 600, function () use ($rootPageId) {
+            $query = Page::where('project_id', $this->projectId)
+                ->where('current', true)
+                ->with(['creator', 'children.creator', 'children.children']);
+                
+            if ($rootPageId) {
+                // Проверяем, что корневая страница принадлежит проекту
+                if (!$this->validatePageAccess($rootPageId)) {
+                    return new Collection();
+                }
+                $query->where('parent_id', $rootPageId);
+            } else {
+                $query->whereNull('parent_id');
+            }
+            
+            return $query->orderBy('title')->get();
+        });
+    }
+
+    public function getPageChildren(int $pageId): Collection
+    {
+        if (!$this->validatePageAccess($pageId)) {
+            Log::warning('Access denied to page children', [
+                'page_id' => $pageId, 
+                'project_id' => $this->projectId
+            ]);
+            return new Collection();
+        }
+        
+        $cacheKey = "page_context_{$this->projectId}_children_{$pageId}";
+        
+        return Cache::remember($cacheKey, 300, function () use ($pageId) {
+            return Page::where('parent_id', $pageId)
+                ->where('project_id', $this->projectId)
+                ->where('current', true)
+                ->with(['creator', 'children'])
+                ->orderBy('title')
+                ->get();
+        });
+    }
+
+    public function getPageParent(int $pageId): ?Page
+    {
+        $page = $this->getPageById($pageId);
+        if (!$page || !$page->parent_id) {
+            return null;
+        }
+        
+        return $this->getPageById($page->parent_id);
+    }
+
+    public function findRelatedPages(int $pageId): Collection
+    {
+        if (!$this->validatePageAccess($pageId)) {
+            return new Collection();
+        }
+        
+        Log::debug('Finding related pages', [
+            'page_id' => $pageId, 
+            'project_id' => $this->projectId
+        ]);
+        
+        $cacheKey = "page_context_{$this->projectId}_related_{$pageId}";
+        
+        return Cache::remember($cacheKey, 600, function () use ($pageId) {
+            $page = $this->getPageById($pageId);
+            if (!$page) {
+                return new Collection();
+            }
+            
+            $relatedPages = new Collection();
+            
+            // Поиск страниц с общими файлами
+            if (!empty($page->files)) {
+                $relatedByFiles = Page::where('project_id', $this->projectId)
+                    ->where('current', true)
+                    ->where('id', '!=', $pageId)
+                    ->get()
+                    ->filter(function ($otherPage) use ($page) {
+                        if (empty($otherPage->files)) {
+                            return false;
+                        }
+                        
+                        $commonFiles = array_intersect($page->files, $otherPage->files);
+                        return !empty($commonFiles);
+                    });
+                    
+                $relatedPages = $relatedPages->merge($relatedByFiles);
+            }
+            
+            // Поиск страниц в той же иерархии
+            $siblings = $this->getPageChildren($page->parent_id ?? 0);
+            $relatedPages = $relatedPages->merge(
+                $siblings->where('id', '!=', $pageId)
+            );
+            
+            return $relatedPages->unique('id')->values();
+        });
+    }
+
+    public function getPageWithActualization(int $pageId): ?Page
+    {
+        if (!$this->validatePageAccess($pageId)) {
+            return null;
+        }
+        
+        $cacheKey = "page_context_{$this->projectId}_with_actualization_{$pageId}";
+        
+        return Cache::remember($cacheKey, 300, function () use ($pageId) {
+            return Page::where('id', $pageId)
+                ->where('project_id', $this->projectId)
+                ->where('current', true)
+                ->with([
+                    'creator', 
+                    'actualizations.llmChat', 
+                    'actualizations.createdBy',
+                    'latestActualization',
+                    'completedActualization'
+                ])
+                ->first();
+        });
+    }
+
+    public function getPageFiles(int $pageId): array
+    {
+        $page = $this->getPageById($pageId);
+        if (!$page) {
+            Log::warning('Page not found for files retrieval', [
+                'page_id' => $pageId, 
+                'project_id' => $this->projectId
+            ]);
+            return [];
+        }
+        
+        return $page->files ?? [];
+    }
+
+    public function getTaskHistory(int $pageId): Collection
+    {
+        if (!$this->validatePageAccess($pageId)) {
+            return new Collection();
+        }
+        
+        Log::debug('Getting task history for page', [
+            'page_id' => $pageId, 
+            'project_id' => $this->projectId
+        ]);
+        
+        $cacheKey = "page_context_{$this->projectId}_task_history_{$pageId}";
+        
+        return Cache::remember($cacheKey, 300, function () use ($pageId) {
+            return PageDiffDescription::where('page_id', $pageId)
+                ->whereHas('page', function ($query) {
+                    $query->where('project_id', $this->projectId)
+                        ->where('current', true);
+                })
+                ->with(['creator', 'llmChat', 'techplane'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
+    }
+
+    public function validatePageAccess(int $pageId): bool
+    {
+        $cacheKey = "page_context_{$this->projectId}_access_{$pageId}";
+        
+        return Cache::remember($cacheKey, 60, function () use ($pageId) {
+            return Page::where('id', $pageId)
+                ->where('project_id', $this->projectId)
+                ->where('current', true)
+                ->exists();
+        });
+    }
+
+    public function isPageInProject(int $pageId): bool
+    {
+        return $this->validatePageAccess($pageId);
+    }
+}

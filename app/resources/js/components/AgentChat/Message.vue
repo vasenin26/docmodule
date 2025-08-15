@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LLMMessage } from '@/types';
 import { ref } from 'vue';
+import { getStupidStore } from '@/lib/utils';
 
 const props = defineProps<{
     message: LLMMessage;
@@ -96,6 +97,25 @@ function toggleMessageExpansion(index: number): void {
         expandedMessages.value.add(index);
     }
 }
+
+const functions: {[key: string]: string} = getStupidStore('functions');
+
+function registrFunctionName(toolCall: {
+    id: string,
+    function: {
+        name: string,
+    }
+}): string {
+    functions[toolCall.id] = toolCall.function.name;
+
+    return toolCall.function.name;
+}
+
+function getFunctionName(id: string): string {
+    console.log(id, functions);
+    return functions[id] || '';
+}
+
 </script>
 
 <template>
@@ -105,11 +125,11 @@ function toggleMessageExpansion(index: number): void {
             <div class="flex items-center space-x-2">
                 <div :class="getRoleIconClass(message.role)" class="flex h-5 w-5 items-center justify-center rounded-full">
                     <span class="text-xs font-medium text-white">
-                        {{ getRoleIcon(message.role) }}
+                        {{ getRoleIcon(message.role) }} 
                     </span>
                 </div>
                 <span class="text-xs font-medium" :class="getRoleLabelClass(message.role)">
-                    {{ getRoleLabel(message.role) }}
+                    {{ getRoleLabel(message.role) }} {{ getFunctionName(message.tool_call_id) }}
                 </span>
             </div>
         </div>
@@ -117,10 +137,10 @@ function toggleMessageExpansion(index: number): void {
         <!-- Содержимое сообщения -->
         <div class="text-sm">
             <div v-if="!message.content" class="text-gray-500 italic">Сообщение без текстового содержимого</div>
-            <div v-if="message.tool_calls && message.tool_calls.length > 0" class="mt-2 flex gap-1">
+            <div v-if="message.tool_calls && message.tool_calls.length > 0" class="mt-2 flex flex-wrap gap-1">
                 <div v-for="toolCall in message.tool_calls" :key="toolCall.id">
                     <div class="tag text-xs text-gray-500 italic">
-                        {{ toolCall.function.name }}
+                        {{ registrFunctionName(toolCall) }}
                     </div>
                 </div>
             </div>

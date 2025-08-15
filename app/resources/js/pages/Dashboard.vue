@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import ExpenseCard from '@/components/dashboard/ExpenseCard.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type DashboardData } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import PlaceholderPattern from '../components/PlaceholderPattern.vue';
-import ExpenseCard from '@/components/dashboard/ExpenseCard.vue';
 
 defineProps<DashboardData>();
 
@@ -23,7 +23,7 @@ const breadcrumbs: BreadcrumbItem[] = [
             <div class="grid auto-rows-min gap-4 md:grid-cols-3">
                 <!-- Карточка расходов на токены -->
                 <ExpenseCard :statistics="token_statistics" />
-                
+
                 <!-- Placeholder карточки для будущих компонентов -->
                 <div class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
                     <PlaceholderPattern />

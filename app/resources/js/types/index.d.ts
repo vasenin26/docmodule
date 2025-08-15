@@ -39,11 +39,12 @@ export interface LLMMessage {
     role: 'user' | 'assistant' | 'system';
     content: string | null;
     timestamp: string;
+    tool_call_id?: string;
     tool_calls?: {
         id: string;
         function: {
-            name: string
-        }
+            name: string;
+        };
     }[];
 }
 
