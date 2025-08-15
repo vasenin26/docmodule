@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import type { LLMMessage } from '@/types';
+import { ref } from 'vue';
 
 const props = defineProps<{
     message: LLMMessage;
     index: number;
-}>()
+}>();
 const expandedMessages = ref(new Set<number>());
 
 // Константы
@@ -99,64 +99,53 @@ function toggleMessageExpansion(index: number): void {
 </script>
 
 <template>
-<div
-    class="p-3 rounded-lg"
-    :class="getMessageClass(message.role)"
-    >
-    <!-- Заголовок сообщения -->
-    <div class="flex items-center justify-between mb-2">
-        <div class="flex items-center space-x-2">
-            <div :class="getRoleIconClass(message.role)" class="w-5 h-5 rounded-full flex items-center justify-center">
-                <span class="text-xs font-medium text-white">
-                  {{ getRoleIcon(message.role) }}
+    <div class="rounded-lg p-3" :class="getMessageClass(message.role)">
+        <!-- Заголовок сообщения -->
+        <div class="mb-2 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div :class="getRoleIconClass(message.role)" class="flex h-5 w-5 items-center justify-center rounded-full">
+                    <span class="text-xs font-medium text-white">
+                        {{ getRoleIcon(message.role) }}
+                    </span>
+                </div>
+                <span class="text-xs font-medium" :class="getRoleLabelClass(message.role)">
+                    {{ getRoleLabel(message.role) }}
                 </span>
             </div>
-            <span class="text-xs font-medium" :class="getRoleLabelClass(message.role)">
-                {{ getRoleLabel(message.role) }}
-              </span>
         </div>
-    </div>
 
-    <!-- Содержимое сообщения -->
-    <div class="text-sm">
-        <div v-if="!message.content" class="text-gray-500 italic">
-            Сообщение без текстового содержимого
-        </div>
-        <div v-if="message.tool_calls && message.tool_calls.length > 0" class="mt-2 flex gap-1">
-            <div v-for="toolCall in message.tool_calls" :key="toolCall.id">
-                <div class="text-gray-500 italic text-xs tag">
-                    {{ toolCall.function.name }}
+        <!-- Содержимое сообщения -->
+        <div class="text-sm">
+            <div v-if="!message.content" class="text-gray-500 italic">Сообщение без текстового содержимого</div>
+            <div v-if="message.tool_calls && message.tool_calls.length > 0" class="mt-2 flex gap-1">
+                <div v-for="toolCall in message.tool_calls" :key="toolCall.id">
+                    <div class="tag text-xs text-gray-500 italic">
+                        {{ toolCall.function.name }}
+                    </div>
                 </div>
             </div>
-        </div>
-        <div
-            v-else-if="isLongMessage(message.content) && !expandedMessages.has(props.index)"
-            class="space-y-2"
-        >
-            <div class="whitespace-pre-wrap break-words overflow-x-hidden">{{ getTruncatedContent(message.content) }}</div>
-            <button
-                @click="toggleMessageExpansion(props.index)"
-                class="text-blue-600 hover:text-blue-800 text-xs font-medium"
-            >
-                Показать полностью
-            </button>
-        </div>
-        <div v-else class="space-y-2">
-            <div class="whitespace-pre-wrap break-words overflow-x-hidden">{{ message.content }}</div>
-            <button
-                v-if="isLongMessage(message.content)"
-                @click="toggleMessageExpansion(props.index)"
-                class="text-blue-600 hover:text-blue-800 text-xs font-medium"
-            >
-                Свернуть
-            </button>
+            <div v-else-if="isLongMessage(message.content) && !expandedMessages.has(props.index)" class="space-y-2">
+                <div class="overflow-x-hidden break-words whitespace-pre-wrap">{{ getTruncatedContent(message.content) }}</div>
+                <button @click="toggleMessageExpansion(props.index)" class="text-xs font-medium text-blue-600 hover:text-blue-800">
+                    Показать полностью
+                </button>
+            </div>
+            <div v-else class="space-y-2">
+                <div class="overflow-x-hidden break-words whitespace-pre-wrap">{{ message.content }}</div>
+                <button
+                    v-if="isLongMessage(message.content)"
+                    @click="toggleMessageExpansion(props.index)"
+                    class="text-xs font-medium text-blue-600 hover:text-blue-800"
+                >
+                    Свернуть
+                </button>
+            </div>
         </div>
     </div>
-</div>
 </template>
 
 <style scoped>
- .tag {
+.tag {
     padding: 4px 6px;
     border-radius: 4px;
     background-color: #f0f0f0;
@@ -164,5 +153,5 @@ function toggleMessageExpansion(index: number): void {
     display: inline-block;
     font-size: 12px;
     font-weight: 500;
- }
+}
 </style>

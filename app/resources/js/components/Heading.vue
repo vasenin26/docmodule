@@ -18,6 +18,5 @@ defineProps<Props>();
 
 <style>
 .header-title {
-
 }
 </style>

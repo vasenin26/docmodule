@@ -119,65 +119,13 @@
           </Card>
         </div>
 
-        <div v-else class="space-y-4">
-          <Card 
-            v-for="page in project.pages" 
-            :key="page.id"
-            class="hover:shadow-md transition-shadow cursor-pointer"
-            @click="$inertia.visit(route('pages.show', page.id))"
-          >
-            <CardHeader>
-              <div class="flex items-center justify-between">
-                <CardTitle class="text-lg">{{ page.title }}</CardTitle>
-                <DropdownMenu>
-                  <DropdownMenuTrigger as-child>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      class="h-8 w-8 p-0"
-                      @click.stop
-                    >
-                      <Icon name="more-horizontal" class="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem as-child>
-                      <Link 
-                        :href="route('pages.show', page.id)"
-                        class="flex items-center"
-                      >
-                        <Icon name="eye" class="mr-2 h-4 w-4" />
-                        Просмотр
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem as-child>
-                      <Link 
-                        :href="route('pages.edit', page.id)"
-                        class="flex items-center"
-                      >
-                        <Icon name="edit" class="mr-2 h-4 w-4" />
-                        Редактировать
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div class="space-y-2">
-                <div class="text-sm text-muted-foreground">
-                  Создал: {{ page.creator.name }}
-                </div>
-                <div class="text-sm text-muted-foreground">
-                  {{ formatDate(page.created_at) }}
-                </div>
-                <div v-if="page.children && page.children.length > 0" class="text-sm text-muted-foreground">
-                  Дочерних страниц: {{ page.children.length }}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <PageList
+          v-else
+          :pages="pagesData"
+          :project="project"
+          :filters="{ search: '', parent_id: undefined }"
+          :show-create-button="false"
+        />
       </div>
 
       <!-- Репозитории -->
@@ -247,6 +195,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
@@ -260,46 +209,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import Heading from '@/components/Heading.vue'
 import Icon from '@/components/Icon.vue'
+import PageList from '@/components/PageList.vue'
+import type { Project, PagesData } from '@/types'
 
-interface User {
-  id: number
-  name: string
-  email: string
-}
-
-interface Repository {
-  id: number
-  url: string
-  options: any
-  created_at: string
-  updated_at: string
-}
-
-interface Page {
-  id: number
-  title: string
-  content: string
-  created_by: number
-  creator: User
-  created_at: string
-  updated_at: string
-  children?: Page[]
-}
-
-interface Project {
-  id: number
-  title: string
-  owner_id: number
-  owner: User
-  created_at: string
-  updated_at: string
-  pages?: Page[]
-  repositories?: Repository[]
-}
-
-defineProps<{
+const props = defineProps<{
   project: Project
 }>()
+
+// Преобразуем страницы проекта в формат PagesData для компонента PageList
+const pagesData = computed<PagesData>(() => ({
+  data: props.project.pages || [],
+  links: [] // В контексте проекта пагинация не используется
+}))
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('ru-RU', {
@@ -311,7 +232,7 @@ const formatDate = (dateString: string) => {
 
 const deleteProject = () => {
   if (confirm(`Вы уверены, что хотите удалить проект? Все страницы проекта также будут удалены.`)) {
-    router.delete(route('projects.destroy', project.id))
+    router.delete(route('projects.destroy', props.project.id))
   }
 }
 </script>

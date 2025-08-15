@@ -67,4 +67,44 @@ export interface PageDiffDescription {
     updated_at: string;
 }
 
+export interface Project {
+    id: number;
+    title: string;
+    owner_id: number;
+    owner: User;
+    created_at: string;
+    updated_at: string;
+    pages?: Page[];
+    repositories?: Repository[];
+}
+
+export interface Repository {
+    id: number;
+    url: string;
+    options: any;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Page {
+    id: number;
+    title: string;
+    content: string;
+    created_at: string;
+    created_by: number;
+    creator: User;
+    project?: Project;
+    children: Page[];
+    hasActiveDraft?: boolean;
+}
+
+export interface PagesData {
+    data: Page[];
+    links: Array<{
+        url: string | null;
+        label: string;
+        active: boolean;
+    }>;
+}
+
 export type BreadcrumbItemType = BreadcrumbItem;

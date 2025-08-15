@@ -7,16 +7,16 @@
 export function generateGitStyleDiff(oldText: string, newText: string): string {
     const oldLines = oldText.split('\n');
     const newLines = newText.split('\n');
-    
+
     const diffLines: string[] = [];
     let oldIndex = 0;
     let newIndex = 0;
-    
+
     // Простое построчное сравнение
     while (oldIndex < oldLines.length || newIndex < newLines.length) {
         const oldLine = oldLines[oldIndex];
         const newLine = newLines[newIndex];
-        
+
         if (oldIndex >= oldLines.length) {
             // Остались только новые строки
             diffLines.push(`+${newLine}`);
@@ -33,11 +33,10 @@ export function generateGitStyleDiff(oldText: string, newText: string): string {
         } else {
             // Строки разные - находим следующее совпадение
             let foundMatch = false;
-            
+
             // Ищем совпадение в ближайших строках
             for (let lookAhead = 1; lookAhead <= 3; lookAhead++) {
-                if (oldIndex + lookAhead < oldLines.length && 
-                    oldLines[oldIndex + lookAhead] === newLine) {
+                if (oldIndex + lookAhead < oldLines.length && oldLines[oldIndex + lookAhead] === newLine) {
                     // Найдено совпадение - удаляем промежуточные строки
                     for (let i = 0; i < lookAhead; i++) {
                         diffLines.push(`-${oldLines[oldIndex + i]}`);
@@ -46,9 +45,8 @@ export function generateGitStyleDiff(oldText: string, newText: string): string {
                     foundMatch = true;
                     break;
                 }
-                
-                if (newIndex + lookAhead < newLines.length && 
-                    newLines[newIndex + lookAhead] === oldLine) {
+
+                if (newIndex + lookAhead < newLines.length && newLines[newIndex + lookAhead] === oldLine) {
                     // Найдено совпадение - добавляем промежуточные строки
                     for (let i = 0; i < lookAhead; i++) {
                         diffLines.push(`+${newLines[newIndex + i]}`);
@@ -58,7 +56,7 @@ export function generateGitStyleDiff(oldText: string, newText: string): string {
                     break;
                 }
             }
-            
+
             if (!foundMatch) {
                 // Не найдено совпадение - считаем что строка изменилась
                 diffLines.push(`-${oldLine}`);
@@ -68,10 +66,10 @@ export function generateGitStyleDiff(oldText: string, newText: string): string {
             }
         }
     }
-    
+
     // Добавляем заголовок diff
     const header = `@@ -1,${oldLines.length} +1,${newLines.length} @@`;
-    
+
     return [header, ...diffLines].join('\n');
 }
 

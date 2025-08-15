@@ -82,9 +82,6 @@ class ActualizationController extends Controller
      */
     public function show(Request $request, Actualization $actualization): Response
     {
-        // Проверка прав доступа
-        $this->authorize('view', $actualization->page);
-
         $details = $this->actualizationService->getDetails($actualization);
 
         return Inertia::render('pages/ActualizationShow', [
