@@ -54,12 +54,18 @@ class GenerateTechplaneJob implements ShouldQueue
             // Получаем описание задачи
             $taskDescription = $task->content ?? 'Описание задачи отсутствует';
 
+            // Получаем прикреплённые файлы из страницы
+            $attachedFiles = [];
+            if ($task->page && $task->page->files) {
+                $attachedFiles = $task->page->files;
+            }
+
             // Получаем генератор техплана
             $projectId = $task->page ? $task->page->project_id : null;
             $techplaneGenerator = $agentFactory->getTechplaneGenerator($projectId);
             
-            // Генерируем техплан
-            $generationResult = $techplaneGenerator->generate($taskDescription);
+            // Генерируем техплан с учётом прикреплённых файлов
+            $generationResult = $techplaneGenerator->generate($taskDescription, $attachedFiles);
 
             // Сохраняем сгенерированный техплан и обновляем статус
             $techplane->update([
@@ -72,6 +78,9 @@ class GenerateTechplaneJob implements ShouldQueue
             // Логируем ошибку
             Log::error('Failed to generate techplane', [
                 'techplane_id' => $this->techplaneId,
+                'task_id' => $task->id ?? null,
+                'page_id' => $task->page->id ?? null,
+                'attached_files_count' => count($attachedFiles ?? []),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

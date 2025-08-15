@@ -96,21 +96,6 @@ function toggleMessageExpansion(index: number): void {
         expandedMessages.value.add(index);
     }
 }
-
-// Форматирование времени
-function formatTimestamp(timestamp: string): string {
-    try {
-        const date = new Date(timestamp);
-        return new Intl.DateTimeFormat('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-        }).format(date);
-    } catch {
-        return 'Неизвестно';
-    }
-}
 </script>
 
 <template>
@@ -137,8 +122,8 @@ function formatTimestamp(timestamp: string): string {
         <div v-if="!message.content" class="text-gray-500 italic">
             Сообщение без текстового содержимого
         </div>
-        <div v-if="message.toolCalls && message.toolCalls.length > 0" class="mt-2">
-            <div v-for="toolCall in message.toolCalls" :key="toolCall.id">
+        <div v-if="message.tool_calls && message.tool_calls.length > 0" class="mt-2 flex gap-1">
+            <div v-for="toolCall in message.tool_calls" :key="toolCall.id">
                 <div class="text-gray-500 italic text-xs tag">
                     {{ toolCall.function.name }}
                 </div>

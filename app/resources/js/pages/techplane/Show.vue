@@ -8,13 +8,13 @@
             Технический план
           </h1>
           <p class="text-gray-600 mt-2">
-            Создан: {{ formatDate(techplane.created_at) }} • 
+            Создан: {{ formatDate(techplane.created_at) }} •
             Автор: {{ techplane.creator.name }}
           </p>
         </div>
         <div class="flex gap-3">
           <!-- Кнопка перегенерации -->
-          <Button v-if="canRestartGeneration" @click="restartGeneration" 
+          <Button v-if="canRestartGeneration" @click="restartGeneration"
                   :disabled="isRestartingGeneration" variant="outline" size="sm">
             <span v-if="isRestartingGeneration">Перезапуск...</span>
             <span v-else>Перезапустить генерацию</span>
@@ -82,7 +82,7 @@
           </div>
           <div v-else class="text-muted-foreground italic">
             <div class="flex items-center gap-2">
-              <div v-if="isPolling" 
+              <div v-if="isPolling"
                    class="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent">
               </div>
               <span>{{ getStatusMessage() }}</span>
@@ -93,15 +93,15 @@
 
       <!-- Модальное окно чата -->
       <Dialog v-model:open="showChatModal">
-        <DialogContent class="max-w-4xl max-h-[80vh]">
+        <DialogContent class="max-w-5xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>Чат LLM</DialogTitle>
           </DialogHeader>
           <div class="overflow-hidden">
-            <AgentChat 
+            <AgentChat
               v-if="techplane.llm_chat"
-              :chat="techplane.llm_chat"
-              :readonly="true"
+              :messages="techplane.llm_chat.messages"
+              :loading="isPolling && generationStatus === 'generating'"
             />
           </div>
         </DialogContent>
@@ -234,7 +234,7 @@ onUnmounted(() => {
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleString('ru-RU', {
     year: 'numeric',
-    month: 'long', 
+    month: 'long',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit'

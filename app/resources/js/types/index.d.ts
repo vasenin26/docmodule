@@ -39,7 +39,7 @@ export interface LLMMessage {
     role: 'user' | 'assistant' | 'system';
     content: string | null;
     timestamp: string;
-    toolCalls?: {
+    tool_calls?: {
         id: string;
         function: {
             name: string
