@@ -25,6 +25,12 @@
           >
             Чат
           </Button>
+          <!-- Кнопка возврата к задаче -->
+          <Button as-child variant="outline">
+            <Link :href="route('tasks.show', techplane.task.id)">
+              К задаче
+            </Link>
+          </Button>
         </div>
       </div>
 
