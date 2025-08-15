@@ -84,6 +84,12 @@
             <MarkdownPreview :content="form.content" />
             </div>
 
+            <!-- Прикрепленные файлы -->
+            <div class="space-y-2">
+              <FileLinksList v-model="form.files" />
+              <InputError v-if="errors?.files" :message="errors.files" />
+            </div>
+
             <!-- Checkbox для создания задачи -->
             <div v-if="currentDraft" class="flex items-center space-x-2">
               <Checkbox
@@ -128,11 +134,13 @@ import Label from '@/components/ui/label/Label.vue'
 import InputError from '@/components/InputError.vue'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
 import Checkbox from '@/components/ui/checkbox/Checkbox.vue'
+import FileLinksList from '@/components/FileLinksList.vue'
 
 interface Page {
   id: number
   title: string
   content: string
+  files?: string[]
   current: boolean
 }
 
@@ -140,6 +148,7 @@ interface Draft {
   id: number
   title: string
   content: string
+  files?: string[]
   created_at: string
   updated_at: string
 }
@@ -157,6 +166,7 @@ const props = withDefaults(defineProps<{
 const form = useForm({
   title: props.currentDraft?.title || props.page?.title || '',
   content: props.currentDraft?.content || props.page?.content || '',
+  files: props.currentDraft?.files || props.page?.files || [],
   createTask: false,
 })
 
@@ -178,12 +188,14 @@ const continueDraft = () => {
   if (props.currentDraft) {
     form.title = props.currentDraft.title
     form.content = props.currentDraft.content
+    form.files = props.currentDraft.files || []
   }
 }
 
 const createNewDraft = () => {
   form.title = props.page.title
   form.content = props.page.content
+  form.files = props.page.files || []
 }
 
 const approveDraft = () => {

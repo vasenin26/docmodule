@@ -101,6 +101,45 @@
         </CardContent>
       </Card>
 
+      <!-- Прикрепленные файлы -->
+      <Card v-if="page.files && page.files.length > 0">
+        <CardHeader>
+          <CardTitle>Прикрепленные файлы</CardTitle>
+          <CardDescription>
+            Файлы, связанные с данной страницей документации
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div class="space-y-2">
+            <div
+              v-for="(file, index) in page.files"
+              :key="index"
+              class="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50"
+            >
+              <FileIcon class="w-5 h-5 text-muted-foreground" />
+              <div class="flex-1">
+                <p class="font-mono text-sm break-all">{{ getFileName(file) }}</p>
+                <p class="text-xs text-muted-foreground break-all">{{ file }}</p>
+              </div>
+              <Button 
+                as-child 
+                variant="outline" 
+                size="sm"
+                v-if="isValidRepositoryUrl(file)"
+              >
+                <a 
+                  :href="file" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  Открыть файл
+                </a>
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <!-- Описания задач -->
       <Card v-if="page.diff_descriptions && page.diff_descriptions.length > 0">
         <CardHeader>
@@ -266,6 +305,9 @@ import CardTitle from '@/components/ui/card/CardTitle.vue'
 import CardDescription from '@/components/ui/card/CardDescription.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import CreateChildPage from '@/components/CreateChildPage.vue'
+import { FileIcon } from 'lucide-vue-next'
+
+
 
 interface Creator {
   name: string
@@ -290,6 +332,7 @@ interface Page {
   id: number
   title: string
   content: string
+  files?: string[]
   created_at: string
   updated_at: string
   creator: Creator
@@ -331,5 +374,25 @@ const formatDate = (date: string) => {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+// Методы для работы с файлами
+const isValidRepositoryUrl = (url: string): boolean => {
+  try {
+    new URL(url)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const getFileName = (url: string): string => {
+  try {
+    const urlObj = new URL(url)
+    const pathParts = urlObj.pathname.split('/')
+    return pathParts[pathParts.length - 1] || 'Файл'
+  } catch {
+    return 'Файл'
+  }
 }
 </script>

@@ -17,6 +17,7 @@ class Page extends Model
     protected $fillable = [
         'title',
         'content',
+        'files',
         'created_by',
         'base_id',
         'previous_version_id',
@@ -27,7 +28,62 @@ class Page extends Model
 
     protected $casts = [
         'current' => 'boolean',
+        'files' => 'array',
     ];
+
+    /**
+     * Получить список файлов страницы
+     */
+    public function getFilesAttribute($value): array
+    {
+        return $value ? json_decode($value, true) : [];
+    }
+
+    /**
+     * Валидировать ссылки на файлы в репозиториях
+     */
+    public function validateFilePaths(array $files): bool
+    {
+        foreach ($files as $file) {
+            // Файл должен быть строкой с корректным URL
+            if (!is_string($file)) {
+                return false;
+            }
+            
+            // URL должен быть корректной ссылкой
+            if (!filter_var($file, FILTER_VALIDATE_URL)) {
+                return false;
+            }
+            
+            // Дополнительная проверка, что это ссылка на файл в git репозитории
+            if (!$this->isGitRepositoryFileUrl($file)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Проверить, является ли URL ссылкой на файл в git репозитории
+     */
+    private function isGitRepositoryFileUrl(string $url): bool
+    {
+        // Проверяем популярные git хостинги
+        $gitHosts = ['github.com', 'gitlab.com', 'bitbucket.org'];
+        
+        $parsedUrl = parse_url($url);
+        if (!isset($parsedUrl['host'])) {
+            return false;
+        }
+        
+        foreach ($gitHosts as $host) {
+            if (str_contains($parsedUrl['host'], $host)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 
     /**
      * Пользователь, создавший страницу
@@ -123,6 +179,12 @@ class Page extends Model
         $newVersion->previous_version_id = $this->id;
         $newVersion->current = true;
         $newVersion->fill($data);
+        
+        // Обеспечиваем корректное копирование поля files
+        if (!isset($data['files']) && $this->files) {
+            $newVersion->files = $this->files;
+        }
+        
         $newVersion->save();
 
         // Убираем флаг current у всех других версий
@@ -260,6 +322,12 @@ class Page extends Model
         $draft->previous_version_id = $this->id;
         $draft->current = false; // Ключевое отличие от createNewVersion
         $draft->fill($data);
+        
+        // Обеспечиваем корректное копирование поля files
+        if (!isset($data['files']) && $this->files) {
+            $draft->files = $this->files;
+        }
+        
         $draft->save();
         
         // Если это первая версия, устанавливаем base_id

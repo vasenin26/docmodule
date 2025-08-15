@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePageRequest;
+use App\Http\Requests\UpdatePageRequest;
 use App\Jobs\CalculateVersionDifferenceJob;
 use App\Models\Page;
 use App\Models\PageDiffDescription;
@@ -95,20 +97,9 @@ class PageController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, Project $project = null)
+    public function store(StorePageRequest $request, Project $project = null)
     {
-        $validation = [
-            'title' => 'required|string|max:255',
-            'content' => 'nullable|string',
-            'parent_id' => 'nullable|exists:pages,id',
-        ];
-
-        // Если проект не указан в URL, валидируем project_id из формы
-        if (!$project) {
-            $validation['project_id'] = 'nullable|exists:projects,id';
-        }
-
-        $validated = $request->validate($validation);
+        $validated = $request->validated();
 
         // Определяем project_id
         $projectId = null;
@@ -131,6 +122,7 @@ class PageController extends Controller
         $page = Page::create([
             'title' => $validated['title'],
             'content' => $validated['content'],
+            'files' => $validated['files'] ?? [],
             'created_by' => Auth::id(),
             'parent_id' => $validated['parent_id'] ?? null,
             'project_id' => $projectId,
@@ -184,21 +176,19 @@ class PageController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdatePageRequest $request, string $id)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'nullable|string',
-        ]);
-
+        $validated = $request->validated();
+        
         $page = Page::where('current', true)->findOrFail($id);
         $currentDraft = $page->getCurrentDraft();
 
         if ($currentDraft) {
             // Обновляем существующий черновик
             $currentDraft->update([
-                'title' => $request->title,
-                'content' => $request->content,
+                'title' => $validated['title'],
+                'content' => $validated['content'],
+                'files' => $validated['files'] ?? [],
             ]);
             
             return redirect()->back()
@@ -206,8 +196,9 @@ class PageController extends Controller
         } else {
             // Создаем новый черновик
             $draft = $page->createDraft([
-                'title' => $request->title,
-                'content' => $request->content,
+                'title' => $validated['title'],
+                'content' => $validated['content'],
+                'files' => $validated['files'] ?? [],
             ]);
             
             return redirect()->back()
@@ -266,6 +257,7 @@ class PageController extends Controller
         $newVersion = $page->createNewVersion([
             'title' => $version->title,
             'content' => $version->content,
+            'files' => $version->files ?? [],
         ]);
 
         return redirect()->route('pages.index')

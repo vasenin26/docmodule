@@ -85,6 +85,12 @@
             <MarkdownPreview :content="form.content" />
             </div>
 
+            <!-- Прикрепленные файлы -->
+            <div class="space-y-2">
+              <FileLinksList v-model="form.files" />
+              <InputError v-if="errors?.files" :message="errors.files" />
+            </div>
+
             <!-- Скрытое поле для parent_id -->
             <input v-if="parentPage" type="hidden" name="parent_id" :value="parentPage.id" />
 
@@ -119,6 +125,9 @@ import Input from '@/components/ui/input/Input.vue'
 import Label from '@/components/ui/label/Label.vue'
 import InputError from '@/components/InputError.vue'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
+import FileLinksList from '@/components/FileLinksList.vue'
+
+
 
 interface ParentPage {
   id: number
@@ -142,6 +151,7 @@ const props = withDefaults(defineProps<{
 const form = useForm({
   title: '',
   content: '',
+  files: [] as string[],
   parent_id: props.parentPage?.id || null,
   project_id: props.project?.id || null,
 })
