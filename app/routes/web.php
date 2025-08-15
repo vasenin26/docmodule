@@ -23,46 +23,34 @@ Route::get('dashboard', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Маршруты проектов
     Route::resource('projects', ProjectController::class);
-    
+
     // Маршруты репозиториев проектов
     Route::post('projects/{project}/repositories', [RepositoryController::class, 'store'])
         ->name('projects.repositories.store');
     Route::delete('projects/{project}/repositories/{repository}', [RepositoryController::class, 'destroy'])
         ->name('projects.repositories.destroy');
-    
+
     // Маршруты страниц в контексте проекта
     Route::get('projects/{project}/pages', [PageController::class, 'index'])->name('projects.pages.index');
     Route::get('projects/{project}/pages/create', [PageController::class, 'create'])->name('projects.pages.create');
     Route::post('projects/{project}/pages', [PageController::class, 'store'])->name('projects.pages.store');
-    
+
     // Общие маршруты для страниц
     Route::resource('pages', PageController::class);
     Route::get('pages/{page}/versions', [PageController::class, 'versions'])->name('pages.versions');
     Route::post('pages/{page}/restore/{version}', [PageController::class, 'restore'])->name('pages.restore');
-    
+
     // Новые маршруты для черновиков
     Route::post('pages/{page}/draft/approve', [PageController::class, 'approveDraft'])->name('pages.draft.approve');
     Route::get('pages/{page}/draft', [PageController::class, 'getDraft'])->name('pages.draft.get');
     Route::delete('pages/{page}/draft', [PageController::class, 'deleteDraft'])->name('pages.draft.delete');
-    
+
     // Маршрут для создания задачи
     Route::post('pages/{page}/create-task', [PageController::class, 'createTask'])->name('pages.create-task');
-    
+
     // Маршруты актуализации
     Route::post('pages/{page}/actualize', [ActualizationController::class, 'store'])
         ->name('pages.actualize');
-    
-    // Временный маршрут для отладки
-    Route::post('pages/{page}/actualize-debug', function(Request $request, Page $page) {
-        return response()->json([
-            'success' => true,
-            'message' => 'Debug route works',
-            'user_id' => auth()->id(),
-            'page_id' => $page->id,
-            'csrf_token' => $request->header('X-CSRF-TOKEN'),
-            'authenticated' => auth()->check(),
-        ]);
-    })->name('pages.actualize.debug');
     Route::get('pages/{page}/actualization/status', [ActualizationController::class, 'status'])
         ->name('pages.actualization.status');
     Route::get('pages/{page}/actualizations', [ActualizationController::class, 'index'])
@@ -71,13 +59,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('actualizations.show');
     Route::delete('actualizations/{actualization}', [ActualizationController::class, 'cancel'])
         ->name('actualizations.cancel');
-    
+
     // Маршруты для задач
     Route::get('tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
     Route::get('tasks/{task}/status', [TaskController::class, 'checkGenerationStatus'])->name('tasks.status');
     Route::post('tasks/{task}/restart-generation', [TaskController::class, 'restartGeneration'])->name('tasks.restart-generation');
     Route::post('tasks/{task}/create-techplane', [TaskController::class, 'createTechplane'])->name('tasks.create-techplane');
-    
+
     // Маршруты для техпланов
     Route::get('techplanes/{techplane}', [TechplaneController::class, 'show'])->name('techplanes.show');
     Route::post('techplanes/{techplane}/restart-generation', [TechplaneController::class, 'restartGeneration'])

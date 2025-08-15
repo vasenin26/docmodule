@@ -69,7 +69,7 @@ class ActualizationService
             
             // Запустить генерацию
             $result = $generator->actualize(
-                $page->content,
+                $page->content ?? '',
                 $page->files ?? []
             );
 

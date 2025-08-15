@@ -41,7 +41,7 @@ export function usePageActualization(pageId: number) {
     isActualizing.value = true
 
     try {
-      const response = await fetch(`/pages/${pageId}/actualize-debug`, {
+      const response = await fetch(`/pages/${pageId}/actualize`, {
         method: 'POST',
         headers: getHeaders(),
       })
@@ -61,12 +61,12 @@ export function usePageActualization(pageId: number) {
       }
     } catch (error: any) {
       console.error('Error starting actualization:', error)
-      
+
       let errorMessage = 'Ошибка при запуске актуализации'
       if (error.message) {
         errorMessage = error.message
       }
-      
+
       throw new Error(errorMessage)
     } finally {
       isActualizing.value = false
@@ -105,10 +105,10 @@ export function usePageActualization(pageId: number) {
       await checkStatus()
 
       // Останавливаем проверку если актуализация завершилась
-      if (actualizationStatus.value && 
+      if (actualizationStatus.value &&
           ['completed', 'failed'].includes(actualizationStatus.value.status)) {
         stopStatusChecking()
-        
+
         // Если актуализация завершилась успешно, перезагружаем страницу
         if (actualizationStatus.value.status === 'completed') {
           router.reload()
@@ -155,12 +155,12 @@ export function usePageActualization(pageId: number) {
       }
     } catch (error: any) {
       console.error('Error canceling actualization:', error)
-      
+
       let errorMessage = 'Ошибка при отмене актуализации'
       if (error.message) {
         errorMessage = error.message
       }
-      
+
       throw new Error(errorMessage)
     }
   }
@@ -195,7 +195,7 @@ export function usePageActualization(pageId: number) {
    * Есть ли активная актуализация
    */
   const hasActiveActualization = computed(() => {
-    return actualizationStatus.value && 
+    return actualizationStatus.value &&
            ['pending', 'processing'].includes(actualizationStatus.value.status)
   })
 
@@ -246,7 +246,7 @@ export function usePageActualization(pageId: number) {
    * Можно ли отменить актуализацию
    */
   const canCancelActualization = computed(() => {
-    return actualizationStatus.value && 
+    return actualizationStatus.value &&
            ['pending', 'processing'].includes(actualizationStatus.value.status)
   })
 

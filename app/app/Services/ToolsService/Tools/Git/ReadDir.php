@@ -5,7 +5,7 @@ namespace App\Services\ToolsService\Tools\Git;
 use App\Interfaces\GitRepoProviderInterface;
 use App\Interfaces\ToolInterface;
 
-class ReadFile implements ToolInterface
+class ReadDir implements ToolInterface
 {
 
     public function __construct(
@@ -14,7 +14,7 @@ class ReadFile implements ToolInterface
     {
     }
 
-    //read file from git repository
+    //read directory contents from git repository
     public function execute(array $args): ?string
     {
         list('url' => $url, 'path' => $path) = $args;
@@ -22,13 +22,26 @@ class ReadFile implements ToolInterface
         $repo = $this->repoProvider->getRepo($url);
         $fullPath = $repo->getRepositoryPath() . '/' . trim($path, '/');
 
-        $content = file_get_contents($fullPath);
-
-        if ($content === false) {
-            return "File not found: $path";
+        if (!is_dir($fullPath)) {
+            return "Directory not found: $path";
         }
 
-        return $content;
+        $files = scandir($fullPath);
+
+        if ($files === false) {
+            return "Error reading directory: $path";
+        }
+
+        // Remove . and .. entries
+        $files = array_filter($files, function($file) {
+            return $file !== '.' && $file !== '..';
+        });
+
+        if (empty($files)) {
+            return "Directory is empty: $path";
+        }
+
+        return implode("\n", $files);
     }
 
     public function getProps($name): array
@@ -37,7 +50,7 @@ class ReadFile implements ToolInterface
             'type' => 'function',
             'function' => [
                 'name' => $name,
-                'description' => 'Read file from repository',
+                'description' => 'Read directory contents from repository',
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
@@ -47,7 +60,7 @@ class ReadFile implements ToolInterface
                         ],
                         'path' => [
                             'type' => 'string',
-                            'description' => 'Path to file',
+                            'description' => 'Path to directory',
                         ]
                     ],
                     'required' => ['url', 'path'],

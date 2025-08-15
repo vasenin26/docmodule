@@ -24,14 +24,6 @@ class ActualizationController extends Controller
     public function store(StoreActualizationRequest $request, Page $page): JsonResponse
     {
         try {
-            // Временная отладка
-            \Log::info('Actualization request', [
-                'user_id' => $request->user()->id ?? 'no user',
-                'page_id' => $page->id,
-                'user_authenticated' => auth()->check(),
-                'request_headers' => $request->headers->all(),
-            ]);
-
             $actualization = $this->actualizationService->initiate($page, $request->user());
 
             return response()->json([

@@ -21,6 +21,7 @@ class ToolServiceFactory implements ToolServiceFactoryInterface
                 'time' => $this->factory->time(),
                 'git-readFile' => $this->factory->gitReadFile(),
                 'git-searchFileByName' => $this->factory->gitSearchFileByName(),
+                'git-readDir' => $this->factory->gitReadDir(),
             ]
         );
     }
