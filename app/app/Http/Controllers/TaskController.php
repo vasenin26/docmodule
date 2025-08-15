@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\GenerateTaskDescriptionJob;
+use App\Jobs\GenerateTechplaneJob;
 use App\Models\PageDiffDescription;
 use App\Models\Techplane;
 use Illuminate\Http\Request;
@@ -141,7 +142,10 @@ class TaskController extends Controller implements HasMiddleware
             'generation_status' => Techplane::STATUS_PENDING,
         ]);
 
+        // Запустить фоновую генерацию
+        GenerateTechplaneJob::dispatch($techplane->id);
+
         return redirect()->route('techplanes.show', $techplane)
-            ->with('success', 'Техплан создан');
+            ->with('success', 'Техплан создан, генерация запущена');
     }
 }

@@ -53,6 +53,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Маршруты для техпланов
     Route::get('techplanes/{techplane}', [TechplaneController::class, 'show'])->name('techplanes.show');
+    Route::post('techplanes/{techplane}/restart-generation', [TechplaneController::class, 'restartGeneration'])
+        ->name('techplanes.restart-generation');
+    Route::get('techplanes/{techplane}/check-generation-status', [TechplaneController::class, 'checkGenerationStatus'])
+        ->name('techplanes.check-generation-status');
 });
 
 require __DIR__.'/settings.php';

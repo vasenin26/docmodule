@@ -6,6 +6,7 @@ use App\Factory\AgentFactory;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Interfaces\Factory\AgentFactoryInterface;
 use App\Interfaces\Factory\TaskDescriptionGeneratorFactoryInterface;
+use App\Interfaces\Factory\TechplaneGeneratorFactoryInterface;
 use App\Interfaces\Factory\ToolServiceFactoryInterface;
 use App\Interfaces\GitRepoProviderInterface;
 use App\Interfaces\LLM\ContentGenerator;
@@ -14,6 +15,7 @@ use App\Services\DiffGenerator\DiffGeneratorService;
 use App\Services\LLMGenerator\LMStudioClient;
 use App\Services\RepositoryService\RepositoryProvider;
 use App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorFactory;
+use App\Services\TaskDescriptionGenerator\TechplaneGeneratorFactory;
 use App\Services\TaskManagementService;
 use App\Services\TaskTracker\Integration\FakeIntegration;
 use App\Services\TaskTracker\TaskTrackerService;
@@ -33,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(AgentFactoryInterface::class, AgentFactory::class);
         $this->app->bind(TaskDescriptionGeneratorFactoryInterface::class, TaskDescriptionGeneratorFactory::class);
+        $this->app->bind(TechplaneGeneratorFactoryInterface::class, TechplaneGeneratorFactory::class);
 
         // Регистрация сервиса генерации diff
         $this->app->bind(DiffGeneratorInterface::class, DiffGeneratorService::class);

@@ -78,54 +78,7 @@
                 </Card>
 
                 <!-- Технический план -->
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Технический план</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div v-if="task.techplane">
-                            <!-- Содержимое техплана -->
-                            <div v-if="task.techplane.content" class="mb-4">
-                                <div class="prose prose-sm max-w-none">
-                                    <MarkdownRenderer :content="task.techplane.content" />
-                                </div>
-                            </div>
-                            <div v-else class="text-muted-foreground italic mb-4">
-                                Техплан создан, но содержимое еще не сгенерировано
-                            </div>
-                            
-                            <!-- Кнопки действий -->
-                            <div class="flex gap-3">
-                                <Button variant="outline" disabled>
-                                    Сгенерировать
-                                </Button>
-                                <Button
-                                    as-child
-                                    variant="default"
-                                >
-                                    <Link :href="route('techplanes.show', task.techplane.id)">
-                                        Редактировать
-                                    </Link>
-                                </Button>
-                            </div>
-                        </div>
-                        <div v-else>
-                            <!-- Кнопка создания техплана -->
-                            <Button
-                                as-child
-                                variant="default"
-                            >
-                                <Link 
-                                    :href="route('tasks.create-techplane', task.id)" 
-                                    method="post"
-                                    as="button"
-                                >
-                                    Создать технический план
-                                </Link>
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                <TechplanCard :techplane="task.techplane" :task-id="task.id" />
             </div>
             <div class="space-y-6 lg:col-span-1">
                 <!-- Метаинформация -->
@@ -208,6 +161,7 @@ import DiffViewer from '@/components/DiffViewer.vue';
 import Heading from '@/components/Heading.vue';
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
 import TaskExportButton from '@/components/TaskExportButton.vue';
+import TechplanCard from '@/components/TechplanCard.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -216,6 +170,17 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import type { LLMChat } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+
+interface TechplaneData {
+    id: number;
+    content: string | null;
+    generation_status: string;
+    created_at: string;
+    creator: {
+        id: number;
+        name: string;
+    };
+}
 
 interface TaskData {
     id: number;
@@ -245,6 +210,7 @@ interface TaskData {
         email: string;
     };
     llm_chat?: LLMChat | null;
+    techplane?: TechplaneData | null;
 }
 
 const props = defineProps<{
