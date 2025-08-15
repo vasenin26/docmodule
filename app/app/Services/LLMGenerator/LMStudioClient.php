@@ -6,6 +6,7 @@ use App\Common\DTO\LLMResultDTO;
 use App\Interfaces\Factory\ToolServiceFactoryInterface;
 use App\Interfaces\LLM\ContentGenerator;
 use Illuminate\Support\Facades\Log;
+use Mockery\Exception;
 use OpenAI;
 
 class LMStudioClient implements ContentGenerator
@@ -36,7 +37,6 @@ class LMStudioClient implements ContentGenerator
 //            ->make();
         $client = OpenAI::factory()
             ->withApiKey(env('OPENAI_API_KEY'))
-            ->withBaseUri(env('OPENAI_URL'))
             ->make();
 
         $tools = $this->toolsFactory->withAllTools();
@@ -44,24 +44,40 @@ class LMStudioClient implements ContentGenerator
         do {
             $answer = null;
 
-            $result = $client->chat()->create([
-                'model' => 'gpt-4o',
-                'messages' => $messages,
-                'tools' => $tools->getMeta()
-            ]);
+            Log::info('Ask LLM', ['message' => count($messages)]);
+
+            try {
+                $result = $client->chat()->create([
+                    'model' => 'gpt-4o',
+                    'messages' => $messages,
+                    'tools' => $tools->getMeta()
+                ]);
+            } catch (\Throwable $exception) {
+                var_dump($messages);
+                var_dump($exception);
+                Log::error($exception->getMessage());
+                throw $exception;
+            }
+
+            Log::info('LLM OK', ['message' => count($messages)]);
 
             $lastMessage = $result->choices[0]->message;
             $toolCalls = $lastMessage->toolCalls;
 
-            $messages[] = (array)$lastMessage;
+            $messages[] = $this->prepareMessage($lastMessage);
 
             if (empty($toolCalls)) {
                 $messages[] = ['role' => 'user', 'content' => 'Store answer with tools for finish'];
             } else {
                 foreach ($toolCalls as $toolCall) {
+
+                    Log::info("LLM call tool: " . $toolCall->function->name . " with args " . $toolCall->function->arguments);
+
                     $toolResult = $tools->callTool($toolCall->function->name, $toolCall->function->arguments);
 
-                    if(is_array($toolResult)) {
+                    Log::info("Tool finished", ['result' => $toolResult]);
+
+                    if (is_null($toolResult)) {
                         $messages[] = [
                             'role' => 'tool',
                             'tool_call_id' => $toolCall->id,
@@ -74,10 +90,11 @@ class LMStudioClient implements ContentGenerator
                     $messages[] = [
                         'role' => 'tool',
                         'tool_call_id' => $toolCall->id,
-                        'content' => json_encode($toolResult)
+                        'content' => $toolResult
                     ];
 
                     if ($tools->isResultFunction($toolCall->function->name)) {
+                        var_dump('RESULT');
                         $answer = $toolResult;
                     }
                 }
@@ -126,5 +143,28 @@ class LMStudioClient implements ContentGenerator
             $completionTokens,
             $totalTokens
         );
+    }
+
+    private function prepareMessage(OpenAI\Responses\Chat\CreateResponseMessage $lastMessage): array
+    {
+        $toolCalls = $lastMessage->toolCalls;
+
+        $toolCallsArray = [];
+        foreach ($toolCalls as $tc) {
+            $toolCallsArray[] = [
+                'id' => $tc->id,
+                'type' => 'function',
+                'function' => [
+                    'name' => $tc->function->name,
+                    'arguments' => $tc->function->arguments,
+                ],
+            ];
+        }
+
+        return [
+            'role' => $lastMessage->role,
+            'content' => $lastMessage->content,
+            'tool_calls' => $toolCallsArray ?: null
+        ];
     }
 }
