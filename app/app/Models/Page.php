@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[ObservedBy([PageObserver::class])]
 class Page extends Model
@@ -380,6 +381,75 @@ class Page extends Model
                     ->from('pages as p2')
                     ->whereColumn('p2.base_id', 'pages.base_id')
                     ->where('p2.current', true);
+            });
+    }
+
+    /**
+     * Актуализации страницы
+     */
+    public function actualizations(): HasMany
+    {
+        return $this->hasMany(Actualization::class);
+    }
+
+    /**
+     * Последняя актуализация
+     */
+    public function latestActualization(): HasOne
+    {
+        return $this->hasOne(Actualization::class)->latestOfMany();
+    }
+
+    /**
+     * Завершенная актуализация (если есть)
+     */
+    public function completedActualization(): HasOne
+    {
+        return $this->hasOne(Actualization::class)
+            ->where('status', Actualization::STATUS_COMPLETED)
+            ->latestOfMany();
+    }
+
+    /**
+     * Проверить наличие активной актуализации
+     */
+    public function hasActiveActualization(): bool
+    {
+        return $this->actualizations()
+            ->whereIn('status', [Actualization::STATUS_PENDING, Actualization::STATUS_PROCESSING])
+            ->exists();
+    }
+
+    /**
+     * Проверить, является ли черновик актуализированным
+     * Черновик считается актуализированным, если для него есть завершенная актуализация
+     */
+    public function isActualized(): bool
+    {
+        // Только черновики могут быть актуализированными
+        if ($this->current) {
+            return false;
+        }
+        
+        return $this->completedActualization()->exists();
+    }
+
+    /**
+     * Получить актуализацию для черновика
+     */
+    public function getActualizationInfo(): ?Actualization
+    {
+        return $this->completedActualization;
+    }
+
+    /**
+     * Scope для поиска актуализированных черновиков
+     */
+    public function scopeActualized($query)
+    {
+        return $query->where('current', false)
+            ->whereHas('actualizations', function($q) {
+                $q->where('status', Actualization::STATUS_COMPLETED);
             });
     }
 }

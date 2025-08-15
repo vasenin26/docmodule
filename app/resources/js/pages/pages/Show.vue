@@ -16,6 +16,15 @@
           >
             Создать задачу
           </Button>
+          <Button 
+            v-if="canActualize"
+            @click="startActualization"
+            :disabled="isActualizing || hasActiveActualization"
+            variant="outline"
+          >
+            <RefreshCw :class="{ 'animate-spin': isActualizing || hasActiveActualization }" class="w-4 h-4 mr-2" />
+            Актуализировать
+          </Button>
           <Button as-child>
             <Link :href="route('pages.edit', page.id)">
               Редактировать
@@ -57,6 +66,48 @@
             <Button @click="approveDraft" variant="default" size="sm">
               Утвердить
             </Button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Статус актуализации -->
+      <div v-if="actualizationStatus" class="p-4 border rounded-lg" 
+           :class="{
+             'bg-blue-50 border-blue-200': statusColor === 'blue',
+             'bg-yellow-50 border-yellow-200': statusColor === 'yellow', 
+             'bg-green-50 border-green-200': statusColor === 'green',
+             'bg-red-50 border-red-200': statusColor === 'red'
+           }">
+        <div class="flex items-start gap-3">
+          <RefreshCw :class="{ 'animate-spin': hasActiveActualization }" class="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <div class="flex items-center justify-between w-full">
+            <div>
+              <strong>Статус актуализации:</strong> {{ statusText }}
+              <br />
+              <span class="text-sm text-muted-foreground">
+                Обновлено: {{ formatDate(actualizationStatus.updated_at) }}
+              </span>
+            </div>
+            <div class="flex gap-2">
+              <Button 
+                v-if="canCancelActualization"
+                @click="cancelActualization"
+                variant="outline"
+                size="sm"
+              >
+                Отменить
+              </Button>
+              <Button 
+                v-if="actualizationStatus.has_chat && actualizationStatus.status === 'completed'"
+                as-child
+                variant="outline"
+                size="sm"
+              >
+                <Link :href="route('actualizations.show', actualizationStatus.id)">
+                  Подробности
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -293,7 +344,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import Heading from '@/components/Heading.vue'
@@ -305,7 +356,9 @@ import CardTitle from '@/components/ui/card/CardTitle.vue'
 import CardDescription from '@/components/ui/card/CardDescription.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import CreateChildPage from '@/components/CreateChildPage.vue'
-import { FileIcon } from 'lucide-vue-next'
+
+import { FileIcon, RefreshCw } from 'lucide-vue-next'
+import { usePageActualization } from '@/composables/usePageActualization'
 
 
 
@@ -343,6 +396,9 @@ interface Page {
   current: boolean
   currentDraft?: Draft
   diff_descriptions?: TaskDescription[]
+  hasActiveActualization?: boolean
+  isActualized?: boolean
+  actualizationInfo?: any
 }
 
 const props = defineProps<{
@@ -354,6 +410,34 @@ const canCreateTask = computed(() => {
          (!props.page.diff_descriptions || props.page.diff_descriptions.length === 0) &&
          !props.page.currentDraft &&
          props.page.previous_version_id !== null
+})
+
+// Логика актуализации
+const {
+  isActualizing,
+  actualizationStatus,
+  hasActiveActualization,
+  statusText,
+  statusColor,
+  canStartActualization,
+  canCancelActualization,
+  startActualization,
+  cancelActualization,
+  checkStatus,
+} = usePageActualization(props.page.id)
+
+// Проверяем статус при загрузке компонента
+onMounted(() => {
+  if (props.page.hasActiveActualization || props.page.isActualized) {
+    checkStatus()
+  }
+})
+
+// Можно ли запустить актуализацию (есть файлы и нет активной актуализации)
+const canActualize = computed(() => {
+  return props.page.files && 
+         props.page.files.length > 0 && 
+         canStartActualization.value
 })
 
 const createTask = () => {

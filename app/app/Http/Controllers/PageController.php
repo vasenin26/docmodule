@@ -50,9 +50,11 @@ class PageController extends Controller
 
         $pages = $query->orderBy('created_at', 'desc')->paginate(20);
 
-        // Добавляем информацию о черновиках для каждой страницы
+        // Добавляем информацию о черновиках и актуализации для каждой страницы
         $pages->getCollection()->transform(function ($page) {
             $page->hasActiveDraft = $page->hasActiveDraft();
+            $page->isActualized = $page->isActualized(); // Для черновиков
+            $page->actualizationInfo = $page->getActualizationInfo(); // Информация об актуализации
             return $page;
         });
 
@@ -146,11 +148,23 @@ class PageController extends Controller
      */
     public function show(string $id)
     {
-        $page = Page::with(['creator', 'children.creator', 'parent', 'project', 'diffDescriptions.creator'])
-            ->findOrFail($id);
+        $page = Page::with([
+            'creator', 
+            'children.creator', 
+            'parent', 
+            'project', 
+            'diffDescriptions.creator',
+            'latestActualization.llmChat',
+            'latestActualization.createdBy'
+        ])->findOrFail($id);
 
         // Добавляем информацию о черновике
         $page->currentDraft = $page->getCurrentDraft();
+        
+        // Добавляем информацию об актуализации
+        $page->hasActiveActualization = $page->hasActiveActualization();
+        $page->isActualized = $page->isActualized();
+        $page->actualizationInfo = $page->getActualizationInfo();
 
         return Inertia::render('pages/Show', [
             'page' => $page,

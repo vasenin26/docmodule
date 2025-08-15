@@ -1,12 +1,15 @@
 <?php
 
+use App\Http\Controllers\ActualizationController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TechplaneController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Models\Page;
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
@@ -44,6 +47,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Маршрут для создания задачи
     Route::post('pages/{page}/create-task', [PageController::class, 'createTask'])->name('pages.create-task');
+    
+    // Маршруты актуализации
+    Route::post('pages/{page}/actualize', [ActualizationController::class, 'store'])
+        ->name('pages.actualize');
+    
+    // Временный маршрут для отладки
+    Route::post('pages/{page}/actualize-debug', function(Request $request, Page $page) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Debug route works',
+            'user_id' => auth()->id(),
+            'page_id' => $page->id,
+            'csrf_token' => $request->header('X-CSRF-TOKEN'),
+            'authenticated' => auth()->check(),
+        ]);
+    })->name('pages.actualize.debug');
+    Route::get('pages/{page}/actualization/status', [ActualizationController::class, 'status'])
+        ->name('pages.actualization.status');
+    Route::get('pages/{page}/actualizations', [ActualizationController::class, 'index'])
+        ->name('pages.actualizations.index');
+    Route::get('actualizations/{actualization}', [ActualizationController::class, 'show'])
+        ->name('actualizations.show');
+    Route::delete('actualizations/{actualization}', [ActualizationController::class, 'cancel'])
+        ->name('actualizations.cancel');
     
     // Маршруты для задач
     Route::get('tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
