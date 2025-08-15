@@ -76,6 +76,56 @@
                         </div>
                     </CardContent>
                 </Card>
+
+                <!-- Технический план -->
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Технический план</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div v-if="task.techplane">
+                            <!-- Содержимое техплана -->
+                            <div v-if="task.techplane.content" class="mb-4">
+                                <div class="prose prose-sm max-w-none">
+                                    <MarkdownRenderer :content="task.techplane.content" />
+                                </div>
+                            </div>
+                            <div v-else class="text-muted-foreground italic mb-4">
+                                Техплан создан, но содержимое еще не сгенерировано
+                            </div>
+                            
+                            <!-- Кнопки действий -->
+                            <div class="flex gap-3">
+                                <Button variant="outline" disabled>
+                                    Сгенерировать
+                                </Button>
+                                <Button
+                                    as-child
+                                    variant="default"
+                                >
+                                    <Link :href="route('techplanes.show', task.techplane.id)">
+                                        Редактировать
+                                    </Link>
+                                </Button>
+                            </div>
+                        </div>
+                        <div v-else>
+                            <!-- Кнопка создания техплана -->
+                            <Button
+                                as-child
+                                variant="default"
+                            >
+                                <Link 
+                                    :href="route('tasks.create-techplane', task.id)" 
+                                    method="post"
+                                    as="button"
+                                >
+                                    Создать технический план
+                                </Link>
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
             <div class="space-y-6 lg:col-span-1">
                 <!-- Метаинформация -->

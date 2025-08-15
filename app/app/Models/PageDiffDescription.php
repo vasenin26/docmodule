@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class PageDiffDescription extends Model
 {
@@ -76,5 +77,13 @@ class PageDiffDescription extends Model
     public function hasFailed(): bool
     {
         return $this->generation_status === self::STATUS_FAILED;
+    }
+
+    /**
+     * Связь с техпланом
+     */
+    public function techplane(): HasOne
+    {
+        return $this->hasOne(Techplane::class, 'task_id');
     }
 }

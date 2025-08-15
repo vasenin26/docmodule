@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Models\PageDiffDescription;
+use App\Models\Techplane;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,8 +32,14 @@ class TaskController extends Controller implements HasMiddleware
      */
     public function show(PageDiffDescription $task): Response
     {
-        // Загружаем связанные данные
-        $task->load(['page.creator', 'page.previousVersion', 'creator', 'llmChat']);
+        // Загружаем связанные данные включая техплан
+        $task->load([
+            'page.creator', 
+            'page.previousVersion', 
+            'creator', 
+            'llmChat',
+            'techplane.creator'
+        ]);
 
         return Inertia::render('tasks/Show', [
             'task' => [
@@ -65,6 +74,16 @@ class TaskController extends Controller implements HasMiddleware
                     'messages' => $task->llmChat->messages,
                     'created_at' => $task->llmChat->created_at,
                     'updated_at' => $task->llmChat->updated_at,
+                ] : null,
+                'techplane' => $task->techplane ? [
+                    'id' => $task->techplane->id,
+                    'content' => $task->techplane->content,
+                    'generation_status' => $task->techplane->generation_status,
+                    'created_at' => $task->techplane->created_at,
+                    'creator' => [
+                        'id' => $task->techplane->creator->id,
+                        'name' => $task->techplane->creator->name,
+                    ],
                 ] : null,
             ]
         ]);
@@ -109,5 +128,20 @@ class TaskController extends Controller implements HasMiddleware
             'success' => true,
             'message' => 'Генерация перезапущена'
         ]);
+    }
+
+    /**
+     * Создать техплан для задачи
+     */
+    public function createTechplane(PageDiffDescription $task): RedirectResponse
+    {
+        $techplane = Techplane::create([
+            'task_id' => $task->id,
+            'created_by' => Auth::id(),
+            'generation_status' => Techplane::STATUS_PENDING,
+        ]);
+
+        return redirect()->route('techplanes.show', $techplane)
+            ->with('success', 'Техплан создан');
     }
 }
