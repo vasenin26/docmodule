@@ -51,6 +51,9 @@ export interface LLMChat {
     id: number;
     messages: LLMMessage[];
     tokens?: number | null;
+    prompt_tokens?: number | null;
+    completion_tokens?: number | null;
+    total_tokens?: number | null;
     created_at: string;
     updated_at: string;
 }
@@ -108,3 +111,13 @@ export interface PagesData {
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;
+
+export interface TokenStatistics {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+}
+
+export interface DashboardData {
+    token_statistics: TokenStatistics;
+}

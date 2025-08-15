@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActualizationController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\RepositoryController;
@@ -15,9 +16,14 @@ Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
+
+// API маршрут для получения статистики токенов
+Route::get('api/dashboard/token-statistics', [DashboardController::class, 'apiTokenStatistics'])
+    ->middleware(['auth', 'verified'])
+    ->name('api.dashboard.token-statistics');
 
 // Маршруты для проектов и страниц документации
 Route::middleware(['auth', 'verified'])->group(function () {
