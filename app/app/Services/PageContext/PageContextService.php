@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\PageContext;
 
 use App\Interfaces\PageContextServiceInterface;
 use App\Models\Page;
-use App\Models\Actualization;
 use App\Models\PageDiffDescription;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -29,23 +28,23 @@ class PageContextService implements PageContextServiceInterface
     public function getPageById(int $pageId): ?Page
     {
         Log::debug('Getting page by ID', ['page_id' => $pageId, 'project_id' => $this->projectId]);
-        
+
         $cacheKey = "page_context_{$this->projectId}_page_{$pageId}";
-        
+
         return Cache::remember($cacheKey, 300, function () use ($pageId) {
             $page = Page::where('id', $pageId)
                 ->where('project_id', $this->projectId)
                 ->where('current', true)
                 ->with(['creator', 'project', 'parent', 'children'])
                 ->first();
-                
+
             if (!$page) {
                 Log::warning('Page not found or not accessible', [
-                    'page_id' => $pageId, 
+                    'page_id' => $pageId,
                     'project_id' => $this->projectId
                 ]);
             }
-            
+
             return $page;
         });
     }
@@ -53,9 +52,9 @@ class PageContextService implements PageContextServiceInterface
     public function getCurrentPages(): Collection
     {
         Log::debug('Getting current pages for project', ['project_id' => $this->projectId]);
-        
+
         $cacheKey = "page_context_{$this->projectId}_current_pages";
-        
+
         return Cache::remember($cacheKey, 600, function () {
             return Page::where('project_id', $this->projectId)
                 ->where('current', true)
@@ -68,9 +67,9 @@ class PageContextService implements PageContextServiceInterface
     public function getAllProjectPages(): Collection
     {
         Log::debug('Getting all project pages', ['project_id' => $this->projectId]);
-        
+
         $cacheKey = "page_context_{$this->projectId}_all_pages";
-        
+
         return Cache::remember($cacheKey, 600, function () {
             return Page::where('project_id', $this->projectId)
                 ->where('current', true)
@@ -83,17 +82,17 @@ class PageContextService implements PageContextServiceInterface
     public function getPageHierarchy(?int $rootPageId = null): Collection
     {
         Log::debug('Getting page hierarchy', [
-            'root_page_id' => $rootPageId, 
+            'root_page_id' => $rootPageId,
             'project_id' => $this->projectId
         ]);
-        
+
         $cacheKey = "page_context_{$this->projectId}_hierarchy_" . ($rootPageId ?? 'root');
-        
+
         return Cache::remember($cacheKey, 600, function () use ($rootPageId) {
             $query = Page::where('project_id', $this->projectId)
                 ->where('current', true)
                 ->with(['creator', 'children.creator', 'children.children']);
-                
+
             if ($rootPageId) {
                 // Проверяем, что корневая страница принадлежит проекту
                 if (!$this->validatePageAccess($rootPageId)) {
@@ -103,7 +102,7 @@ class PageContextService implements PageContextServiceInterface
             } else {
                 $query->whereNull('parent_id');
             }
-            
+
             return $query->orderBy('title')->get();
         });
     }
@@ -112,14 +111,14 @@ class PageContextService implements PageContextServiceInterface
     {
         if (!$this->validatePageAccess($pageId)) {
             Log::warning('Access denied to page children', [
-                'page_id' => $pageId, 
+                'page_id' => $pageId,
                 'project_id' => $this->projectId
             ]);
             return new Collection();
         }
-        
+
         $cacheKey = "page_context_{$this->projectId}_children_{$pageId}";
-        
+
         return Cache::remember($cacheKey, 300, function () use ($pageId) {
             return Page::where('parent_id', $pageId)
                 ->where('project_id', $this->projectId)
@@ -136,7 +135,7 @@ class PageContextService implements PageContextServiceInterface
         if (!$page || !$page->parent_id) {
             return null;
         }
-        
+
         return $this->getPageById($page->parent_id);
     }
 
@@ -145,22 +144,22 @@ class PageContextService implements PageContextServiceInterface
         if (!$this->validatePageAccess($pageId)) {
             return new Collection();
         }
-        
+
         Log::debug('Finding related pages', [
-            'page_id' => $pageId, 
+            'page_id' => $pageId,
             'project_id' => $this->projectId
         ]);
-        
+
         $cacheKey = "page_context_{$this->projectId}_related_{$pageId}";
-        
+
         return Cache::remember($cacheKey, 600, function () use ($pageId) {
             $page = $this->getPageById($pageId);
             if (!$page) {
                 return new Collection();
             }
-            
+
             $relatedPages = new Collection();
-            
+
             // Поиск страниц с общими файлами
             if (!empty($page->files)) {
                 $relatedByFiles = Page::where('project_id', $this->projectId)
@@ -171,20 +170,20 @@ class PageContextService implements PageContextServiceInterface
                         if (empty($otherPage->files)) {
                             return false;
                         }
-                        
+
                         $commonFiles = array_intersect($page->files, $otherPage->files);
                         return !empty($commonFiles);
                     });
-                    
+
                 $relatedPages = $relatedPages->merge($relatedByFiles);
             }
-            
+
             // Поиск страниц в той же иерархии
             $siblings = $this->getPageChildren($page->parent_id ?? 0);
             $relatedPages = $relatedPages->merge(
                 $siblings->where('id', '!=', $pageId)
             );
-            
+
             return $relatedPages->unique('id')->values();
         });
     }
@@ -194,16 +193,16 @@ class PageContextService implements PageContextServiceInterface
         if (!$this->validatePageAccess($pageId)) {
             return null;
         }
-        
+
         $cacheKey = "page_context_{$this->projectId}_with_actualization_{$pageId}";
-        
+
         return Cache::remember($cacheKey, 300, function () use ($pageId) {
             return Page::where('id', $pageId)
                 ->where('project_id', $this->projectId)
                 ->where('current', true)
                 ->with([
-                    'creator', 
-                    'actualizations.llmChat', 
+                    'creator',
+                    'actualizations.llmChat',
                     'actualizations.createdBy',
                     'latestActualization',
                     'completedActualization'
@@ -217,12 +216,12 @@ class PageContextService implements PageContextServiceInterface
         $page = $this->getPageById($pageId);
         if (!$page) {
             Log::warning('Page not found for files retrieval', [
-                'page_id' => $pageId, 
+                'page_id' => $pageId,
                 'project_id' => $this->projectId
             ]);
             return [];
         }
-        
+
         return $page->files ?? [];
     }
 
@@ -231,14 +230,14 @@ class PageContextService implements PageContextServiceInterface
         if (!$this->validatePageAccess($pageId)) {
             return new Collection();
         }
-        
+
         Log::debug('Getting task history for page', [
-            'page_id' => $pageId, 
+            'page_id' => $pageId,
             'project_id' => $this->projectId
         ]);
-        
+
         $cacheKey = "page_context_{$this->projectId}_task_history_{$pageId}";
-        
+
         return Cache::remember($cacheKey, 300, function () use ($pageId) {
             return PageDiffDescription::where('page_id', $pageId)
                 ->whereHas('page', function ($query) {
@@ -254,7 +253,7 @@ class PageContextService implements PageContextServiceInterface
     public function validatePageAccess(int $pageId): bool
     {
         $cacheKey = "page_context_{$this->projectId}_access_{$pageId}";
-        
+
         return Cache::remember($cacheKey, 60, function () use ($pageId) {
             return Page::where('id', $pageId)
                 ->where('project_id', $this->projectId)

@@ -5,6 +5,9 @@ services:
       dockerfile: docker/php/Dockerfile
     volumes:
       - ./app:/app
+      - ./repos:/var/repos
+      - /home/vasenin26/.gitconfig:/root/.gitconfig:ro
+      - /home/vasenin26/.ssh:/root/.ssh:ro
     working_dir: /app
     ports:
       - "80:80"

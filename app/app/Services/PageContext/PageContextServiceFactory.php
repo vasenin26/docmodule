@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\PageContext;
 
 use App\Interfaces\PageContextServiceFactoryInterface;
 use App\Interfaces\PageContextServiceInterface;

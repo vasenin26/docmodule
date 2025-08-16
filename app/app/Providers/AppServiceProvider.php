@@ -14,7 +14,7 @@ use App\Interfaces\PageContextServiceFactoryInterface;
 use App\Interfaces\TaskTrackerInterface;
 use App\Services\DiffGenerator\DiffGeneratorService;
 use App\Services\LLMGenerator\LMStudioClient;
-use App\Services\PageContextServiceFactory;
+use App\Services\PageContext\PageContextServiceFactory;
 use App\Services\RepositoryService\RepositoryProvider;
 use App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorFactory;
 use App\Services\TaskDescriptionGenerator\TechplaneGeneratorFactory;
@@ -50,7 +50,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TaskManagementService::class);
 
         $this->app->singleton(GitRepoProviderInterface::class, RepositoryProvider::class);
-        
+
         // Регистрация фабрики PageContextService
         $this->app->bind(
             PageContextServiceFactoryInterface::class,
