@@ -117,12 +117,12 @@
                     </CardHeader>
                     <CardContent class="space-y-4">
                         <!-- Сравнение заголовков -->
-                        <div v-if="task.page.title !== task.page.previous_version.title">
+                        <div v-if="task.page.title !== (task.page.previous_version.title || '')">
                             <Label class="text-sm font-medium">Изменение заголовка</Label>
                             <div class="mt-2 space-y-2">
                                 <div class="rounded border border-red-200 bg-red-50 p-2">
                                     <span class="text-xs font-medium text-red-600">Было:</span>
-                                    <p class="text-sm">{{ task.page.previous_version.title }}</p>
+                                    <p class="text-sm">{{ task.page.previous_version.title || '' }}</p>
                                 </div>
                                 <div class="rounded border border-green-200 bg-green-50 p-2">
                                     <span class="text-xs font-medium text-green-600">Стало:</span>
@@ -132,7 +132,7 @@
                         </div>
 
                         <!-- Сравнение содержимого -->
-                        <div v-if="task.page.content !== task.page.previous_version.content">
+                        <div v-if="task.page.content !== (task.page.previous_version.content || '')">
                             <Label class="text-sm font-medium">Изменение содержимого</Label>
                             <div class="mt-2">
                                 <DiffViewer :old-content="task.page.previous_version.content" :new-content="task.page.content" />
@@ -201,7 +201,7 @@ interface TaskData {
         previous_version?: {
             id: number;
             title: string;
-            content: string;
+            content: string | null;
         };
     };
     creator: {

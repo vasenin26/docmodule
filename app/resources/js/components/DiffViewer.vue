@@ -16,14 +16,16 @@ import { generateGitStyleDiff, getDiffLineType } from '@/lib/diffUtils';
 import { computed } from 'vue';
 
 interface Props {
-    oldContent: string;
-    newContent: string;
+    oldContent: string | null;
+    newContent: string | null;
 }
 
 const props = defineProps<Props>();
 
 const diffLines = computed(() => {
-    const diff = generateGitStyleDiff(props.oldContent, props.newContent);
+    const oldContent = props.oldContent || '';
+    const newContent = props.newContent || '';
+    const diff = generateGitStyleDiff(oldContent, newContent);
     return diff.split('\n');
 });
 

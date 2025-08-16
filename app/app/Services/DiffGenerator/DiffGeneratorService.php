@@ -9,26 +9,30 @@ class DiffGeneratorService implements DiffGeneratorInterface
     /**
      * Generate diff output in git diff format
      *
-     * @param string $oldContent
-     * @param string $newContent
+     * @param string|null $oldContent
+     * @param string|null $newContent
      * @param string $type
      * @return string
      */
-    public function generateDiff(string $oldContent, string $newContent, string $type = 'content'): string
+    public function generateDiff(?string $oldContent, ?string $newContent, string $type = 'content'): string
     {
-        $oldLines = explode("\n", $oldContent);
-        $newLines = explode("\n", $newContent);
+        // Обеспечиваем, что параметры являются строками
+        $oldContentStr = $oldContent ?? '';
+        $newContentStr = $newContent ?? '';
+        
+        $oldLines = explode("\n", $oldContentStr);
+        $newLines = explode("\n", $newContentStr);
 
         $diffOutput = [];
 
         // Handle title changes
         if ($type === 'title') {
-            if ($oldContent !== $newContent) {
-                if (!empty($oldContent)) {
-                    $diffOutput[] = "- {$oldContent}";
+            if ($oldContentStr !== $newContentStr) {
+                if (!empty($oldContentStr)) {
+                    $diffOutput[] = "- {$oldContentStr}";
                 }
-                if (!empty($newContent)) {
-                    $diffOutput[] = "+ {$newContent}";
+                if (!empty($newContentStr)) {
+                    $diffOutput[] = "+ {$newContentStr}";
                 }
             }
             return implode("\n", $diffOutput);

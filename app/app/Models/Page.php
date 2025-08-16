@@ -139,7 +139,8 @@ class Page extends Model
      */
     public function children(): HasMany
     {
-        return $this->hasMany(Page::class, 'parent_id');
+        return $this->hasMany(Page::class, 'parent_id')
+            ->where('current', true);
     }
 
     /**

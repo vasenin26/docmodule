@@ -5,8 +5,12 @@
  * @returns diff в формате git
  */
 export function generateGitStyleDiff(oldText: string, newText: string): string {
-    const oldLines = oldText.split('\n');
-    const newLines = newText.split('\n');
+    // Обеспечиваем, что параметры являются строками
+    const oldTextStr = oldText || '';
+    const newTextStr = newText || '';
+    
+    const oldLines = oldTextStr.split('\n');
+    const newLines = newTextStr.split('\n');
 
     const diffLines: string[] = [];
     let oldIndex = 0;

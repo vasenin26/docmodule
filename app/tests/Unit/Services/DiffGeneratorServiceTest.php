@@ -119,4 +119,63 @@ class DiffGeneratorServiceTest extends TestCase
 
         $this->assertEquals('', $result);
     }
+
+    #[Test]
+    public function it_handles_null_old_content()
+    {
+        $oldContent = null;
+        $newContent = "Line 1\nLine 2";
+
+        $result = $this->diffGenerator->generateDiff($oldContent, $newContent, 'content');
+
+        $expected = "+ Line 1\n+ Line 2";
+        $this->assertEquals($expected, $result);
+    }
+
+    #[Test]
+    public function it_handles_null_new_content()
+    {
+        $oldContent = "Line 1\nLine 2";
+        $newContent = null;
+
+        $result = $this->diffGenerator->generateDiff($oldContent, $newContent, 'content');
+
+        $expected = "- Line 1\n- Line 2";
+        $this->assertEquals($expected, $result);
+    }
+
+    #[Test]
+    public function it_handles_both_null_content()
+    {
+        $oldContent = null;
+        $newContent = null;
+
+        $result = $this->diffGenerator->generateDiff($oldContent, $newContent, 'content');
+
+        $this->assertEquals('', $result);
+    }
+
+    #[Test]
+    public function it_handles_null_old_title()
+    {
+        $oldTitle = null;
+        $newTitle = 'New Title';
+
+        $result = $this->diffGenerator->generateDiff($oldTitle, $newTitle, 'title');
+
+        $expected = "+ New Title";
+        $this->assertEquals($expected, $result);
+    }
+
+    #[Test]
+    public function it_handles_null_new_title()
+    {
+        $oldTitle = 'Old Title';
+        $newTitle = null;
+
+        $result = $this->diffGenerator->generateDiff($oldTitle, $newTitle, 'title');
+
+        $expected = "- Old Title";
+        $this->assertEquals($expected, $result);
+    }
 }
