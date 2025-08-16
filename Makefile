@@ -3,3 +3,10 @@ develop:
 
 bash:
 	docker compose exec -it development bash
+
+release:
+	git push
+	git checkout main
+	git merge develop
+	git push
+	git checkout develop
