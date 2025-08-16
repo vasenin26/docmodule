@@ -73,7 +73,7 @@ class FindConfigFiles implements ToolInterface
         // Удаляем дубликаты
         $uniqueFiles = [];
         $seenFiles = [];
-        
+
         foreach ($configFiles as $config) {
             if (!in_array($config['file'], $seenFiles)) {
                 $uniqueFiles[] = $config;
@@ -128,7 +128,7 @@ class FindConfigFiles implements ToolInterface
     private function searchByPattern(string $repoPath, string $pattern): array
     {
         $files = [];
-        
+
         try {
             $iterator = new \RecursiveIteratorIterator(
                 new \RecursiveDirectoryIterator($repoPath, \RecursiveDirectoryIterator::SKIP_DOTS)
@@ -137,12 +137,12 @@ class FindConfigFiles implements ToolInterface
             foreach ($iterator as $file) {
                 if ($file->isFile()) {
                     $relativePath = str_replace($repoPath . '/', '', $file->getPathname());
-                    
+
                     // Исключаем системные директории
                     if ($this->shouldSkipFile($relativePath)) {
                         continue;
                     }
-                    
+
                     if (fnmatch($pattern, $relativePath) || fnmatch($pattern, basename($relativePath))) {
                         $files[] = $relativePath;
                     }
@@ -236,7 +236,7 @@ class FindConfigFiles implements ToolInterface
     private function getConfigDescription(string $filename): string
     {
         $basename = basename($filename);
-        
+
         $descriptions = [
             'composer.json' => 'PHP project dependencies and autoload configuration',
             'package.json' => 'Node.js project metadata and dependencies',
@@ -253,7 +253,7 @@ class FindConfigFiles implements ToolInterface
             '.env' => 'Environment-specific configuration variables'
         ];
 
-        return $descriptions[$basename] ?? 'Project configuration file';
+        return $descriptions[$basename] ?? 'Project file';
     }
 
     public function getProps($name): array

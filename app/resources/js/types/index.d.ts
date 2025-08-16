@@ -69,6 +69,11 @@ export interface PageDiffDescription {
     llm_chat?: LLMChat | null;
     created_at: string;
     updated_at: string;
+    edited_at?: string;
+}
+
+export interface TaskUpdateFormData {
+    content: string;
 }
 
 export interface Project {

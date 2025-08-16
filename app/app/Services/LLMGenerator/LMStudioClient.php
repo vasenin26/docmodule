@@ -48,7 +48,7 @@ class LMStudioClient implements ContentGenerator
 
             try {
                 $result = $client->chat()->create([
-                    'model' => 'gpt-4o',
+                    'model' => 'gpt-5',
                     'messages' => $messages,
                     'tools' => $tools->getMeta()
                 ]);

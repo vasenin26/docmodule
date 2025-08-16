@@ -6,6 +6,7 @@ use App\Jobs\GenerateTaskDescriptionJob;
 use App\Jobs\GenerateTechplaneJob;
 use App\Models\PageDiffDescription;
 use App\Models\Techplane;
+use App\Http\Requests\TaskUpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -49,6 +50,7 @@ class TaskController extends Controller implements HasMiddleware
                 'generation_status' => $task->generation_status,
                 'created_at' => $task->created_at,
                 'updated_at' => $task->updated_at,
+                'edited_at' => $task->edited_at,
                 'page' => [
                     'id' => $task->page->id,
                     'title' => $task->page->title,
@@ -88,6 +90,91 @@ class TaskController extends Controller implements HasMiddleware
                 ] : null,
             ]
         ]);
+    }
+
+    /**
+     * Show the form for editing the specified task.
+     */
+    public function edit(PageDiffDescription $task): Response
+    {
+        // Проверяем права доступа
+        if ($task->created_by !== Auth::id()) {
+            abort(403, 'У вас нет прав для редактирования этой задачи');
+        }
+
+        // Загружаем связанные данные
+        $task->load([
+            'page.creator', 
+            'page.previousVersion', 
+            'creator', 
+            'llmChat'
+        ]);
+
+        return Inertia::render('tasks/Edit', [
+            'task' => [
+                'id' => $task->id,
+                'content' => $task->content,
+                'generation_status' => $task->generation_status,
+                'created_at' => $task->created_at,
+                'updated_at' => $task->updated_at,
+                'edited_at' => $task->edited_at,
+                'page' => [
+                    'id' => $task->page->id,
+                    'title' => $task->page->title,
+                    'content' => $task->page->content,
+                    'created_at' => $task->page->created_at,
+                    'creator' => [
+                        'id' => $task->page->creator->id,
+                        'name' => $task->page->creator->name,
+                        'email' => $task->page->creator->email,
+                    ],
+                    'previous_version' => $task->page->previousVersion ? [
+                        'id' => $task->page->previousVersion->id,
+                        'title' => $task->page->previousVersion->title,
+                        'content' => $task->page->previousVersion->content,
+                    ] : null,
+                ],
+                'creator' => [
+                    'id' => $task->creator->id,
+                    'name' => $task->creator->name,
+                    'email' => $task->creator->email,
+                ],
+                'llm_chat' => $task->llmChat ? [
+                    'id' => $task->llmChat->id,
+                    'messages' => $task->llmChat->messages,
+                    'created_at' => $task->llmChat->created_at,
+                    'updated_at' => $task->llmChat->updated_at,
+                ] : null,
+            ]
+        ]);
+    }
+
+    /**
+     * Update the specified task.
+     */
+    public function update(TaskUpdateRequest $request, PageDiffDescription $task): RedirectResponse
+    {
+        // Проверяем права доступа
+        if ($task->created_by !== Auth::id()) {
+            abort(403, 'У вас нет прав для редактирования этой задачи');
+        }
+
+        // Валидация входящих данных
+        $validated = $request->validated();
+
+        // Обновляем содержимое задачи
+        $task->update([
+            'content' => $validated['content'],
+        ]);
+
+        // Отмечаем задачу как отредактированную
+        $task->markAsEdited();
+
+        // Очищаем связанный техплан
+        $task->clearTechplane();
+
+        return redirect()->route('tasks.show', $task)
+            ->with('success', 'Задача успешно обновлена');
     }
 
     /**

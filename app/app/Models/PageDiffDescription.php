@@ -17,12 +17,14 @@ class PageDiffDescription extends Model
         'created_by',
         'generation_status',
         'llm_chat_id',
+        'edited_at',
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'generation_status' => 'string',
+        'edited_at' => 'datetime',
     ];
 
     // Константы для статусов
@@ -85,5 +87,23 @@ class PageDiffDescription extends Model
     public function techplane(): HasOne
     {
         return $this->hasOne(Techplane::class, 'task_id');
+    }
+
+    /**
+     * Отметить задачу как отредактированную
+     */
+    public function markAsEdited(): void
+    {
+        $this->update(['edited_at' => now()]);
+    }
+
+    /**
+     * Очистить связанный техплан
+     */
+    public function clearTechplane(): void
+    {
+        if ($this->techplane) {
+            $this->techplane->clear();
+        }
     }
 }

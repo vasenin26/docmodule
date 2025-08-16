@@ -47,4 +47,25 @@ class Techplane extends Model
     {
         return $this->generation_status === self::STATUS_GENERATING;
     }
+
+    /**
+     * Очистить содержимое техплана
+     */
+    public function clear(): void
+    {
+        $this->update([
+            'content' => null,
+            'generation_status' => self::STATUS_PENDING
+        ]);
+    }
+
+    /**
+     * Отметить техплан как очищенный
+     */
+    public function markAsCleared(): void
+    {
+        $this->update([
+            'generation_status' => self::STATUS_PENDING
+        ]);
+    }
 }

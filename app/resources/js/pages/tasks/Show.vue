@@ -7,6 +7,11 @@
                     <p class="mt-1 text-sm text-muted-foreground">Создана {{ formatDate(task.created_at) }} пользователем {{ task.creator?.name }}</p>
                 </div>
                 <div class="flex items-center gap-2">
+                    <!-- Кнопка редактирования -->
+                    <Button v-if="canEditTask" as-child variant="outline" size="sm">
+                        <Link :href="route('tasks.edit', task.id)">Редактировать задачу</Link>
+                    </Button>
+
                     <!-- Кнопка перезапуска генерации -->
                     <Button v-if="canRestartGeneration" @click="restartGeneration" :disabled="isRestartingGeneration" variant="outline" size="sm">
                         <span v-if="isRestartingGeneration">Перезапуск...</span>
@@ -236,6 +241,10 @@ const openChatModal = () => {
 
 const canRestartGeneration = computed(() => {
     return generationStatus.value !== 'generating';
+});
+
+const canEditTask = computed(() => {
+    return generationStatus.value === 'completed';
 });
 
 // Функция проверки статуса генерации
