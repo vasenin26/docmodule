@@ -24,9 +24,33 @@ class RepositoryController extends Controller
         $validated = $request->validate([
             'url' => [
                 'required',
-                'url',
                 'max:255',
                 function ($attribute, $value, $fail) use ($project) {
+                    // Проверка HTTPS формата
+                    if (filter_var($value, FILTER_VALIDATE_URL) && str_starts_with($value, 'https://')) {
+                        // Проверяем, что это GitHub репозиторий
+                        if (!str_contains($value, 'github.com')) {
+                            $fail('Поддерживаются только GitHub репозитории');
+                            return;
+                        }
+                    }
+                    // Проверка SSH формата
+                    elseif (str_starts_with($value, 'git@')) {
+                        $parts = explode(':', $value);
+                        if (count($parts) !== 2 || !str_contains($parts[0], '@')) {
+                            $fail('Неверный формат SSH URL');
+                            return;
+                        }
+                        if (!str_contains($parts[0], 'github.com')) {
+                            $fail('Поддерживаются только GitHub репозитории');
+                            return;
+                        }
+                    }
+                    else {
+                        $fail('URL должен быть в формате HTTPS или SSH');
+                        return;
+                    }
+                    
                     // Проверяем, существует ли уже такой репозиторий в этом проекте
                     $existingRepository = Repository::where('url', $value)->first();
                     if ($existingRepository && $project->repositories()->where('repository_id', $existingRepository->id)->exists()) {
@@ -36,7 +60,7 @@ class RepositoryController extends Controller
             ],
         ], [
             'url.required' => 'URL репозитория обязателен для заполнения',
-            'url.url' => 'Введите корректный URL',
+            'url.max' => 'URL репозитория не может быть длиннее 255 символов',
         ]);
 
         // Используем паттерн "найти или создать" для Repository модели

@@ -81,8 +81,8 @@
                                     <Input
                                         id="repository_url"
                                         v-model="repositoryForm.url"
-                                        type="url"
-                                        placeholder="https://github.com/username/repository"
+                                        type="text"
+                                        placeholder="https://github.com/username/repo или git@github.com:username/repo.git"
                                         :class="{ 'border-destructive': repositoryForm.errors.url }"
                                         class="flex-1"
                                         required
@@ -154,12 +154,35 @@ const repositoryProcessing = ref(false);
 
 // Клиентская валидация URL
 const isValidUrl = (url: string) => {
-    try {
-        new URL(url);
-        return true;
-    } catch {
-        return false;
+    // Проверка HTTPS формата
+    if (url.startsWith('https://')) {
+        try {
+            new URL(url);
+            return url.includes('github.com');
+        } catch {
+            return false;
+        }
     }
+    
+    // Проверка SSH формата
+    if (url.startsWith('git@')) {
+        const parts = url.split(':');
+        if (parts.length !== 2) return false;
+        
+        const domainPart = parts[0];
+        const pathPart = parts[1];
+        
+        // Проверяем формат git@domain
+        if (!domainPart.includes('@') || domainPart.split('@').length !== 2) return false;
+        
+        // Проверяем, что это GitHub
+        if (!domainPart.includes('github.com')) return false;
+        
+        // Проверяем, что путь не пустой
+        return pathPart.length > 0;
+    }
+    
+    return false;
 };
 
 // Проверка, не дублируется ли репозиторий
@@ -185,7 +208,7 @@ const addRepository = () => {
     }
 
     if (!isValidUrl(repositoryForm.url)) {
-        repositoryForm.setError('url', 'Введите корректный URL');
+        repositoryForm.setError('url', 'URL должен быть в формате HTTPS или SSH GitHub репозитория');
         return;
     }
 
