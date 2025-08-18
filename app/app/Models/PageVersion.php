@@ -17,6 +17,7 @@ class PageVersion extends Model
         'content',
         'previous_version_id',
         'files',
+        'is_draft',
     ];
 
     protected $casts = [

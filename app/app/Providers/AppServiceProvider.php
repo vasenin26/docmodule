@@ -12,13 +12,19 @@ use App\Interfaces\GitRepoProviderInterface;
 use App\Interfaces\LLM\ContentGenerator;
 use App\Interfaces\PageContextServiceFactoryInterface;
 use App\Interfaces\TaskTrackerInterface;
+use App\Interfaces\DocumentationControlInterface;
+use App\Interfaces\DraftServiceInterface;
+use App\Interfaces\TaskServiceInterface;
 use App\Services\DiffGenerator\DiffGeneratorService;
+use App\Services\DocumentationControl;
+use App\Services\DraftService;
 use App\Services\LLMGenerator\LMStudioClient;
 use App\Services\PageContext\PageContextServiceFactory;
 use App\Services\RepositoryService\RepositoryProvider;
 use App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorFactory;
 use App\Services\TaskDescriptionGenerator\TechplaneGeneratorFactory;
 use App\Services\TaskManagementService;
+use App\Services\TaskService;
 use App\Services\TaskTracker\Integration\FakeIntegration;
 use App\Services\TaskTracker\TaskTrackerService;
 use App\Services\ToolsService\ToolServiceFactory;
@@ -56,6 +62,10 @@ class AppServiceProvider extends ServiceProvider
             PageContextServiceFactoryInterface::class,
             PageContextServiceFactory::class
         );
+
+        $this->app->bind(DraftServiceInterface::class, DraftService::class);
+        $this->app->bind(TaskServiceInterface::class, TaskService::class);
+        $this->app->bind(DocumentationControlInterface::class, DocumentationControl::class);
     }
 
     /**

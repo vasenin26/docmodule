@@ -10,12 +10,21 @@ use App\Models\PageVersion;
 use App\Models\PageDiffDescription;
 use App\Models\Project;
 use App\Services\TaskManagementService;
+use App\Interfaces\DocumentationControlInterface;
+use App\Interfaces\DraftServiceInterface;
+use App\Interfaces\TaskServiceInterface;
+use App\Common\DTO\PageDataDTO;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class PageController extends Controller
 {
+    public function __construct(
+        protected DocumentationControlInterface $documentationControl,
+        protected DraftServiceInterface $draftService,
+        protected TaskServiceInterface $taskService
+    ) {}
     /**
      * Display a listing of the resource.
      */
@@ -59,10 +68,13 @@ class PageController extends Controller
             return $page;
         });
 
-        $viewName = $project ? 'pages/Index' : 'pages/Index';
+        // Получаем DTO через DocumentationControl
+        $pageListDTO = $this->documentationControl->getPageListDTO($pages, $request->only(['search', 'parent_id']));
         
-        return Inertia::render($viewName, [
-            'pages' => $pages,
+        $pageListData = $pageListDTO->toArray();
+        
+        return Inertia::render('pages/Index', [
+            'pages' => $pageListData,
             'filters' => $request->only(['search', 'parent_id']),
             'project' => $project,
         ]);
@@ -154,9 +166,9 @@ class PageController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Page $page)
     {
-        $page = Page::with([
+        $page->load([
             'creator', 
             'children.creator', 
             'parent', 
@@ -165,77 +177,188 @@ class PageController extends Controller
             'diffDescriptions.creator',
             'latestActualization.llmChat',
             'latestActualization.createdBy'
-        ])->findOrFail($id);
+        ]);
 
-        // Добавляем информацию о черновике
-        $page->currentDraft = $page->getCurrentDraft();
+        // Получаем DTO через DocumentationControl
+        $pageDetailDTO = $this->documentationControl->getPageDetailDTO($page);
+
+        $pageData = $pageDetailDTO->toArray();
         
-        // Добавляем информацию об актуализации
-        $page->hasActiveActualization = $page->hasActiveActualization();
-        $page->isActualized = $page->isActualized();
-        $page->actualizationInfo = $page->getActualizationInfo();
-
         return Inertia::render('pages/Show', [
-            'page' => $page,
+            'page' => $pageData,
+            'version' => [
+                'id' => $page->currentVersion->id,
+                'title' => $page->currentVersion->title,
+                'content' => $page->currentVersion->content,
+                'files' => $page->currentVersion->files ?? [],
+                'created_at' => $page->currentVersion->created_at->toISOString(),
+                'is_current' => true,
+            ],
         ]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Page $page)
     {
-        $page = Page::with('currentVersion')->findOrFail($id);
-        $currentDraft = $page->getCurrentDraft();
+        $page->load(['currentVersion', 'versions']);
 
+        // Получаем DTO через DocumentationControl
+        $pageEditDTO = $this->documentationControl->getPageEditDTO($page);
+
+        $pageData = $pageEditDTO->toArray();
+        
         return Inertia::render('pages/Edit', [
-            'page' => $page,
-            'currentDraft' => $currentDraft,
-            'hasActiveDraft' => $currentDraft !== null,
+            'page' => $pageData,
+            'version' => [
+                'id' => $page->currentVersion->id,
+                'title' => $page->currentVersion->title,
+                'content' => $page->currentVersion->content,
+                'files' => $page->currentVersion->files ?? [],
+                'created_at' => $page->currentVersion->created_at->toISOString(),
+                'is_current' => true,
+            ],
             'errors' => (object) [],
         ]);
     }
 
     /**
+     * Show a specific version of the page.
+     */
+    public function showVersion(Page $page, PageVersion $version)
+    {
+        // Проверяем, что версия принадлежит странице
+        if ($version->page_id !== $page->id) {
+            abort(404);
+        }
+
+        $page->load([
+            'creator', 
+            'children.creator', 
+            'parent', 
+            'project', 
+            'diffDescriptions.creator',
+            'latestActualization.llmChat',
+            'latestActualization.createdBy'
+        ]);
+
+        // Устанавливаем данные из конкретной версии
+        $page->title = $version->title ?: 'Без названия';
+        $page->content = $version->content ?: '';
+        $page->files = $version->files ?? [];
+        $page->version_id = $version->id;
+        $page->is_current_version = $page->version_id === $version->id;
+
+        // Получаем DTO через DocumentationControl
+        $pageDetailDTO = $this->documentationControl->getPageDetailDTO($page);
+
+        return Inertia::render('pages/Show', [
+            'page' => $pageDetailDTO->toArray(),
+            'version' => [
+                'id' => $version->id,
+                'title' => $version->title,
+                'content' => $version->content,
+                'files' => $version->files ?? [],
+                'created_at' => $version->created_at->toISOString(),
+                'is_current' => $page->version_id === $version->id,
+            ],
+        ]);
+    }
+
+    /**
+     * Show the form for editing a specific version.
+     */
+    public function editVersion(Page $page, PageVersion $version)
+    {
+        // Проверяем, что версия принадлежит странице
+        if ($version->page_id !== $page->id) {
+            abort(404);
+        }
+
+        $page->load(['currentVersion', 'versions']);
+
+        // Устанавливаем данные из конкретной версии
+        $page->title = $version->title ?: 'Без названия';
+        $page->content = $version->content ?: '';
+        $page->files = $version->files ?? [];
+        $page->version_id = $version->id;
+        $page->is_current_version = $page->version_id === $version->id;
+
+        // Получаем DTO через DocumentationControl
+        $pageEditDTO = $this->documentationControl->getPageEditDTO($page);
+
+        $pageData = $pageEditDTO->toArray();
+        
+        return Inertia::render('pages/Edit', [
+            'page' => $pageData,
+            'version' => [
+                'id' => $version->id,
+                'title' => $version->title,
+                'content' => $version->content,
+                'files' => $version->files ?? [],
+                'created_at' => $version->created_at->toISOString(),
+                'is_current' => $page->version_id === $version->id,
+            ],
+            'errors' => (object) [],
+        ]);
+    }
+
+    /**
+     * Update a specific version of the page.
+     */
+    public function updateVersion(UpdatePageRequest $request, Page $page, PageVersion $version)
+    {
+        // Проверяем, что версия принадлежит странице
+        if ($version->page_id !== $page->id) {
+            abort(404);
+        }
+
+        $validated = $request->validated();
+        
+        // Создаем DTO из валидированных данных
+        $pageData = PageDataDTO::fromArray($validated);
+        
+        // Если это текущая версия, создаем черновик
+        if ($page->version_id === $version->id) {
+            $draft = $this->documentationControl->updatePageWithDraftLogic($page, $pageData);
+            return redirect()->back()
+                ->with('success', $page->hasActiveDraft() ? 'Черновик обновлен.' : 'Черновик создан.');
+        } else {
+            // Если это не текущая версия, создаем новую версию на основе этой
+            $newVersion = $page->createNewVersion([
+                'title' => $validated['title'],
+                'content' => $validated['content'],
+                'files' => $validated['files'] ?? [],
+            ]);
+            
+            return redirect()->route('pages.versions.show', [$page->id, $newVersion->id])
+                ->with('success', 'Новая версия создана.');
+        }
+    }
+
+    /**
      * Update the specified resource in storage.
      */
-    public function update(UpdatePageRequest $request, string $id)
+    public function update(UpdatePageRequest $request, Page $page)
     {
         $validated = $request->validated();
         
-        $page = Page::whereNotNull('version_id')->findOrFail($id);
-        $currentDraft = $page->getCurrentDraft();
-
-        if ($currentDraft) {
-            // Обновляем существующий черновик
-            $currentDraft->update([
-                'title' => $validated['title'],
-                'content' => $validated['content'],
-                'files' => $validated['files'] ?? [],
-            ]);
-            
-            return redirect()->back()
-                ->with('success', 'Черновик обновлен.');
-        } else {
-            // Создаем новый черновик
-            $draft = $page->createDraft([
-                'title' => $validated['title'],
-                'content' => $validated['content'],
-                'files' => $validated['files'] ?? [],
-            ]);
-            
-            return redirect()->back()
-                ->with('success', 'Черновик создан.');
-        }
+        // Создаем DTO из валидированных данных
+        $pageData = PageDataDTO::fromArray($validated);
+        
+        // Получаем DocumentationControl через DI в конструкторе
+        $draft = $this->documentationControl->updatePageWithDraftLogic($page, $pageData);
+        
+        return redirect()->back()
+            ->with('success', $page->hasActiveDraft() ? 'Черновик обновлен.' : 'Черновик создан.');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Page $page)
     {
-        $page = Page::whereNotNull('version_id')->findOrFail($id);
-
         // Удаляем все версии страницы
         $page->versions()->delete();
         
@@ -249,9 +372,9 @@ class PageController extends Controller
     /**
      * Показать версии страницы
      */
-    public function versions(string $id)
+    public function versions(Page $page)
     {
-        $page = Page::with('currentVersion')->findOrFail($id);
+        $page->load('currentVersion');
 
         // Получаем полную цепочку версий
         $versions = $page->getVersionChain();
@@ -265,9 +388,8 @@ class PageController extends Controller
     /**
      * Восстановить версию страницы
      */
-    public function restore(string $id, string $versionId)
+    public function restore(Page $page, string $versionId)
     {
-        $page = Page::findOrFail($id);
         $version = PageVersion::findOrFail($versionId);
 
         // Проверяем, что версия принадлежит странице
@@ -289,68 +411,52 @@ class PageController extends Controller
     /**
      * Утвердить черновик
      */
-    public function approveDraft(Request $request, string $id, TaskManagementService $taskService)
+    public function approveDraft(Request $request, PageVersion $draft)
     {
-        $page = Page::findOrFail($id);
-        $draft = $page->getCurrentDraft();
-        
-        if (!$draft) {
-            return redirect()->back()->with('error', 'Черновик не найден.');
-        }
-        
-        // Утверждаем черновик
-        $page->approveDraft($draft);
+        try {
+            // Получаем страницу из черновика
+            $page = $draft->page;
+            
+            $result = $this->documentationControl->approveDraftWithTask($page, $request->boolean('create_task'));
 
-        // Создаем задачу только если пользователь это указал
-        if ($request->boolean('create_task')) {
-            try {
-                // Создаем PageDiffDescription синхронно и запускаем Jobs асинхронно
-                $diffDescription = $taskService->createTaskForPage($page);
-                
-                // Сразу перенаправляем на страницу задачи
-                // Jobs будут обрабатывать контент в фоне
-                return redirect()->route('tasks.show', $diffDescription->id)
-                    ->with('success', 'Черновик утвержден. Задача создана и обрабатывается.');
-                    
-            } catch (\Exception $e) {
-                return redirect()->route('pages.show', $page->id)
-                    ->with('error', 'Черновик утвержден, но не удалось создать задачу: ' . $e->getMessage());
+            if ($result->taskCreated) {
+                return redirect()->route('tasks.show', $result->taskId)
+                    ->with('success', $result->message);
             }
-        }
 
-        // Переадресация на страницу просмотра если задача не создавалась
-        return redirect()->route('pages.show', $page->id)
-            ->with('success', 'Черновик утвержден.');
+            return redirect()->route('pages.show', $page->id)
+                ->with('success', $result->message);
+        } catch (\Exception $e) {
+            return redirect()->route('pages.show', $draft->page_id)
+                ->with('error', $e->getMessage());
+        }
     }
 
     /**
      * Получить данные черновика
      */
-    public function getDraft(string $id)
+    public function getDraft(Page $page)
     {
-        $page = Page::whereNotNull('version_id')->findOrFail($id);
-        $draft = $page->getCurrentDraft();
+        $draft = $this->draftService->getCurrentDraft($page);
         
         if (!$draft) {
             return response()->json(['error' => 'Черновик не найден'], 404);
         }
         
-        return response()->json($draft);
+        // Возвращаем DTO вместо модели
+        $draftDTO = $this->documentationControl->getDraftDTO($draft);
+        
+        return response()->json($draftDTO->toArray());
     }
 
     /**
      * Удалить черновик
      */
-    public function deleteDraft(string $id)
+    public function deleteDraft(Page $page)
     {
-        $page = Page::whereNotNull('version_id')->findOrFail($id);
-        $draft = $page->getCurrentDraft();
-        
-        if (!$draft) {
+        if (!$this->draftService->deleteDraft($page)) {
             return redirect()->back()->with('error', 'Черновик не найден.');
         }
-        
-        $draft->delete();
         
         return redirect('/')
             ->with('success', 'Черновик удален.');
@@ -359,21 +465,17 @@ class PageController extends Controller
     /**
      * Создать задачу для страницы
      */
-    public function createTask(string $id, TaskManagementService $taskService)
+    public function createTask(Page $page)
     {
-        $page = Page::whereNotNull('version_id')->findOrFail($id);
-        
         try {
-            // Создаем PageDiffDescription синхронно и запускаем Jobs асинхронно
-            $diffDescription = $taskService->createTaskForPage($page);
+            $diffDescription = $this->taskService->createTaskForPage($page);
             
-            // Сразу перенаправляем на страницу задачи
-            // Jobs будут обрабатывать контент в фоне
             return redirect()->route('tasks.show', $diffDescription->id)
                 ->with('success', 'Задача создана и обрабатывается.');
                 
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            return redirect()->route('pages.show', $page->id)
+                ->with('error', 'Не удалось создать задачу: ' . $e->getMessage());
         }
     }
 }

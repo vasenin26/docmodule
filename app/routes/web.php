@@ -45,9 +45,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('pages', PageController::class);
     Route::get('pages/{page}/versions', [PageController::class, 'versions'])->name('pages.versions');
     Route::post('pages/{page}/restore/{version}', [PageController::class, 'restore'])->name('pages.restore');
+    
+    // Маршруты для работы с версиями страниц
+    Route::get('pages/{page}/versions/{version}', [PageController::class, 'showVersion'])->name('pages.versions.show');
+    Route::get('pages/{page}/versions/{version}/edit', [PageController::class, 'editVersion'])->name('pages.versions.edit');
+    Route::put('pages/{page}/versions/{version}', [PageController::class, 'updateVersion'])->name('pages.versions.update');
 
     // Новые маршруты для черновиков
-    Route::post('pages/{page}/draft/approve', [PageController::class, 'approveDraft'])->name('pages.draft.approve');
+    Route::post('drafts/{draft}/approve', [PageController::class, 'approveDraft'])->name('drafts.approve');
     Route::get('pages/{page}/draft', [PageController::class, 'getDraft'])->name('pages.draft.get');
     Route::delete('pages/{page}/draft', [PageController::class, 'deleteDraft'])->name('pages.draft.delete');
 

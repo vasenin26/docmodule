@@ -31,19 +31,27 @@
         </div>
       </div> -->
 
-            <!-- Информация о черновике -->
-            <div v-if="currentDraft" class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
-                <p class="text-sm text-blue-800">
-                    <strong>Редактирование черновика:</strong>
+            <!-- Информация о версии -->
+            <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <p class="text-sm text-gray-800">
+                    <strong>Редактирование версии:</strong>
+                    {{ version.is_current ? 'Текущая версия' : `Версия #${version.id}` }}
+                    (создана {{ formatDate(version.created_at) }})
+                </p>
+                <p v-if="currentDraft" class="text-sm text-blue-800 mt-2">
+                    <strong>Активный черновик:</strong>
                     Создан {{ formatDate(currentDraft.created_at) }}
                 </p>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>{{ page?.title || 'Загрузка...' }}</CardTitle>
+                    <CardTitle>{{ version?.title || 'Без названия' }}</CardTitle>
                     <CardDescription v-if="!currentDraft">
-                        Редактирование страницы документации. При сохранении будет создан черновик.
+                        {{ version.is_current 
+                            ? 'Редактирование текущей версии. При сохранении будет создан черновик.' 
+                            : 'Редактирование версии. При сохранении будет создана новая версия.' 
+                        }}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -93,7 +101,10 @@
                         <!-- Кнопки -->
                         <div class="flex items-center gap-4">
                             <Button type="submit" :disabled="processing">
-                                {{ processing ? 'Сохранение...' : currentDraft ? 'Обновить черновик' : 'Создать черновик' }}
+                                {{ processing ? 'Сохранение...' : 
+                                   currentDraft ? 'Обновить черновик' : 
+                                   version.is_current ? 'Создать черновик' : 'Создать новую версию' 
+                                }}
                             </Button>
                             <Button v-if="currentDraft" type="button" @click="approveDraft" variant="default"> Утвердить черновик </Button>
                             <Button type="button" variant="outline" @click="cancel"> Отмена </Button>
@@ -140,9 +151,19 @@ interface Draft {
     updated_at: string;
 }
 
+interface Version {
+    id: number;
+    title: string;
+    content: string;
+    files?: string[];
+    created_at: string;
+    is_current: boolean;
+}
+
 const props = withDefaults(
     defineProps<{
         page: Page;
+        version: Version;
         currentDraft?: Draft;
         hasActiveDraft?: boolean;
         errors?: Record<string, string>;
@@ -154,9 +175,9 @@ const props = withDefaults(
 );
 
 const form = useForm({
-    title: props.currentDraft?.title || props.page?.title || '',
-    content: props.currentDraft?.content || props.page?.content || '',
-    files: props.currentDraft?.files || props.page?.files || [],
+    title: props.currentDraft?.title || props.version?.title || 'Без названия',
+    content: props.currentDraft?.content || props.version?.content || '',
+    files: props.currentDraft?.files || props.version?.files || [],
     createTask: false,
 });
 
@@ -164,7 +185,13 @@ const processing = ref(false);
 
 const submit = () => {
     processing.value = true;
-    form.put(route('pages.update', props.page?.id), {
+    
+    // Используем URL для версии, если это не текущая версия
+    const url = props.version.is_current 
+        ? route('pages.update', props.page?.id)
+        : route('pages.versions.update', [props.page?.id, props.version?.id]);
+    
+    form.put(url, {
         onSuccess: () => {
             processing.value = false;
         },
@@ -183,14 +210,14 @@ const continueDraft = () => {
 };
 
 const createNewDraft = () => {
-    form.title = props.page.title;
-    form.content = props.page.content;
-    form.files = props.page.files || [];
+    form.title = props.version.title;
+    form.content = props.version.content;
+    form.files = props.version.files || [];
 };
 
 const approveDraft = () => {
     if (props.currentDraft) {
-        router.post(route('pages.draft.approve', props.currentDraft.id), {
+        router.post(route('drafts.approve', props.currentDraft.id), {
             create_task: form.createTask,
         });
     }

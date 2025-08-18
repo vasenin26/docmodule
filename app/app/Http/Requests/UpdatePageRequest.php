@@ -12,11 +12,19 @@ class UpdatePageRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        $page = Page::where('current', true)->find($this->route('page'));
+        $page = $this->route('page');
         
-        // Проверяем, что пользователь может редактировать страницу
-        // В данном случае проверяем, что пользователь аутентифицирован
-        return auth()->check();
+        // Проверяем, что страница существует
+        if (!$page) {
+            return false;
+        }
+        
+        // Проверяем, что пользователь аутентифицирован
+        if (!auth()->check()) {
+            return false;
+        }
+        
+        return true;
     }
 
     /**

@@ -169,10 +169,15 @@ class Page extends Model
             return null;
         }
         
-        // Находим черновики (версии без следующей версии)
+        // Если текущая версия сама является черновиком, то активного черновика нет
+        if ($currentVersion->is_draft) {
+            return null;
+        }
+        
+        // Находим черновики, которые являются дочерними для текущей версии
         return $this->versions()
-            ->where('id', '!=', $currentVersion->id)
-            ->whereDoesntHave('nextVersion')
+            ->where('is_draft', true)
+            ->where('previous_version_id', $currentVersion->id)
             ->orderBy('created_at', 'desc')
             ->first();
     }
@@ -196,7 +201,12 @@ class Page extends Model
             throw new \Exception('Страница не имеет текущей версии');
         }
         
-        return $currentVersion->createNewVersion($data);
+        $draft = $currentVersion->createNewVersion($data);
+        
+        // Устанавливаем флаг is_draft = true для нового черновика
+        $draft->update(['is_draft' => true]);
+        
+        return $draft;
     }
 
     /**

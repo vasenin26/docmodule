@@ -1,9 +1,9 @@
 <template>
-    <AppLayout :title="page.title">
+    <AppLayout :title="page.title || 'Без названия'">
         <template #header>
             <div class="flex items-center justify-between">
                 <div>
-                    <Heading :title="page.title" />
+                    <Heading :title="page.title || 'Без названия'" />
                     <p class="mt-1 text-sm text-muted-foreground">Создано {{ formatDate(page.created_at) }} пользователем {{ page.creator?.name }}</p>
                 </div>
                 <div class="flex items-center gap-2">

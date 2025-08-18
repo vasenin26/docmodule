@@ -7,6 +7,7 @@ use App\Jobs\GenerateTechplaneJob;
 use App\Models\PageDiffDescription;
 use App\Models\Techplane;
 use App\Http\Requests\TaskUpdateRequest;
+use App\Interfaces\DocumentationControlInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,9 @@ use Inertia\Response;
 
 class TaskController extends Controller implements HasMiddleware
 {
+    public function __construct(
+        protected DocumentationControlInterface $documentationControl
+    ) {}
     /**
      * Get the middleware that should be assigned to the controller.
      */
@@ -34,61 +38,12 @@ class TaskController extends Controller implements HasMiddleware
      */
     public function show(PageDiffDescription $task): Response
     {
-        // Загружаем связанные данные включая техплан
-        $task->load([
-            'page.creator', 
-            'page.currentVersion', 
-            'creator', 
-            'llmChat',
-            'techplane.creator'
-        ]);
+        $task->load(['page', 'techplane']);
+        $pageAggregate = $this->documentationControl->getCurrentPageAggregate($task->page);
+        $task->page = $pageAggregate->toArray();
 
         return Inertia::render('tasks/Show', [
-            'task' => [
-                'id' => $task->id,
-                'content' => $task->content,
-                'generation_status' => $task->generation_status,
-                'created_at' => $task->created_at,
-                'updated_at' => $task->updated_at,
-                'edited_at' => $task->edited_at,
-                'page' => [
-                    'id' => $task->page->id,
-                    'title' => $task->page->title,
-                    'content' => $task->page->content,
-                    'created_at' => $task->page->created_at,
-                    'creator' => [
-                        'id' => $task->page->creator->id,
-                        'name' => $task->page->creator->name,
-                        'email' => $task->page->creator->email,
-                    ],
-                    'current_version' => $task->page->currentVersion ? [
-                        'id' => $task->page->currentVersion->id,
-                        'title' => $task->page->currentVersion->title,
-                        'content' => $task->page->currentVersion->content,
-                    ] : null,
-                ],
-                'creator' => [
-                    'id' => $task->creator->id,
-                    'name' => $task->creator->name,
-                    'email' => $task->creator->email,
-                ],
-                'llm_chat' => $task->llmChat ? [
-                    'id' => $task->llmChat->id,
-                    'messages' => $task->llmChat->messages,
-                    'created_at' => $task->llmChat->created_at,
-                    'updated_at' => $task->llmChat->updated_at,
-                ] : null,
-                'techplane' => $task->techplane ? [
-                    'id' => $task->techplane->id,
-                    'content' => $task->techplane->content,
-                    'generation_status' => $task->techplane->generation_status,
-                    'created_at' => $task->techplane->created_at,
-                    'creator' => [
-                        'id' => $task->techplane->creator->id,
-                        'name' => $task->techplane->creator->name,
-                    ],
-                ] : null,
-            ]
+            'task' => $task,
         ]);
     }
 

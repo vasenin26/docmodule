@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Interfaces\PageContextServiceFactoryInterface;
+use App\Common\DTO\ProjectDetailDTO;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -11,6 +13,9 @@ use Illuminate\Support\Facades\Auth;
 
 class ProjectController extends Controller
 {
+    public function __construct(
+        protected PageContextServiceFactoryInterface $pageContextServiceFactory
+    ) {}
     /**
      * Display a listing of the resource.
      */
@@ -57,20 +62,22 @@ class ProjectController extends Controller
      */
     public function show(Project $project): Response
     {
-        // Проверяем доступ к проекту
         if ($project->owner_id !== Auth::id()) {
             abort(403);
         }
 
-        $project->load(['owner', 'repositories', 'pages' => function ($query) {
-            $query->whereNotNull('version_id')
-                ->whereNull('parent_id')
-                ->with(['creator', 'children', 'currentVersion'])
-                ->orderBy('created_at', 'desc');
-        }]);
+        // PageContextService остается без изменений
+        $pageContextService = $this->pageContextServiceFactory->createForProject($project->id);
+        
+        $project->load(['owner', 'repositories']);
+        $project->pages = $pageContextService->getCurrentPages();
 
+        // Создаем DTO для проекта
+        $projectDetailDTO = ProjectDetailDTO::fromProject($project);
+
+        
         return Inertia::render('projects/Show', [
-            'project' => $project
+            'project' => $projectDetailDTO->toArray(),
         ]);
     }
 
