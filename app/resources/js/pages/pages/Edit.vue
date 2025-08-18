@@ -119,8 +119,9 @@ import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 interface Page {
-    id: number;
     title: string;
+    page_id: number;
+    version_id: number;
     content: string;
     files?: string[];
 }
@@ -152,7 +153,7 @@ const processing = ref(false);
 const createDraft = () => {
     processing.value = true;
 
-    form.post(route('pages.create-draft', props.page?.id), {
+    form.post(route('pages.create-draft', props.page.page_id), {
         onSuccess: () => {
             processing.value = false;
         },
@@ -166,7 +167,7 @@ const submit = () => {
     processing.value = true;
 
     const url = props.is_current_version
-        ? route('pages.create-version')
+        ? route('pages.create-draft', {page: props.page.page_id})
         : route('pages.versions.update', [props.page.page_id, props.page.version_id]);
 
     form.put(url, {
@@ -180,7 +181,7 @@ const submit = () => {
 };
 
 const approveDraft = () => {
-    if (!props.page.is_current_version) {
+    if (!props.is_current_version) {
         router.post(route('drafts.approve', props.page.version_id), {
             create_task: form.createTask,
         });
@@ -188,6 +189,6 @@ const approveDraft = () => {
 };
 
 const cancel = () => {
-    router.visit(route('pages.show', props.page?.id));
+    router.visit(route('pages.show', props.page.page_id));
 };
 </script>

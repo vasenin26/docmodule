@@ -312,7 +312,7 @@ class PageController extends Controller
         $pageData = PageDataDTO::fromArray($validated);
 
         // Если это текущая версия, создаем черновик
-        if ($page->version_id === $version->id) {
+        if ($page->version_id !== $version->id) {
             $draft = $this->documentationControl->updatePageWithDraftLogic($page, $pageData);
             return redirect()->back()
                 ->with('success', $page->hasActiveDraft() ? 'Черновик обновлен.' : 'Черновик создан.');
