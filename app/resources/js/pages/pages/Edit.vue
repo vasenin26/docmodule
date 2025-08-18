@@ -5,7 +5,7 @@
                 <Heading title="Редактировать страницу" />
                 <div class="flex items-center gap-2">
                     <Button as-child variant="outline">
-                        <Link :href="route('pages.show', page?.id)"> Просмотр </Link>
+                        <Link :href="route('pages.show', page?.page_id)"> Просмотр </Link>
                     </Button>
                     <Button as-child variant="outline">
                         <Link :href="route('pages.index')"> Назад к списку </Link>
@@ -15,26 +15,13 @@
         </template>
 
         <div class="max-w-4xl">
-            <!-- Информация о версии -->
-            <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                <p class="text-sm text-gray-800">
-                    <strong>Редактирование версии:</strong>
-                    {{ version.is_current ? 'Текущая версия' : `Версия #${version.id}` }}
-                    (создана {{ formatDate(version.created_at) }})
-                </p>
-                <p v-if="currentDraft" class="text-sm text-blue-800 mt-2">
-                    <strong>Активный черновик:</strong>
-                    Создан {{ formatDate(currentDraft.created_at) }}
-                </p>
-            </div>
-
             <Card>
                 <CardHeader>
-                    <CardTitle>{{ version?.title || 'Без названия' }}</CardTitle>
-                    <CardDescription v-if="!currentDraft">
-                        {{ version.is_current 
-                            ? 'Редактирование текущей версии. При сохранении будет создан черновик.' 
-                            : 'Редактирование версии. При сохранении будет создана новая версия.' 
+                    <CardTitle>{{ page?.title || 'Без названия' }}</CardTitle>
+                    <CardDescription>
+                        {{ is_current_version
+                            ? 'Редактирование текущей версии. При сохранении будет создан черновик.'
+                            : 'Редактирование версии. При сохранении будет создана новая версия.'
                         }}
                     </CardDescription>
                 </CardHeader>
@@ -77,7 +64,7 @@
                         </div>
 
                         <!-- Checkbox для создания задачи -->
-                        <div v-if="currentDraft" class="flex items-center space-x-2">
+                        <div v-if="!is_current_version" class="flex items-center space-x-2">
                             <Checkbox id="createTask" v-model="form.createTask" />
                             <Label for="createTask">Создать задачу при утверждении</Label>
                         </div>
@@ -86,26 +73,24 @@
                         <div class="flex items-center gap-4">
                             <!-- Кнопка "Создать черновик" для текущей версии -->
                             <Button
-                                v-if="isCurrentVersion && !currentDraft"
+                                v-if="is_current_version"
                                 type="submit"
                                 :disabled="processing"
                                 @click="createDraft"
                             >
                                 {{ processing ? 'Создание...' : 'Создать черновик' }}
                             </Button>
-                            
+
                             <!-- Кнопка "Сохранить" для черновика -->
                             <Button
                                 v-else
                                 type="submit"
                                 :disabled="processing"
                             >
-                                {{ processing ? 'Сохранение...' : 
-                                   currentDraft ? 'Сохранить' : 'Создать новую версию' 
-                                }}
+                                {{ processing ? 'Сохранение...' : 'Сохранить'}}
                             </Button>
-                            
-                            <Button v-if="currentDraft" type="button" @click="approveDraft" variant="default"> Утвердить черновик </Button>
+
+                            <Button v-if="!is_current_version" type="button" @click="approveDraft" variant="default"> Утвердить черновик </Button>
                             <Button type="button" variant="outline" @click="cancel"> Отмена </Button>
                         </div>
                     </form>
@@ -138,35 +123,13 @@ interface Page {
     title: string;
     content: string;
     files?: string[];
-    current: boolean;
-}
-
-interface Draft {
-    id: number;
-    title: string;
-    content: string;
-    files?: string[];
-    created_at: string;
-    updated_at: string;
-}
-
-interface Version {
-    id: number;
-    title: string;
-    content: string;
-    files?: string[];
-    created_at: string;
-    is_current: boolean;
 }
 
 const props = withDefaults(
     defineProps<{
-        page: Page;
-        version: Version;
-        isCurrentVersion?: boolean; // Новый проп
-        currentDraft?: Draft;
-        hasActiveDraft?: boolean;
-        errors?: Record<string, string>;
+        page: Page,
+        is_current_version: false
+        errors: any
     }>(),
     {
         errors: () => ({}),
@@ -176,9 +139,9 @@ const props = withDefaults(
 );
 
 const form = useForm({
-    title: props.currentDraft?.title || props.version?.title || 'Без названия',
-    content: props.currentDraft?.content || props.version?.content || '',
-    files: props.currentDraft?.files || props.version?.files || [],
+    title: props.page.title || 'Без названия',
+    content: props.page.content,
+    files: props.page?.files || [],
     createTask: false,
     is_current_version: false as boolean,
 });
@@ -188,7 +151,7 @@ const processing = ref(false);
 // Метод для создания черновика
 const createDraft = () => {
     processing.value = true;
-    
+
     form.post(route('pages.create-draft', props.page?.id), {
         onSuccess: () => {
             processing.value = false;
@@ -199,20 +162,13 @@ const createDraft = () => {
     });
 };
 
-// Метод для сохранения черновика
 const submit = () => {
     processing.value = true;
-    
-    // Добавляем флаг для текущей версии
-    if (props.isCurrentVersion) {
-        form.is_current_version = true;
-    }
-    
-    // Используем URL для версии, если это не текущая версия
-    const url = props.version.is_current 
-        ? route('pages.update', props.page?.id)
-        : route('pages.versions.update', [props.page?.id, props.version?.id]);
-    
+
+    const url = props.is_current_version
+        ? route('pages.create-version')
+        : route('pages.versions.update', [props.page.page_id, props.page.version_id]);
+
     form.put(url, {
         onSuccess: () => {
             processing.value = false;
@@ -223,23 +179,9 @@ const submit = () => {
     });
 };
 
-const continueDraft = () => {
-    if (props.currentDraft) {
-        form.title = props.currentDraft.title;
-        form.content = props.currentDraft.content;
-        form.files = props.currentDraft.files || [];
-    }
-};
-
-const createNewDraft = () => {
-    form.title = props.version.title;
-    form.content = props.version.content;
-    form.files = props.version.files || [];
-};
-
 const approveDraft = () => {
-    if (props.currentDraft) {
-        router.post(route('drafts.approve', props.currentDraft.id), {
+    if (!props.page.is_current_version) {
+        router.post(route('drafts.approve', props.page.version_id), {
             create_task: form.createTask,
         });
     }
@@ -247,9 +189,5 @@ const approveDraft = () => {
 
 const cancel = () => {
     router.visit(route('pages.show', props.page?.id));
-};
-
-const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ru-RU');
 };
 </script>

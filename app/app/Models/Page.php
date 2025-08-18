@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Common\DTO\PageVersionDTO;
 use App\Observers\PageObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -99,16 +100,16 @@ class Page extends Model
     public function createNewVersion(array $data = []): PageVersion
     {
         $currentVersion = $this->currentVersion;
-        
+
         if (!$currentVersion) {
             throw new \Exception('Страница не имеет текущей версии');
         }
-        
+
         $newVersion = $currentVersion->createNewVersion($data);
-        
+
         // Обновляем version_id в странице
         $this->update(['version_id' => $newVersion->id]);
-        
+
         return $newVersion;
     }
 
@@ -126,11 +127,11 @@ class Page extends Model
     public function getVersionChain(): \Illuminate\Database\Eloquent\Collection
     {
         $currentVersion = $this->currentVersion;
-        
+
         if (!$currentVersion) {
             return new \Illuminate\Database\Eloquent\Collection();
         }
-        
+
         return $currentVersion->getVersionChain();
     }
 
@@ -164,16 +165,16 @@ class Page extends Model
     public function getCurrentDraft(): ?PageVersion
     {
         $currentVersion = $this->currentVersion;
-        
+
         if (!$currentVersion) {
             return null;
         }
-        
+
         // Если текущая версия сама является черновиком, то активного черновика нет
         if ($currentVersion->is_draft) {
             return null;
         }
-        
+
         // Находим черновики, которые являются дочерними для текущей версии
         return $this->versions()
             ->where('is_draft', true)
@@ -196,16 +197,16 @@ class Page extends Model
     public function createDraft(array $data = []): PageVersion
     {
         $currentVersion = $this->currentVersion;
-        
+
         if (!$currentVersion) {
             throw new \Exception('Страница не имеет текущей версии');
         }
-        
+
         $draft = $currentVersion->createNewVersion($data);
-        
+
         // Устанавливаем флаг is_draft = true для нового черновика
         $draft->update(['is_draft' => true]);
-        
+
         return $draft;
     }
 
@@ -282,21 +283,21 @@ class Page extends Model
     {
         // Только черновики могут быть актуализированными
         $currentVersion = $this->currentVersion;
-        
+
         if (!$currentVersion) {
             return false;
         }
-        
+
         // Проверяем, есть ли другие версии после текущей
         $hasNewerVersions = $this->versions()
             ->where('id', '!=', $currentVersion->id)
             ->where('created_at', '>', $currentVersion->created_at)
             ->exists();
-        
+
         if (!$hasNewerVersions) {
             return false;
         }
-        
+
         return $this->completedActualization()->exists();
     }
 
@@ -342,5 +343,15 @@ class Page extends Model
     public function getFilesAttribute(): array
     {
         return $this->currentVersion?->files ?? [];
+    }
+
+    public function getVersion(int $id): PageVersion
+    {
+        return PageVersion::where(['page_id' => $this->id, 'id' => $id])->firstOrFail();
+    }
+
+    public function checkCurrentVersion(int $version_id): bool
+    {
+        return $this->currentVersion->id === $version_id;
     }
 }
