@@ -29,18 +29,27 @@ class DocumentationControl implements DocumentationControlInterface
         Log::info('Updating page with draft logic', ['page_id' => $page->id]);
         
         $currentDraft = $this->draftService->getCurrentDraft($page);
-
-        if ($currentDraft) {
-            // Обновляем существующий черновик
-            $currentDraft->update($data->toArray());
-            Log::info('Existing draft updated', ['draft_id' => $currentDraft->id]);
-            return $currentDraft;
-        } else {
-            // Создаем новый черновик
-            $draft = $this->draftService->createDraft($page, $data);
-            Log::info('New draft created', ['draft_id' => $draft->id]);
-            return $draft;
+        
+        if (!$currentDraft) {
+            throw new \Exception('Черновик не найден. Создайте черновик перед редактированием.');
         }
+        
+        // Обновляем существующий черновик
+        $currentDraft->update($data->toArray());
+        Log::info('Existing draft updated', ['draft_id' => $currentDraft->id]);
+        return $currentDraft;
+    }
+
+    // Новый метод для создания черновика из текущей версии
+    public function createDraftFromCurrentVersion(Page $page, PageDataDTO $data): PageVersion
+    {
+        Log::info('Creating draft from current version', ['page_id' => $page->id]);
+        
+        // Создаем новый черновик на основе данных формы
+        $draft = $this->draftService->createDraft($page, $data);
+        
+        Log::info('Draft created from current version', ['draft_id' => $draft->id]);
+        return $draft;
     }
 
     public function approveDraftWithTask(Page $page, bool $createTask = false): DraftApprovalResultDTO

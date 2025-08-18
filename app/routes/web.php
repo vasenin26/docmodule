@@ -46,6 +46,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('pages/{page}/versions', [PageController::class, 'versions'])->name('pages.versions');
     Route::post('pages/{page}/restore/{version}', [PageController::class, 'restore'])->name('pages.restore');
     
+    // Новый маршрут для создания черновика
+    Route::post('pages/{page}/create-draft', [PageController::class, 'createDraft'])->name('pages.create-draft');
+    
     // Маршруты для работы с версиями страниц
     Route::get('pages/{page}/versions/{version}', [PageController::class, 'showVersion'])->name('pages.versions.show');
     Route::get('pages/{page}/versions/{version}/edit', [PageController::class, 'editVersion'])->name('pages.versions.edit');

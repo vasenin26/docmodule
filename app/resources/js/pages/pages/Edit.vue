@@ -15,22 +15,6 @@
         </template>
 
         <div class="max-w-4xl">
-            <!-- Предупреждение о существующем черновике -->
-            <!-- <div v-if="hasActiveDraft" class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-6">
-        <p class="text-sm text-yellow-800">
-          <strong>Внимание:</strong> У этой страницы есть активный черновик. 
-          Вы можете продолжить редактирование черновика или создать новый.
-        </p>
-        <div class="mt-2 flex gap-2">
-          <Button @click="continueDraft" variant="outline" size="sm">
-            Продолжить черновик
-          </Button>
-          <Button @click="createNewDraft" variant="outline" size="sm">
-            Создать новый черновик
-          </Button>
-        </div>
-      </div> -->
-
             <!-- Информация о версии -->
             <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
                 <p class="text-sm text-gray-800">
@@ -100,12 +84,27 @@
 
                         <!-- Кнопки -->
                         <div class="flex items-center gap-4">
-                            <Button type="submit" :disabled="processing">
+                            <!-- Кнопка "Создать черновик" для текущей версии -->
+                            <Button
+                                v-if="isCurrentVersion && !currentDraft"
+                                type="submit"
+                                :disabled="processing"
+                                @click="createDraft"
+                            >
+                                {{ processing ? 'Создание...' : 'Создать черновик' }}
+                            </Button>
+                            
+                            <!-- Кнопка "Сохранить" для черновика -->
+                            <Button
+                                v-else
+                                type="submit"
+                                :disabled="processing"
+                            >
                                 {{ processing ? 'Сохранение...' : 
-                                   currentDraft ? 'Обновить черновик' : 
-                                   version.is_current ? 'Создать черновик' : 'Создать новую версию' 
+                                   currentDraft ? 'Сохранить' : 'Создать новую версию' 
                                 }}
                             </Button>
+                            
                             <Button v-if="currentDraft" type="button" @click="approveDraft" variant="default"> Утвердить черновик </Button>
                             <Button type="button" variant="outline" @click="cancel"> Отмена </Button>
                         </div>
@@ -164,6 +163,7 @@ const props = withDefaults(
     defineProps<{
         page: Page;
         version: Version;
+        isCurrentVersion?: boolean; // Новый проп
         currentDraft?: Draft;
         hasActiveDraft?: boolean;
         errors?: Record<string, string>;
@@ -171,6 +171,7 @@ const props = withDefaults(
     {
         errors: () => ({}),
         hasActiveDraft: false,
+        isCurrentVersion: false,
     },
 );
 
@@ -179,12 +180,33 @@ const form = useForm({
     content: props.currentDraft?.content || props.version?.content || '',
     files: props.currentDraft?.files || props.version?.files || [],
     createTask: false,
+    is_current_version: false as boolean,
 });
 
 const processing = ref(false);
 
+// Метод для создания черновика
+const createDraft = () => {
+    processing.value = true;
+    
+    form.post(route('pages.create-draft', props.page?.id), {
+        onSuccess: () => {
+            processing.value = false;
+        },
+        onError: () => {
+            processing.value = false;
+        },
+    });
+};
+
+// Метод для сохранения черновика
 const submit = () => {
     processing.value = true;
+    
+    // Добавляем флаг для текущей версии
+    if (props.isCurrentVersion) {
+        form.is_current_version = true;
+    }
     
     // Используем URL для версии, если это не текущая версия
     const url = props.version.is_current 

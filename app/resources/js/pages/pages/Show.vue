@@ -12,9 +12,21 @@
                         :page-id="page.id"
                         :can-actualize="canActualize"
                     />
-                    <Button as-child>
-                        <Link :href="route('pages.edit', page.id)"> Редактировать </Link>
+                    
+                    <!-- Кнопка "Продолжить редактирование" для черновика -->
+                    <Button v-if="page.hasActiveDraft" as-child>
+                        <Link :href="route('pages.versions.edit', [page.id, page.currentDraft.id])">
+                            Продолжить редактирование
+                        </Link>
                     </Button>
+                    
+                    <!-- Кнопка "Редактировать" для текущей версии -->
+                    <Button v-else as-child>
+                        <Link :href="route('pages.edit', page.id)">
+                            Редактировать
+                        </Link>
+                    </Button>
+                    
                     <Button as-child variant="outline">
                         <Link :href="route('pages.versions', page.id)"> Версии </Link>
                     </Button>
@@ -140,23 +152,20 @@
                 <CardContent>
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                            <span class="font-medium">Base ID:</span>
-                            <span class="ml-2 text-muted-foreground">{{ page.base_id || 'Первая версия' }}</span>
+                            <span class="font-medium">Текущая версия:</span>
+                            <span class="ml-2 text-muted-foreground">{{ version.id }}</span>
                         </div>
                         <div>
-                            <span class="font-medium">Previous Version ID:</span>
+                            <span class="font-medium">Предыдущая версия:</span>
                             <span class="ml-2 text-muted-foreground">{{ page.previous_version_id || 'Первая версия' }}</span>
                         </div>
                         <div>
-                            <span class="font-medium">Текущая версия:</span>
-                            <span class="ml-2 text-muted-foreground">{{ page.current ? 'Да' : 'Нет' }}</span>
+                            <span class="font-medium">Дата создания версии:</span>
+                            <span class="ml-2 text-muted-foreground">{{ formatDate(version.created_at) }}</span>
                         </div>
                         <div>
-                            <span class="font-medium">Статус:</span>
-                            <span class="ml-2 text-muted-foreground">
-                                <span v-if="page.current" class="rounded bg-green-100 px-2 py-1 text-xs text-green-800"> Текущая </span>
-                                <span v-else class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-800"> Архивная </span>
-                            </span>
+                            <span class="font-medium">Дата создания предыдущей версии:</span>
+                            <span class="ml-2 text-muted-foreground">{{ previousVersion ? formatDate(previousVersion.created_at) : 'Первая версия' }}</span>
                         </div>
                     </div>
                 </CardContent>
@@ -247,16 +256,34 @@ interface Page {
     children: Page[];
     base_id?: number;
     previous_version_id?: number;
+    version_id?: number;
     current: boolean;
     currentDraft?: Draft;
     diff_descriptions?: TaskDescription[];
     hasActiveActualization?: boolean;
     isActualized?: boolean;
     actualizationInfo?: any;
+    hasActiveDraft?: boolean;
+}
+
+interface Version {
+    id: number;
+    title: string;
+    content: string;
+    files?: string[];
+    created_at: string;
+    is_current: boolean;
+}
+
+interface PreviousVersion {
+    id: number;
+    created_at: string;
 }
 
 const props = defineProps<{
     page: Page;
+    version: Version;
+    previousVersion?: PreviousVersion;
 }>();
 
 const canCreateTask = computed(() => {

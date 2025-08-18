@@ -18,14 +18,31 @@ readonly class PageEditDTO
     {
         $pageData = [
             'id' => $page->id,
-            'title' => $page->title ?? 'Без названия',
-            'content' => $page->content ?? '',
-            'files' => $page->files ?? [],
+            'title' => $page->currentVersion?->title ?? 'Без названия',
+            'content' => $page->currentVersion?->content ?? '',
+            'files' => $page->currentVersion?->files ?? [],
             'parent_id' => $page->parent_id,
             'project_id' => $page->project_id,
             'created_by' => $page->created_by,
             'created_at' => $page->created_at->toISOString(),
             'updated_at' => $page->updated_at->toISOString(),
+            'creator' => $page->creator ? [
+                'id' => $page->creator->id,
+                'name' => $page->creator->name,
+                'email' => $page->creator->email,
+            ] : null,
+            'project' => $page->project ? [
+                'id' => $page->project->id,
+                'title' => $page->project->title,
+            ] : null,
+            'parent' => $page->parent ? [
+                'id' => $page->parent->id,
+                'title' => $page->parent->currentVersion?->title ?? 'Без названия',
+            ] : null,
+            'children' => $page->children->map(fn($child) => [
+                'id' => $child->id,
+                'title' => $child->currentVersion?->title ?? 'Без названия',
+            ])->toArray(),
         ];
 
         $currentDraft = null;

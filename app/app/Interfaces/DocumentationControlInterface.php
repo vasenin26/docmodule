@@ -16,6 +16,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 interface DocumentationControlInterface
 {
     public function updatePageWithDraftLogic(Page $page, PageDataDTO $data): PageVersion;
+    public function createDraftFromCurrentVersion(Page $page, PageDataDTO $data): PageVersion;
     public function approveDraftWithTask(Page $page, bool $createTask = false): DraftApprovalResultDTO;
     public function getCurrentPageAggregate(Page $page): PageAggregateDTO;
     

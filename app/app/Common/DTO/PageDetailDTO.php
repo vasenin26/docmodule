@@ -30,6 +30,8 @@ readonly class PageDetailDTO
             'created_by' => $page->created_by,
             'created_at' => $page->created_at->toISOString(),
             'updated_at' => $page->updated_at->toISOString(),
+            'previous_version_id' => $page->currentVersion?->previous_version_id,
+            'version_id' => $page->version_id,
             'creator' => [
                 'id' => $page->creator->id,
                 'name' => $page->creator->name,

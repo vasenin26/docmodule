@@ -173,7 +173,7 @@ class PageController extends Controller
             'children.creator', 
             'parent', 
             'project', 
-            'currentVersion',
+            'currentVersion.previousVersion',
             'diffDescriptions.creator',
             'latestActualization.llmChat',
             'latestActualization.createdBy'
@@ -194,6 +194,10 @@ class PageController extends Controller
                 'created_at' => $page->currentVersion->created_at->toISOString(),
                 'is_current' => true,
             ],
+            'previousVersion' => $page->currentVersion->previousVersion ? [
+                'id' => $page->currentVersion->previousVersion->id,
+                'created_at' => $page->currentVersion->previousVersion->created_at->toISOString(),
+            ] : null,
         ]);
     }
 
@@ -219,8 +223,28 @@ class PageController extends Controller
                 'created_at' => $page->currentVersion->created_at->toISOString(),
                 'is_current' => true,
             ],
+            'isCurrentVersion' => true, // Новый флаг
             'errors' => (object) [],
         ]);
+    }
+
+    /**
+     * Create a draft from current version.
+     */
+    public function createDraft(Request $request, Page $page)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'nullable|string',
+            'files' => 'nullable|array',
+            'files.*' => 'required|string|url',
+        ]);
+        
+        $pageData = PageDataDTO::fromArray($validated);
+        $draft = $this->documentationControl->createDraftFromCurrentVersion($page, $pageData);
+        
+        return redirect()->route('pages.versions.edit', [$page->id, $draft->id])
+            ->with('success', 'Черновик создан.');
     }
 
     /**
@@ -347,11 +371,17 @@ class PageController extends Controller
         // Создаем DTO из валидированных данных
         $pageData = PageDataDTO::fromArray($validated);
         
-        // Получаем DocumentationControl через DI в конструкторе
-        $draft = $this->documentationControl->updatePageWithDraftLogic($page, $pageData);
+        // Если это текущая версия, создаем черновик
+        if ($request->input('is_current_version', false)) {
+            $draft = $this->documentationControl->createDraftFromCurrentVersion($page, $pageData);
+            return redirect()->route('pages.versions.edit', [$page->id, $draft->id])
+                ->with('success', 'Черновик создан.');
+        }
         
+        // Иначе обновляем существующий черновик
+        $draft = $this->documentationControl->updatePageWithDraftLogic($page, $pageData);
         return redirect()->back()
-            ->with('success', $page->hasActiveDraft() ? 'Черновик обновлен.' : 'Черновик создан.');
+            ->with('success', 'Черновик обновлен.');
     }
 
     /**
