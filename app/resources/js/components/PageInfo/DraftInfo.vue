@@ -12,7 +12,7 @@
             </div>
             <div class="flex gap-2">
                 <Button as-child variant="outline" size="sm">
-                    <Link :href="route('pages.edit', pageId)"> 
+                    <Link :href="route('pages.versions.edit', [pageId, draft.id])"> 
                         Продолжить редактирование 
                     </Link>
                 </Button>
