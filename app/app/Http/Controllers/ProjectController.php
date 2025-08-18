@@ -63,9 +63,9 @@ class ProjectController extends Controller
         }
 
         $project->load(['owner', 'repositories', 'pages' => function ($query) {
-            $query->where('current', true)
+            $query->whereNotNull('version_id')
                 ->whereNull('parent_id')
-                ->with(['creator', 'children'])
+                ->with(['creator', 'children', 'currentVersion'])
                 ->orderBy('created_at', 'desc');
         }]);
 

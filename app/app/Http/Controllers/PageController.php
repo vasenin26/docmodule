@@ -6,6 +6,7 @@ use App\Http\Requests\StorePageRequest;
 use App\Http\Requests\UpdatePageRequest;
 use App\Jobs\CalculateVersionDifferenceJob;
 use App\Models\Page;
+use App\Models\PageVersion;
 use App\Models\PageDiffDescription;
 use App\Models\Project;
 use App\Services\TaskManagementService;
@@ -20,8 +21,8 @@ class PageController extends Controller
      */
     public function index(Request $request, Project $project = null)
     {
-        $query = Page::where('current', true)
-            ->with(['creator', 'children.creator', 'project']);
+        $query = Page::whereNotNull('version_id')
+            ->with(['creator', 'children.creator', 'project', 'currentVersion']);
 
         // Фильтрация по проекту (если это страницы в контексте проекта)
         if ($project) {
@@ -42,7 +43,7 @@ class PageController extends Controller
         // Поиск по названию и содержимому
         if ($request->has('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
+            $query->whereHas('currentVersion', function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                   ->orWhere('content', 'like', "%{$search}%");
             });
@@ -79,8 +80,9 @@ class PageController extends Controller
 
         $parentPage = null;
         if ($request->has('parent_id')) {
-            $parentPage = Page::where('current', true)
+            $parentPage = Page::whereNotNull('version_id')
                 ->where('id', $request->parent_id)
+                ->with('currentVersion')
                 ->first();
         }
 
@@ -121,17 +123,23 @@ class PageController extends Controller
             }
         }
 
+        // Создаем страницу
         $page = Page::create([
+            'parent_id' => $validated['parent_id'] ?? null,
+            'created_by' => Auth::id(),
+            'project_id' => $projectId,
+        ]);
+
+        // Создаем первую версию
+        $version = PageVersion::create([
+            'page_id' => $page->id,
             'title' => $validated['title'],
             'content' => $validated['content'],
             'files' => $validated['files'] ?? [],
-            'created_by' => Auth::id(),
-            'parent_id' => $validated['parent_id'] ?? null,
-            'project_id' => $projectId,
-            'base_id' => null, // Для первой версии base_id = null
-            'previous_version_id' => null, // Для первой версии previous_version_id = null
-            'current' => true,
         ]);
+
+        // Устанавливаем первую версию как текущую
+        $page->update(['version_id' => $version->id]);
 
         // Определяем куда перенаправить
         if ($project) {
@@ -153,6 +161,7 @@ class PageController extends Controller
             'children.creator', 
             'parent', 
             'project', 
+            'currentVersion',
             'diffDescriptions.creator',
             'latestActualization.llmChat',
             'latestActualization.createdBy'
@@ -176,7 +185,7 @@ class PageController extends Controller
      */
     public function edit(string $id)
     {
-        $page = Page::findOrFail($id);
+        $page = Page::with('currentVersion')->findOrFail($id);
         $currentDraft = $page->getCurrentDraft();
 
         return Inertia::render('pages/Edit', [
@@ -194,7 +203,7 @@ class PageController extends Controller
     {
         $validated = $request->validated();
         
-        $page = Page::where('current', true)->findOrFail($id);
+        $page = Page::whereNotNull('version_id')->findOrFail($id);
         $currentDraft = $page->getCurrentDraft();
 
         if ($currentDraft) {
@@ -225,11 +234,13 @@ class PageController extends Controller
      */
     public function destroy(string $id)
     {
-        $page = Page::where('current', true)->findOrFail($id);
+        $page = Page::whereNotNull('version_id')->findOrFail($id);
 
         // Удаляем все версии страницы
-        $baseId = $page->base_id ?? $page->id;
-        Page::where('base_id', $baseId)->delete();
+        $page->versions()->delete();
+        
+        // Удаляем страницу
+        $page->delete();
 
         return redirect()->route('pages.index')
             ->with('success', 'Страница успешно удалена.');
@@ -240,7 +251,7 @@ class PageController extends Controller
      */
     public function versions(string $id)
     {
-        $page = Page::findOrFail($id);
+        $page = Page::with('currentVersion')->findOrFail($id);
 
         // Получаем полную цепочку версий
         $versions = $page->getVersionChain();
@@ -257,14 +268,11 @@ class PageController extends Controller
     public function restore(string $id, string $versionId)
     {
         $page = Page::findOrFail($id);
-        $version = Page::findOrFail($versionId);
+        $version = PageVersion::findOrFail($versionId);
 
-        // Проверяем, что версия принадлежит той же цепочке
-        $pageChain = $page->getVersionChain();
-        $versionInChain = $pageChain->where('id', $versionId)->first();
-
-        if (!$versionInChain) {
-            return redirect()->back()->with('error', 'Версия не найдена в цепочке страницы.');
+        // Проверяем, что версия принадлежит странице
+        if ($version->page_id !== $page->id) {
+            return redirect()->back()->with('error', 'Версия не принадлежит данной странице.');
         }
 
         // Создаем новую версию на основе выбранной
@@ -283,21 +291,21 @@ class PageController extends Controller
      */
     public function approveDraft(Request $request, string $id, TaskManagementService $taskService)
     {
-        $draft = Page::findOrFail($id);
+        $page = Page::findOrFail($id);
+        $draft = $page->getCurrentDraft();
         
-        // Проверяем, является ли страница черновиком
-        if (!$draft->isDraft()) {
-            return redirect()->back()->with('error', 'Страница не является черновиком.');
+        if (!$draft) {
+            return redirect()->back()->with('error', 'Черновик не найден.');
         }
         
         // Утверждаем черновик
-        $draft->approveDraft();
+        $page->approveDraft($draft);
 
         // Создаем задачу только если пользователь это указал
         if ($request->boolean('create_task')) {
             try {
                 // Создаем PageDiffDescription синхронно и запускаем Jobs асинхронно
-                $diffDescription = $taskService->createTaskForPage($draft);
+                $diffDescription = $taskService->createTaskForPage($page);
                 
                 // Сразу перенаправляем на страницу задачи
                 // Jobs будут обрабатывать контент в фоне
@@ -305,13 +313,13 @@ class PageController extends Controller
                     ->with('success', 'Черновик утвержден. Задача создана и обрабатывается.');
                     
             } catch (\Exception $e) {
-                return redirect()->route('pages.show', $draft->id)
+                return redirect()->route('pages.show', $page->id)
                     ->with('error', 'Черновик утвержден, но не удалось создать задачу: ' . $e->getMessage());
             }
         }
 
         // Переадресация на страницу просмотра если задача не создавалась
-        return redirect()->route('pages.show', $draft->id)
+        return redirect()->route('pages.show', $page->id)
             ->with('success', 'Черновик утвержден.');
     }
 
@@ -320,7 +328,7 @@ class PageController extends Controller
      */
     public function getDraft(string $id)
     {
-        $page = Page::where('current', true)->findOrFail($id);
+        $page = Page::whereNotNull('version_id')->findOrFail($id);
         $draft = $page->getCurrentDraft();
         
         if (!$draft) {
@@ -335,7 +343,7 @@ class PageController extends Controller
      */
     public function deleteDraft(string $id)
     {
-        $page = Page::where('current', true)->findOrFail($id);
+        $page = Page::whereNotNull('version_id')->findOrFail($id);
         $draft = $page->getCurrentDraft();
         
         if (!$draft) {
@@ -353,7 +361,7 @@ class PageController extends Controller
      */
     public function createTask(string $id, TaskManagementService $taskService)
     {
-        $page = Page::where('current', true)->findOrFail($id);
+        $page = Page::whereNotNull('version_id')->findOrFail($id);
         
         try {
             // Создаем PageDiffDescription синхронно и запускаем Jobs асинхронно

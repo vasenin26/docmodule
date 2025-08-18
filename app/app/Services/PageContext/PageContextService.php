@@ -34,8 +34,8 @@ class PageContextService implements PageContextServiceInterface
         return Cache::remember($cacheKey, 300, function () use ($pageId) {
             $page = Page::where('id', $pageId)
                 ->where('project_id', $this->projectId)
-                ->where('current', true)
-                ->with(['creator', 'project', 'parent', 'children'])
+                ->whereNotNull('version_id')
+                ->with(['creator', 'project', 'parent', 'children', 'currentVersion'])
                 ->first();
 
             if (!$page) {
@@ -57,8 +57,8 @@ class PageContextService implements PageContextServiceInterface
 
         return Cache::remember($cacheKey, 600, function () {
             return Page::where('project_id', $this->projectId)
-                ->where('current', true)
-                ->with(['creator', 'parent', 'children'])
+                ->whereNotNull('version_id')
+                ->with(['creator', 'parent', 'children', 'currentVersion'])
                 ->orderBy('created_at', 'desc')
                 ->get();
         });
@@ -72,9 +72,9 @@ class PageContextService implements PageContextServiceInterface
 
         return Cache::remember($cacheKey, 600, function () {
             return Page::where('project_id', $this->projectId)
-                ->where('current', true)
-                ->with(['creator', 'project', 'parent', 'children', 'actualizations'])
-                ->orderBy('title')
+                ->whereNotNull('version_id')
+                ->with(['creator', 'project', 'parent', 'children', 'currentVersion', 'actualizations'])
+                ->orderBy('created_at', 'desc')
                 ->get();
         });
     }
@@ -90,8 +90,8 @@ class PageContextService implements PageContextServiceInterface
 
         return Cache::remember($cacheKey, 600, function () use ($rootPageId) {
             $query = Page::where('project_id', $this->projectId)
-                ->where('current', true)
-                ->with(['creator', 'children.creator', 'children.children']);
+                ->whereNotNull('version_id')
+                ->with(['creator', 'children.creator', 'children.children', 'currentVersion']);
 
             if ($rootPageId) {
                 // Проверяем, что корневая страница принадлежит проекту
@@ -122,9 +122,9 @@ class PageContextService implements PageContextServiceInterface
         return Cache::remember($cacheKey, 300, function () use ($pageId) {
             return Page::where('parent_id', $pageId)
                 ->where('project_id', $this->projectId)
-                ->where('current', true)
-                ->with(['creator', 'children'])
-                ->orderBy('title')
+                ->whereNotNull('version_id')
+                ->with(['creator', 'children', 'currentVersion'])
+                ->orderBy('created_at', 'desc')
                 ->get();
         });
     }
@@ -163,8 +163,9 @@ class PageContextService implements PageContextServiceInterface
             // Поиск страниц с общими файлами
             if (!empty($page->files)) {
                 $relatedByFiles = Page::where('project_id', $this->projectId)
-                    ->where('current', true)
+                    ->whereNotNull('version_id')
                     ->where('id', '!=', $pageId)
+                    ->with('currentVersion')
                     ->get()
                     ->filter(function ($otherPage) use ($page) {
                         if (empty($otherPage->files)) {
@@ -199,9 +200,10 @@ class PageContextService implements PageContextServiceInterface
         return Cache::remember($cacheKey, 300, function () use ($pageId) {
             return Page::where('id', $pageId)
                 ->where('project_id', $this->projectId)
-                ->where('current', true)
+                ->whereNotNull('version_id')
                 ->with([
                     'creator',
+                    'currentVersion',
                     'actualizations.llmChat',
                     'actualizations.createdBy',
                     'latestActualization',
@@ -242,7 +244,7 @@ class PageContextService implements PageContextServiceInterface
             return PageDiffDescription::where('page_id', $pageId)
                 ->whereHas('page', function ($query) {
                     $query->where('project_id', $this->projectId)
-                        ->where('current', true);
+                        ->whereNotNull('version_id');
                 })
                 ->with(['creator', 'llmChat', 'techplane'])
                 ->orderBy('created_at', 'desc')
@@ -257,7 +259,7 @@ class PageContextService implements PageContextServiceInterface
         return Cache::remember($cacheKey, 60, function () use ($pageId) {
             return Page::where('id', $pageId)
                 ->where('project_id', $this->projectId)
-                ->where('current', true)
+                ->whereNotNull('version_id')
                 ->exists();
         });
     }

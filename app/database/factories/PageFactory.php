@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Page;
+use App\Models\PageVersion;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,12 +20,11 @@ class PageFactory extends Factory
     public function definition(): array
     {
         return [
-            'title' => fake()->sentence(3, 6),
-            'content' => fake()->paragraphs(3, true),
+            'parent_id' => null,
+            'version_id' => null, // Будет установлено после создания версии
             'created_by' => User::factory(),
-            'base_id' => null, // Для первой версии base_id = null
-            'previous_version_id' => null, // Для первой версии previous_version_id = null
-            'current' => true,
+            'deleted_by' => null,
+            'deleted_at' => null,
         ];
     }
 
@@ -36,7 +36,6 @@ class PageFactory extends Factory
         return $this->afterCreating(function (Page $page) {
             Page::factory(rand(2, 5))->create([
                 'parent_id' => $page->id,
-                'current' => true,
             ]);
         });
     }
@@ -47,28 +46,67 @@ class PageFactory extends Factory
     public function withVersions(): static
     {
         return $this->afterCreating(function (Page $page) {
-            // Создаем несколько версий с корректной цепочкой
-            $previousVersion = $page;
+            // Создаем первую версию
+            $firstVersion = PageVersion::factory()->create([
+                'page_id' => $page->id,
+                'title' => fake()->sentence(3, 6),
+                'content' => fake()->paragraphs(3, true),
+            ]);
+            
+            // Устанавливаем первую версию как текущую
+            $page->update(['version_id' => $firstVersion->id]);
+            
+            // Создаем несколько дополнительных версий
+            $previousVersion = $firstVersion;
             for ($i = 0; $i < rand(2, 4); $i++) {
-                $newVersion = $previousVersion->createNewVersion([
+                $newVersion = PageVersion::factory()->create([
+                    'page_id' => $page->id,
                     'title' => fake()->sentence(3, 6),
                     'content' => fake()->paragraphs(3, true),
+                    'previous_version_id' => $previousVersion->id,
                 ]);
                 $previousVersion = $newVersion;
             }
+            
+            // Устанавливаем последнюю версию как текущую
+            $page->update(['version_id' => $newVersion->id]);
         });
     }
 
     /**
-     * Создать страницу как новую версию существующей
+     * Создать страницу с черновиком
      */
-    public function asVersion(Page $basePage): static
+    public function withDraft(): static
     {
-        return $this->state(function (array $attributes) use ($basePage) {
+        return $this->afterCreating(function (Page $page) {
+            // Создаем текущую версию
+            $currentVersion = PageVersion::factory()->create([
+                'page_id' => $page->id,
+                'title' => fake()->sentence(3, 6),
+                'content' => fake()->paragraphs(3, true),
+            ]);
+            
+            $page->update(['version_id' => $currentVersion->id]);
+            
+            // Создаем черновик
+            PageVersion::factory()->create([
+                'page_id' => $page->id,
+                'title' => fake()->sentence(3, 6),
+                'content' => fake()->paragraphs(3, true),
+                'previous_version_id' => $currentVersion->id,
+            ]);
+        });
+    }
+
+    /**
+     * Создать удаленную страницу
+     */
+    public function deleted(): static
+    {
+        return $this->state(function (array $attributes) {
             return [
-                'base_id' => $basePage->base_id ?? $basePage->id,
-                'previous_version_id' => $basePage->id,
-                'current' => true,
+                'deleted_by' => User::factory(),
+                'deleted_at' => now(),
             ];
         });
     }

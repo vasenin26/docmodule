@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Page;
+use App\Models\PageVersion;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -31,14 +32,20 @@ class PageSeeder extends Seeder
         ];
 
         foreach ($mainPages as $title => $content) {
+            // Создаем страницу
             $page = Page::create([
+                'created_by' => $user->id,
+            ]);
+
+            // Создаем первую версию
+            $version = PageVersion::create([
+                'page_id' => $page->id,
                 'title' => $title,
                 'content' => $content,
-                'created_by' => $user->id,
-                'base_id' => null, // Первая версия
-                'previous_version_id' => null, // Первая версия
-                'current' => true,
             ]);
+
+            // Устанавливаем первую версию как текущую
+            $page->update(['version_id' => $version->id]);
 
             // Создаем дочерние страницы для некоторых основных страниц
             if (in_array($title, ['Документация API', 'Руководство пользователя'])) {
@@ -49,28 +56,39 @@ class PageSeeder extends Seeder
                 ];
 
                 foreach ($childPages as $childTitle => $childContent) {
-                    Page::create([
-                        'title' => $childTitle,
-                        'content' => $childContent,
+                    // Создаем дочернюю страницу
+                    $childPage = Page::create([
                         'created_by' => $user->id,
                         'parent_id' => $page->id,
-                        'base_id' => null, // Первая версия
-                        'previous_version_id' => null, // Первая версия
-                        'current' => true,
                     ]);
+
+                    // Создаем первую версию дочерней страницы
+                    $childVersion = PageVersion::create([
+                        'page_id' => $childPage->id,
+                        'title' => $childTitle,
+                        'content' => $childContent,
+                    ]);
+
+                    // Устанавливаем первую версию как текущую
+                    $childPage->update(['version_id' => $childVersion->id]);
                 }
             }
         }
 
         // Создаем страницу с версиями для демонстрации
         $versionPage = Page::create([
+            'created_by' => $user->id,
+        ]);
+
+        // Создаем первую версию
+        $firstVersion = PageVersion::create([
+            'page_id' => $versionPage->id,
             'title' => 'Страница с версиями',
             'content' => 'Первая версия страницы',
-            'created_by' => $user->id,
-            'base_id' => null, // Первая версия
-            'previous_version_id' => null, // Первая версия
-            'current' => false, // Будет обновлено при создании новых версий
         ]);
+
+        // Устанавливаем первую версию как текущую
+        $versionPage->update(['version_id' => $firstVersion->id]);
 
         // Создаем несколько версий с корректной цепочкой
         $versions = [
@@ -78,13 +96,18 @@ class PageSeeder extends Seeder
             'Третья версия страницы' => 'Финальная версия с улучшениями',
         ];
 
-        $previousVersion = $versionPage;
+        $previousVersion = $firstVersion;
         foreach ($versions as $title => $content) {
-            $newVersion = $previousVersion->createNewVersion([
+            $newVersion = PageVersion::create([
+                'page_id' => $versionPage->id,
                 'title' => $title,
                 'content' => $content,
+                'previous_version_id' => $previousVersion->id,
             ]);
             $previousVersion = $newVersion;
         }
+
+        // Устанавливаем последнюю версию как текущую
+        $versionPage->update(['version_id' => $newVersion->id]);
     }
 }

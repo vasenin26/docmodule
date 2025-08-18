@@ -95,16 +95,31 @@ export interface Repository {
     updated_at: string;
 }
 
-export interface Page {
+export interface PageVersion {
     id: number;
+    page_id: number;
     title: string;
     content: string;
+    previous_version_id?: number | null;
+    files: string[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Page {
+    id: number;
+    parent_id?: number | null;
+    version_id?: number | null;
     created_at: string;
     created_by: number;
     creator: User;
     project?: Project;
     children: Page[];
+    currentVersion?: PageVersion;
     hasActiveDraft?: boolean;
+    // Для обратной совместимости
+    title?: string;
+    content?: string;
 }
 
 export interface PagesData {

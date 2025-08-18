@@ -37,7 +37,7 @@ class TaskController extends Controller implements HasMiddleware
         // Загружаем связанные данные включая техплан
         $task->load([
             'page.creator', 
-            'page.previousVersion', 
+            'page.currentVersion', 
             'creator', 
             'llmChat',
             'techplane.creator'
@@ -61,10 +61,10 @@ class TaskController extends Controller implements HasMiddleware
                         'name' => $task->page->creator->name,
                         'email' => $task->page->creator->email,
                     ],
-                    'previous_version' => $task->page->previousVersion ? [
-                        'id' => $task->page->previousVersion->id,
-                        'title' => $task->page->previousVersion->title,
-                        'content' => $task->page->previousVersion->content,
+                    'current_version' => $task->page->currentVersion ? [
+                        'id' => $task->page->currentVersion->id,
+                        'title' => $task->page->currentVersion->title,
+                        'content' => $task->page->currentVersion->content,
                     ] : null,
                 ],
                 'creator' => [
@@ -105,7 +105,7 @@ class TaskController extends Controller implements HasMiddleware
         // Загружаем связанные данные
         $task->load([
             'page.creator', 
-            'page.previousVersion', 
+            'page.currentVersion', 
             'creator', 
             'llmChat'
         ]);
@@ -128,10 +128,10 @@ class TaskController extends Controller implements HasMiddleware
                         'name' => $task->page->creator->name,
                         'email' => $task->page->creator->email,
                     ],
-                    'previous_version' => $task->page->previousVersion ? [
-                        'id' => $task->page->previousVersion->id,
-                        'title' => $task->page->previousVersion->title,
-                        'content' => $task->page->previousVersion->content,
+                    'current_version' => $task->page->currentVersion ? [
+                        'id' => $task->page->currentVersion->id,
+                        'title' => $task->page->currentVersion->title,
+                        'content' => $task->page->currentVersion->content,
                     ] : null,
                 ],
                 'creator' => [

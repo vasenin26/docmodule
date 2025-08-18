@@ -21,7 +21,8 @@ class TaskManagementService
         }
         
         // Проверяем, что есть предыдущая версия для сравнения
-        if (!$page->previous_version_id) {
+        $currentVersion = $page->currentVersion;
+        if (!$currentVersion || !$currentVersion->previous_version_id) {
             throw new \Exception('Невозможно создать задачу для первой версии страницы.');
         }
 
@@ -43,9 +44,10 @@ class TaskManagementService
      */
     public function canCreateTaskForPage(Page $page): bool
     {
-        return $page->current && 
-               $page->previous_version_id !== null &&
+        $currentVersion = $page->currentVersion;
+        return $currentVersion && 
+               $currentVersion->previous_version_id !== null &&
                PageDiffDescription::where('page_id', $page->id)->count() === 0 &&
-               !$page->isDraft();
+               !$page->hasActiveDraft();
     }
 }

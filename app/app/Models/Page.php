@@ -9,82 +9,25 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[ObservedBy([PageObserver::class])]
 class Page extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'title',
-        'content',
-        'files',
-        'created_by',
-        'base_id',
-        'previous_version_id',
         'parent_id',
-        'current',
+        'version_id',
+        'created_by',
+        'deleted_by',
+        'deleted_at',
         'project_id',
     ];
 
-    protected $casts = [
-        'current' => 'boolean',
-        'files' => 'array',
+    protected $dates = [
+        'deleted_at',
     ];
-
-    /**
-     * Получить список файлов страницы
-     */
-    public function getFilesAttribute($value): array
-    {
-        return $value ? json_decode($value, true) : [];
-    }
-
-    /**
-     * Валидировать ссылки на файлы в репозиториях
-     */
-    public function validateFilePaths(array $files): bool
-    {
-        foreach ($files as $file) {
-            // Файл должен быть строкой с корректным URL
-            if (!is_string($file)) {
-                return false;
-            }
-            
-            // URL должен быть корректной ссылкой
-            if (!filter_var($file, FILTER_VALIDATE_URL)) {
-                return false;
-            }
-            
-            // Дополнительная проверка, что это ссылка на файл в git репозитории
-            if (!$this->isGitRepositoryFileUrl($file)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Проверить, является ли URL ссылкой на файл в git репозитории
-     */
-    private function isGitRepositoryFileUrl(string $url): bool
-    {
-        // Проверяем популярные git хостинги
-        $gitHosts = ['github.com', 'gitlab.com', 'bitbucket.org'];
-        
-        $parsedUrl = parse_url($url);
-        if (!isset($parsedUrl['host'])) {
-            return false;
-        }
-        
-        foreach ($gitHosts as $host) {
-            if (str_contains($parsedUrl['host'], $host)) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
 
     /**
      * Пользователь, создавший страницу
@@ -92,6 +35,14 @@ class Page extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Пользователь, удаливший страницу
+     */
+    public function deletedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
     }
 
     /**
@@ -103,27 +54,19 @@ class Page extends Model
     }
 
     /**
-     * Базовая страница (для версионирования)
+     * Текущая версия страницы
      */
-    public function basePage(): BelongsTo
+    public function currentVersion(): BelongsTo
     {
-        return $this->belongsTo(Page::class, 'base_id');
+        return $this->belongsTo(PageVersion::class, 'version_id');
     }
 
     /**
-     * Предыдущая версия страницы
+     * Все версии страницы
      */
-    public function previousVersion(): BelongsTo
+    public function versions(): HasMany
     {
-        return $this->belongsTo(Page::class, 'previous_version_id');
-    }
-
-    /**
-     * Следующая версия страницы
-     */
-    public function nextVersion(): HasMany
-    {
-        return $this->hasMany(Page::class, 'previous_version_id');
+        return $this->hasMany(PageVersion::class);
     }
 
     /**
@@ -139,8 +82,7 @@ class Page extends Model
      */
     public function children(): HasMany
     {
-        return $this->hasMany(Page::class, 'parent_id')
-            ->where('current', true);
+        return $this->hasMany(Page::class, 'parent_id');
     }
 
     /**
@@ -152,69 +94,30 @@ class Page extends Model
     }
 
     /**
-     * Все версии страницы (включая текущую)
-     */
-    public function versions(): HasMany
-    {
-        return $this->hasMany(Page::class, 'base_id');
-    }
-
-    /**
-     * Текущая версия страницы
-     */
-    public function currentVersion(): BelongsTo
-    {
-        return $this->belongsTo(Page::class, 'base_id')->where('current', true);
-    }
-
-    /**
      * Создать новую версию страницы
      */
-    public function createNewVersion(array $data = []): Page
+    public function createNewVersion(array $data = []): PageVersion
     {
-        // Определяем base_id для новой версии
-        $baseId = $this->base_id ?? $this->id;
+        $currentVersion = $this->currentVersion;
         
-        // Создаем новую версию
-        $newVersion = $this->replicate();
-        $newVersion->base_id = $baseId;
-        $newVersion->previous_version_id = $this->id;
-        $newVersion->current = true;
-        $newVersion->fill($data);
-        
-        // Обеспечиваем корректное копирование поля files
-        if (!isset($data['files']) && $this->files) {
-            $newVersion->files = $this->files;
+        if (!$currentVersion) {
+            throw new \Exception('Страница не имеет текущей версии');
         }
         
-        $newVersion->save();
-
-        // Убираем флаг current у всех других версий
-        if ($this->base_id) {
-            // Если это не первая версия, обновляем все версии с тем же base_id
-            Page::where('base_id', $baseId)
-                ->where('id', '!=', $newVersion->id)
-                ->update(['current' => false]);
-        } else {
-            // Если это первая версия, обновляем все версии с base_id равным ID этой страницы
-            Page::where('base_id', $this->id)
-                ->where('id', '!=', $newVersion->id)
-                ->update(['current' => false]);
-            // Также обновляем саму первую версию
-            $this->update(['current' => false]);
-        }
-
+        $newVersion = $currentVersion->createNewVersion($data);
+        
+        // Обновляем version_id в странице
+        $this->update(['version_id' => $newVersion->id]);
+        
         return $newVersion;
     }
 
     /**
      * Получить текущую версию страницы
      */
-    public static function getCurrentVersion(int $baseId): ?Page
+    public function getCurrentVersion(): ?PageVersion
     {
-        return static::where('base_id', $baseId)
-            ->where('current', true)
-            ->first();
+        return $this->currentVersion;
     }
 
     /**
@@ -222,44 +125,35 @@ class Page extends Model
      */
     public function getVersionChain(): \Illuminate\Database\Eloquent\Collection
     {
-        // Находим первую версию в цепочке
-        $firstVersion = $this;
-        while ($firstVersion->previous_version_id) {
-            $firstVersion = $firstVersion->previousVersion;
-        }
-
-        // Собираем всю цепочку версий
-        $chain = new \Illuminate\Database\Eloquent\Collection([$firstVersion]);
-        $current = $firstVersion;
+        $currentVersion = $this->currentVersion;
         
-        while ($current->nextVersion->count() > 0) {
-            $current = $current->nextVersion->first();
-            $chain->push($current);
+        if (!$currentVersion) {
+            return new \Illuminate\Database\Eloquent\Collection();
         }
-
-        return $chain;
+        
+        return $currentVersion->getVersionChain();
     }
 
     /**
-     * Получить все текущие страницы (без дочерних, исключая черновики)
+     * Получить все текущие страницы (без дочерних)
      */
     public static function getCurrentPages(): \Illuminate\Database\Eloquent\Collection
     {
-        return static::where('current', true)
-            ->whereNull('parent_id')
-            ->with(['creator', 'children'])
+        return static::whereNull('parent_id')
+            ->whereNotNull('version_id')
+            ->with(['creator', 'children', 'currentVersion'])
             ->orderBy('created_at', 'desc')
             ->get();
     }
 
     /**
-     * Получить дерево страниц (исключая черновики)
+     * Получить дерево страниц
      */
     public static function getPageTree(): \Illuminate\Database\Eloquent\Collection
     {
-        return static::where('current', true)
-            ->whereNull('parent_id')
-            ->with(['creator', 'children.creator'])
+        return static::whereNull('parent_id')
+            ->whereNotNull('version_id')
+            ->with(['creator', 'children.creator', 'currentVersion'])
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -267,43 +161,20 @@ class Page extends Model
     /**
      * Получить текущий черновик страницы
      */
-    public function getCurrentDraft(): ?Page
+    public function getCurrentDraft(): ?PageVersion
     {
-        $baseId = $this->base_id ?? $this->id;
+        $currentVersion = $this->currentVersion;
         
-        // Находим черновики (не текущие версии с тем же base_id)
-        return static::where('base_id', $baseId)
-            ->where('current', false)
-            ->where('previous_version_id', '=', $this->id)
+        if (!$currentVersion) {
+            return null;
+        }
+        
+        // Находим черновики (версии без следующей версии)
+        return $this->versions()
+            ->where('id', '!=', $currentVersion->id)
+            ->whereDoesntHave('nextVersion')
             ->orderBy('created_at', 'desc')
             ->first();
-    }
-
-    /**
-     * Проверить, является ли версия черновиком
-     */
-    public function isDraft(): bool
-    {
-        if ($this->current) {
-            return false;
-        }
-        
-        // Если это первая версия (base_id = null), то это не черновик
-        if (!$this->base_id) {
-            return false;
-        }
-        
-        // Находим текущую версию
-        $currentVersion = static::where('base_id', $this->base_id)
-            ->where('current', true)
-            ->first();
-            
-        if (!$currentVersion) {
-            return false;
-        }
-        
-        // Черновик - это не текущая версия с тем же base_id
-        return $this->id !== $currentVersion->id;
     }
 
     /**
@@ -317,57 +188,32 @@ class Page extends Model
     /**
      * Создать черновик от текущей версии
      */
-    public function createDraft(array $data = []): Page
+    public function createDraft(array $data = []): PageVersion
     {
-        $draft = $this->replicate();
-        $draft->base_id = $this->base_id ?? $this->id;
-        $draft->previous_version_id = $this->id;
-        $draft->current = false; // Ключевое отличие от createNewVersion
-        $draft->fill($data);
+        $currentVersion = $this->currentVersion;
         
-        // Обеспечиваем корректное копирование поля files
-        if (!isset($data['files']) && $this->files) {
-            $draft->files = $this->files;
+        if (!$currentVersion) {
+            throw new \Exception('Страница не имеет текущей версии');
         }
         
-        $draft->save();
-        
-        // Если это первая версия, устанавливаем base_id
-        if (!$this->base_id) {
-            $this->update(['base_id' => $this->id]);
-            $draft->update(['base_id' => $this->id]);
-        }
-        
-        return $draft;
+        return $currentVersion->createNewVersion($data);
     }
 
     /**
      * Утвердить черновик
      */
-    public function approveDraft(): void
+    public function approveDraft(PageVersion $draft): void
     {
-        // Убираем флаг current у всех других версий
-        $baseId = $this->base_id ?? $this->id;
-        Page::where('base_id', $baseId)
-            ->update(['current' => false]);
-        
-        // Делаем черновик текущей версией
-        $this->update(['current' => true]);
-        
-        // Обновляем base_id у черновика, если он еще не установлен
-        if (!$this->base_id) {
-            $this->update(['base_id' => $this->id]);
-        }
+        // Обновляем version_id в странице
+        $this->update(['version_id' => $draft->id]);
     }
 
     /**
      * Получить последнюю утвержденную версию
      */
-    public function getLatestApprovedVersion(): ?Page
+    public function getLatestApprovedVersion(): ?PageVersion
     {
-        return $this->versions()
-            ->where('current', true)
-            ->first();
+        return $this->currentVersion;
     }
 
     /**
@@ -375,14 +221,11 @@ class Page extends Model
      */
     public function scopeDrafts($query)
     {
-        return $query->where('current', false)
-            ->whereNotNull('previous_version_id')
-            ->where('created_at', '>', function($subquery) {
-                $subquery->select('created_at')
-                    ->from('pages as p2')
-                    ->whereColumn('p2.base_id', 'pages.base_id')
-                    ->where('p2.current', true);
-            });
+        return $query->whereHas('versions', function($q) {
+            $q->whereDoesntHave('nextVersion');
+        })->whereHas('currentVersion', function($q) {
+            $q->whereColumn('page_versions.id', '!=', 'pages.version_id');
+        });
     }
 
     /**
@@ -428,7 +271,19 @@ class Page extends Model
     public function isActualized(): bool
     {
         // Только черновики могут быть актуализированными
-        if ($this->current) {
+        $currentVersion = $this->currentVersion;
+        
+        if (!$currentVersion) {
+            return false;
+        }
+        
+        // Проверяем, есть ли другие версии после текущей
+        $hasNewerVersions = $this->versions()
+            ->where('id', '!=', $currentVersion->id)
+            ->where('created_at', '>', $currentVersion->created_at)
+            ->exists();
+        
+        if (!$hasNewerVersions) {
             return false;
         }
         
@@ -448,9 +303,34 @@ class Page extends Model
      */
     public function scopeActualized($query)
     {
-        return $query->where('current', false)
-            ->whereHas('actualizations', function($q) {
-                $q->where('status', Actualization::STATUS_COMPLETED);
-            });
+        return $query->whereHas('actualizations', function($q) {
+            $q->where('status', Actualization::STATUS_COMPLETED);
+        });
+    }
+
+    // Методы для обратной совместимости с API
+
+    /**
+     * Получить заголовок страницы (из текущей версии)
+     */
+    public function getTitleAttribute(): ?string
+    {
+        return $this->currentVersion?->title;
+    }
+
+    /**
+     * Получить содержимое страницы (из текущей версии)
+     */
+    public function getContentAttribute(): ?string
+    {
+        return $this->currentVersion?->content;
+    }
+
+    /**
+     * Получить файлы страницы (из текущей версии)
+     */
+    public function getFilesAttribute(): array
+    {
+        return $this->currentVersion?->files ?? [];
     }
 }
