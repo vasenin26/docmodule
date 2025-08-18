@@ -8,10 +8,10 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <Button v-if="canCreateTask" @click="createTask" variant="default"> Создать задачу </Button>
-                    <Button v-if="canActualize" @click="startActualization" :disabled="isActualizing || hasActiveActualization" variant="outline">
-                        <RefreshCw :class="{ 'animate-spin': isActualizing || hasActiveActualization }" class="mr-2 h-4 w-4" />
-                        Актуализировать
-                    </Button>
+                    <ActualizationButton
+                        :page-id="page.id"
+                        :can-actualize="canActualize"
+                    />
                     <Button as-child>
                         <Link :href="route('pages.edit', page.id)"> Редактировать </Link>
                     </Button>
@@ -29,57 +29,18 @@
 
         <div class="max-w-4xl space-y-6">
             <!-- Информация о черновике -->
-            <div v-if="page.currentDraft" class="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-yellow-800">
-                            <strong>Активный черновик:</strong>
-                            Создан {{ formatDate(page.currentDraft.created_at) }}
-                        </p>
-                        <p class="mt-1 text-xs text-yellow-600">Последнее обновление: {{ formatDate(page.currentDraft.updated_at) }}</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <Button as-child variant="outline" size="sm">
-                            <Link :href="route('pages.edit', page.id)"> Продолжить редактирование </Link>
-                        </Button>
-                        <Button @click="approveDraft" variant="default" size="sm"> Утвердить </Button>
-                    </div>
-                </div>
-            </div>
+            <DraftInfo v-if="page.currentDraft" :draft="page.currentDraft" :page-id="page.id" />
 
             <!-- Статус актуализации -->
-            <div
+            <ActualizationStatus
                 v-if="actualizationStatus"
-                class="rounded-lg border p-4"
-                :class="{
-                    'border-blue-200 bg-blue-50': statusColor === 'blue',
-                    'border-yellow-200 bg-yellow-50': statusColor === 'yellow',
-                    'border-green-200 bg-green-50': statusColor === 'green',
-                    'border-red-200 bg-red-50': statusColor === 'red',
-                }"
-            >
-                <div class="flex items-start gap-3">
-                    <RefreshCw :class="{ 'animate-spin': hasActiveActualization }" class="mt-0.5 h-4 w-4 flex-shrink-0" />
-                    <div class="flex w-full items-center justify-between">
-                        <div>
-                            <strong>Статус актуализации:</strong> {{ statusText }}
-                            <br />
-                            <span class="text-sm text-muted-foreground"> Обновлено: {{ formatDate(actualizationStatus.updated_at) }} </span>
-                        </div>
-                        <div class="flex gap-2">
-                            <Button v-if="canCancelActualization" @click="cancelActualization" variant="outline" size="sm"> Отменить </Button>
-                            <Button
-                                v-if="actualizationStatus.has_chat && actualizationStatus.status === 'completed'"
-                                as-child
-                                variant="outline"
-                                size="sm"
-                            >
-                                <Link :href="route('actualizations.show', actualizationStatus.id)"> Подробности </Link>
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                :actualization-status="actualizationStatus"
+                :has-active-actualization="hasActiveActualization"
+                :status-text="statusText"
+                :status-color="statusColor"
+                :can-cancel-actualization="canCancelActualization"
+                :on-cancel-actualization="cancelActualization"
+            />
 
             <!-- Родительская страница -->
             <div v-if="page.parent" class="rounded-lg bg-muted/50 p-4">
@@ -168,39 +129,7 @@
             </Card>
 
             <!-- Дочерние страницы -->
-            <Card>
-                <CardHeader>
-                    <CardTitle>Дочерние страницы</CardTitle>
-                    <CardDescription> Страницы, связанные с текущей </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div v-if="page.children && page.children.length > 0" class="mb-4 space-y-2">
-                        <div
-                            v-for="child in page.children"
-                            :key="child.id"
-                            class="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50"
-                        >
-                            <div>
-                                <Link :href="route('pages.show', child.id)" class="font-medium hover:underline">
-                                    {{ child.title }}
-                                </Link>
-                                <p class="text-sm text-muted-foreground">Создано {{ formatDate(child.created_at) }}</p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <Button as-child size="sm" variant="outline">
-                                    <Link :href="route('pages.show', child.id)"> Просмотр </Link>
-                                </Button>
-                                <Button as-child size="sm" variant="outline">
-                                    <Link :href="route('pages.edit', child.id)"> Редактировать </Link>
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Форма создания дочерней страницы -->
-                    <CreateChildPage :parent-id="page.id" />
-                </CardContent>
-            </Card>
+            <ChildPages :children="page.children" :parent-id="page.id" />
 
             <!-- Информация о версиях -->
             <Card>
@@ -268,7 +197,10 @@
 </template>
 
 <script setup lang="ts">
-import CreateChildPage from '@/components/CreateChildPage.vue';
+import DraftInfo from '@/components/PageInfo/DraftInfo.vue';
+import ActualizationStatus from '@/components/PageInfo/ActualizationStatus.vue';
+import ActualizationButton from '@/components/PageInfo/ActualizationButton.vue';
+import ChildPages from '@/components/PageInfo/ChildPages.vue';
 import Heading from '@/components/Heading.vue';
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
 import Button from '@/components/ui/button/Button.vue';
@@ -282,7 +214,7 @@ import { Link, router } from '@inertiajs/vue3';
 import { computed, onMounted } from 'vue';
 
 import { usePageActualization } from '@/composables/usePageActualization';
-import { FileIcon, RefreshCw } from 'lucide-vue-next';
+import { FileIcon } from 'lucide-vue-next';
 
 interface Creator {
     name: string;
@@ -336,16 +268,13 @@ const canCreateTask = computed(() => {
     );
 });
 
-// Логика актуализации
+// Логика актуализации (для статуса и кнопки)
 const {
-    isActualizing,
     actualizationStatus,
-    hasActiveActualization,
     statusText,
     statusColor,
     canStartActualization,
     canCancelActualization,
-    startActualization,
     cancelActualization,
     checkStatus,
 } = usePageActualization(props.page.id);
@@ -364,12 +293,6 @@ const canActualize = computed(() => {
 
 const createTask = () => {
     router.post(route('pages.create-task', props.page.id));
-};
-
-const approveDraft = () => {
-    if (props.page.currentDraft) {
-        router.post(route('pages.draft.approve', props.page.currentDraft.id));
-    }
 };
 
 const formatDate = (date: string) => {
