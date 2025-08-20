@@ -16,9 +16,6 @@
                         Продолжить редактирование 
                     </Link>
                 </Button>
-                <Button @click="approveDraft" variant="default" size="sm"> 
-                    Утвердить 
-                </Button>
             </div>
         </div>
     </div>
