@@ -42,12 +42,12 @@ class PageVersion extends Model
             if (!is_string($file)) {
                 return false;
             }
-            
+
             // URL должен быть корректной ссылкой
             if (!filter_var($file, FILTER_VALIDATE_URL)) {
                 return false;
             }
-            
+
             // Дополнительная проверка, что это ссылка на файл в git репозитории
             if (!$this->isGitRepositoryFileUrl($file)) {
                 return false;
@@ -63,18 +63,18 @@ class PageVersion extends Model
     {
         // Проверяем популярные git хостинги
         $gitHosts = ['github.com', 'gitlab.com', 'bitbucket.org'];
-        
+
         $parsedUrl = parse_url($url);
         if (!isset($parsedUrl['host'])) {
             return false;
         }
-        
+
         foreach ($gitHosts as $host) {
             if (str_contains($parsedUrl['host'], $host)) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -116,7 +116,7 @@ class PageVersion extends Model
         // Собираем всю цепочку версий
         $chain = new \Illuminate\Database\Eloquent\Collection([$firstVersion]);
         $current = $firstVersion;
-        
+
         while ($current->nextVersion) {
             $current = $current->nextVersion;
             $chain->push($current);
@@ -131,14 +131,16 @@ class PageVersion extends Model
     public function createNewVersion(array $data = []): PageVersion
     {
         $newVersion = $this->replicate();
-        $newVersion->previous_version_id = $this->id;
+
         $newVersion->fill($data);
-        
+        $newVersion->previous_version_id = $this->id;
+        $newVersion->is_draft = true;
+
         // Обеспечиваем корректное копирование поля files
         if (!isset($data['files']) && $this->files) {
             $newVersion->files = $this->files;
         }
-        
+
         $newVersion->save();
 
         return $newVersion;

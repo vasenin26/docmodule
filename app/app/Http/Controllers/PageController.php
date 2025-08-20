@@ -4,16 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePageRequest;
 use App\Http\Requests\UpdatePageRequest;
-use App\Jobs\CalculateVersionDifferenceJob;
 use App\Models\Page;
 use App\Models\PageVersion;
-use App\Models\PageDiffDescription;
 use App\Models\Project;
-use App\Services\TaskManagementService;
-use App\Interfaces\DocumentationControlInterface;
-use App\Interfaces\DraftServiceInterface;
 use App\Interfaces\TaskServiceInterface;
-use App\Common\DTO\PageDataDTO;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -21,8 +15,6 @@ use Inertia\Inertia;
 class PageController extends Controller
 {
     public function __construct(
-        protected DocumentationControlInterface $documentationControl,
-        protected DraftServiceInterface $draftService,
         protected TaskServiceInterface $taskService
     ) {}
     /**
@@ -68,13 +60,8 @@ class PageController extends Controller
             return $page;
         });
 
-        // Получаем DTO через DocumentationControl
-        $pageListDTO = $this->documentationControl->getPageListDTO($pages, $request->only(['search', 'parent_id']));
-
-        $pageListData = $pageListDTO->toArray();
-
         return Inertia::render('pages/Index', [
-            'pages' => $pageListData,
+            'pages' => $pages,
             'filters' => $request->only(['search', 'parent_id']),
             'project' => $project,
         ]);
@@ -179,13 +166,13 @@ class PageController extends Controller
             'latestActualization.createdBy'
         ]);
 
-        // Получаем DTO через DocumentationControl
-        $pageDetailDTO = $this->documentationControl->getPageDetailDTO($page);
-
-        $pageData = $pageDetailDTO->toArray();
-
         return Inertia::render('pages/Show', [
-            'page' => $pageData,
+            'page' => [
+                'id' => $page->id,
+                'title' => $page->currentVersion->title,
+                'content' => $page->currentVersion->content,
+                'files' => $page->currentVersion->files,
+            ],
             'version' => [
                 'id' => $page->currentVersion->id,
                 'title' => $page->currentVersion->title,
@@ -201,16 +188,24 @@ class PageController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Page $page)
     {
-        $currentVersion = $this->documentationControl->getCurrentVersion($page);
+        return Inertia::render('pages/Edit', [
+            'page' => $page->currentVersion,
+            'is_current_version' => true,
+            'errors' => (object) [],
+        ]);
+    }
+
+    public function editVersion(Page $page, PageVersion $version)
+    {
+        if ($version->page_id !== $page->id) {
+            abort(404);
+        }
 
         return Inertia::render('pages/Edit', [
-            'page' => $currentVersion,
-            'is_current_version' => true,
+            'page' => $version,
+            'is_current_version' => $page->checkCurrentVersion($version->id),
             'errors' => (object) [],
         ]);
     }
@@ -227,8 +222,7 @@ class PageController extends Controller
             'files.*' => 'required|string|url',
         ]);
 
-        $pageData = PageDataDTO::fromArray($validated);
-        $draft = $this->documentationControl->createDraftFromCurrentVersion($page, $pageData);
+        $draft = $page->createDraft($validated);
 
         return redirect()->route('pages.versions.edit', [$page->id, $draft->id])
             ->with('success', 'Черновик создан.');
@@ -278,25 +272,6 @@ class PageController extends Controller
     }
 
     /**
-     * Show the form for editing a specific version.
-     */
-    public function editVersion(Page $page, PageVersion $version)
-    {
-        // Проверяем, что версия принадлежит странице
-        if ($version->page_id !== $page->id) {
-            abort(404);
-        }
-
-        $pageVersionDTO = $this->documentationControl->getPageVersion($page, $version->id);
-
-        return Inertia::render('pages/Edit', [
-            'page' => $pageVersionDTO,
-            'is_current_version' => $page->checkCurrentVersion($pageVersionDTO->version_id),
-            'errors' => (object) [],
-        ]);
-    }
-
-    /**
      * Update a specific version of the page.
      */
     public function updateVersion(UpdatePageRequest $request, Page $page, PageVersion $version)
@@ -308,48 +283,20 @@ class PageController extends Controller
 
         $validated = $request->validated();
 
-        // Создаем DTO из валидированных данных
-        $pageData = PageDataDTO::fromArray($validated);
-
-        // Если это текущая версия, создаем черновик
-        if ($page->version_id !== $version->id) {
-            $draft = $this->documentationControl->updatePageWithDraftLogic($page, $pageData);
-            return redirect()->back()
-                ->with('success', $page->hasActiveDraft() ? 'Черновик обновлен.' : 'Черновик создан.');
+        if ($page->version_id === $version->id) {
+            abort(401, 'Нельзя обновлять текущую версию');
         } else {
-            // Если это не текущая версия, создаем новую версию на основе этой
-            $newVersion = $page->createNewVersion([
-                'title' => $validated['title'],
-                'content' => $validated['content'],
-                'files' => $validated['files'] ?? [],
-            ]);
+            $version->update($validated);
 
-            return redirect()->route('pages.versions.show', [$page->id, $newVersion->id])
-                ->with('success', 'Новая версия создана.');
+            return redirect()->back()
+                ->with('success', 'Черновик обновлен.');
         }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(UpdatePageRequest $request, Page $page)
     {
-        $validated = $request->validated();
-
-        // Создаем DTO из валидированных данных
-        $pageData = PageDataDTO::fromArray($validated);
-
-        // Если это текущая версия, создаем черновик
-        if ($request->input('is_current_version', false)) {
-            $draft = $this->documentationControl->createDraftFromCurrentVersion($page, $pageData);
-            return redirect()->route('pages.versions.edit', [$page->id, $draft->id])
-                ->with('success', 'Черновик создан.');
-        }
-
-        // Иначе обновляем существующий черновик
-        $draft = $this->documentationControl->updatePageWithDraftLogic($page, $pageData);
-        return redirect()->back()
-            ->with('success', 'Черновик обновлен.');
+        //этот метод остаётся чисто техническим, редактирование страницы возможно только админом
+        abort(403);
     }
 
     /**

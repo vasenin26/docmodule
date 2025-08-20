@@ -32,7 +32,7 @@
                             <tr v-for="page in pages.data" :key="page.id" class="border-b">
                                 <td class="p-4">
                                     <div class="flex items-center gap-2">
-                                        <span class="font-medium">{{ page.title }}</span>
+                                        <span class="font-medium">{{ page.current_version?.title }}</span>
                                         <span v-if="page.children && page.children.length > 0" class="text-xs text-muted-foreground">
                                             ({{ page.children.length }} дочерних)
                                         </span>
@@ -73,7 +73,7 @@
                                             <Link :href="route('pages.show', page.id)"> Просмотр </Link>
                                         </Button>
                                         <Button as-child size="sm" variant="outline">
-                                            <Link :href="page.hasActiveDraft 
+                                            <Link :href="page.hasActiveDraft
                                                 ? route('pages.versions.edit', [page.id, page.currentDraft.id])
                                                 : route('pages.edit', page.id)"
                                             >
@@ -164,6 +164,13 @@ interface Page {
         id: number;
         version: number;
     };
+    current_version: Version
+}
+
+type Version = {
+    id: number
+    title: string
+    content: string
 }
 
 interface PagesData {

@@ -203,8 +203,6 @@ class Page extends Model
         }
 
         $draft = $currentVersion->createNewVersion($data);
-
-        // Устанавливаем флаг is_draft = true для нового черновика
         $draft->update(['is_draft' => true]);
 
         return $draft;
