@@ -4,7 +4,7 @@ namespace App\Services\PageContext;
 
 use App\Interfaces\PageContextServiceInterface;
 use App\Models\Page;
-use App\Models\PageDiffDescription;
+use App\Models\VersionDiffTask;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -241,12 +241,12 @@ class PageContextService implements PageContextServiceInterface
         $cacheKey = "page_context_{$this->projectId}_task_history_{$pageId}";
 
         return Cache::remember($cacheKey, 300, function () use ($pageId) {
-            return PageDiffDescription::where('page_id', $pageId)
-                ->whereHas('page', function ($query) {
-                    $query->where('project_id', $this->projectId)
+            return VersionDiffTask::whereHas('pageVersion.page', function ($query) use ($pageId) {
+                    $query->where('id', $pageId)
+                        ->where('project_id', $this->projectId)
                         ->whereNotNull('version_id');
                 })
-                ->with(['creator', 'llmChat', 'techplane'])
+                ->with(['creator', 'llmChat', 'techplane', 'pageVersion'])
                 ->orderBy('created_at', 'desc')
                 ->get();
         });

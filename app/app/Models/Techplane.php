@@ -24,7 +24,7 @@ class Techplane extends Model
     // Связи
     public function task(): BelongsTo
     {
-        return $this->belongsTo(PageDiffDescription::class, 'task_id');
+        return $this->belongsTo(VersionDiffTask::class, 'task_id');
     }
 
     public function creator(): BelongsTo

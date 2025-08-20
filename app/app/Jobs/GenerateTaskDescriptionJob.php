@@ -4,7 +4,7 @@ namespace App\Jobs;
 
 use App\Common\DTO\DifferenceDataDTO;
 use App\Interfaces\Factory\AgentFactoryInterface;
-use App\Models\PageDiffDescription;
+use App\Models\VersionDiffTask;
 use App\Services\DiffGenerator\DiffGeneratorService;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -31,7 +31,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        public int $pageDiffDescriptionId
+        public int $versionDiffTaskId
     ) {}
 
     /**
@@ -39,41 +39,41 @@ class GenerateTaskDescriptionJob implements ShouldQueue
      */
     public function handle(AgentFactoryInterface $agentFactory, DiffGeneratorService $diffGenerator): void
     {
-        $pageDiffDescription = PageDiffDescription::with(['page.currentVersion', 'page.creator'])->findOrFail($this->pageDiffDescriptionId);
+        $versionDiffTask = VersionDiffTask::with(['pageVersion.page', 'pageVersion.previousVersion'])->findOrFail($this->versionDiffTaskId);
 
         try {
             // Устанавливаем статус "generating"
-            $pageDiffDescription->update([
-                'generation_status' => PageDiffDescription::STATUS_GENERATING
+            $versionDiffTask->update([
+                'generation_status' => VersionDiffTask::STATUS_GENERATING
             ]);
 
-            // Создаем DifferenceDataDTO на основе информации о странице
-            $differenceData = $this->createDifferenceDataDTO($pageDiffDescription->page, $diffGenerator);
+            // Создаем DifferenceDataDTO на основе информации о версии страницы
+            $differenceData = $this->createDifferenceDataDTO($versionDiffTask->pageVersion, $diffGenerator);
 
             // Генерируем описание задачи
-            $descriptionGenerator = $agentFactory->getDescriptionGenerator($pageDiffDescription->page->project_id);
+            $descriptionGenerator = $agentFactory->getDescriptionGenerator($versionDiffTask->pageVersion->page->project_id);
             $generationResult = $descriptionGenerator->generate($differenceData);
 
             // Сохраняем сгенерированное описание и обновляем статус
-            $pageDiffDescription->update([
+            $versionDiffTask->update([
                 'content' => $generationResult->result,
-                'generation_status' => PageDiffDescription::STATUS_COMPLETED,
+                'generation_status' => VersionDiffTask::STATUS_COMPLETED,
                 'llm_chat_id' => $generationResult->chatId
             ]);
 
             // Запускаем следующий job в цепочке
-            CreateTaskInTrackerJob::dispatch($this->pageDiffDescriptionId);
+            CreateTaskInTrackerJob::dispatch($this->versionDiffTaskId);
         } catch (Exception $e) {
             // Логируем ошибку
             Log::error('Failed to generate task description', [
-                'page_diff_description_id' => $this->pageDiffDescriptionId,
+                'version_diff_task_id' => $this->versionDiffTaskId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
             // Устанавливаем статус "failed"
-            $pageDiffDescription->update([
-                'generation_status' => PageDiffDescription::STATUS_FAILED
+            $versionDiffTask->update([
+                'generation_status' => VersionDiffTask::STATUS_FAILED
             ]);
 
             // Перебрасываем исключение для обработки системой очередей
@@ -82,11 +82,10 @@ class GenerateTaskDescriptionJob implements ShouldQueue
     }
 
     /**
-     * Создание DifferenceDataDTO на основе информации о странице
+     * Создание DifferenceDataDTO на основе информации о версии страницы
      */
-    private function createDifferenceDataDTO($page, DiffGeneratorService $diffGenerator): DifferenceDataDTO
+    private function createDifferenceDataDTO($currentVersion, DiffGeneratorService $diffGenerator): DifferenceDataDTO
     {
-        $currentVersion = $page->currentVersion;
         $previousVersion = $currentVersion->previousVersion;
 
         if (!$previousVersion) {

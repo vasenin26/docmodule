@@ -372,9 +372,11 @@ class PageController extends Controller
 
             if($request->boolean('create_task'))
             {
-                $task = $page->createTask();
-
-                return redirect()->route('tasks.show', $task->id);
+                $currentVersion = $page->currentVersion;
+                if ($currentVersion) {
+                    $task = $this->taskService->createTaskForPageVersion($currentVersion);
+                    return redirect()->route('tasks.show', $task->id);
+                }
             }
 
             return redirect()->route('pages.show', $page->id)
@@ -391,9 +393,15 @@ class PageController extends Controller
     public function createTask(Page $page)
     {
         try {
-            $diffDescription = $this->taskService->createTaskForPage($page);
+            // Получаем текущую версию страницы
+            $currentVersion = $page->currentVersion;
+            if (!$currentVersion) {
+                throw new \Exception('У страницы нет текущей версии');
+            }
+            
+            $versionDiffTask = $this->taskService->createTaskForPageVersion($currentVersion);
 
-            return redirect()->route('tasks.show', $diffDescription->id)
+            return redirect()->route('tasks.show', $versionDiffTask->id)
                 ->with('success', 'Задача создана и обрабатывается.');
 
         } catch (\Exception $e) {

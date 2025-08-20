@@ -45,7 +45,7 @@
                         </div>
                         <div>
                             <Label class="text-sm font-medium text-gray-500">Страница</Label>
-                            <p class="text-sm">{{ techplane.task.page.title }}</p>
+                            <p class="text-sm">{{ techplane.task.pageVersion.page.title }}</p>
                         </div>
                         <div>
                             <Label class="text-sm font-medium text-gray-500">Статус</Label>

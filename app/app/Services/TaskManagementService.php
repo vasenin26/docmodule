@@ -4,39 +4,35 @@ namespace App\Services;
 
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Models\Page;
-use App\Models\PageDiffDescription;
+use App\Models\PageVersion;
+use App\Models\VersionDiffTask;
 use Illuminate\Support\Facades\Auth;
 
 class TaskManagementService
 {
     /**
-     * Создать задачу для страницы
+     * Создать задачу для версии страницы
      */
-    public function createTaskForPage(Page $page, ?int $userId = null): PageDiffDescription
+    public function createTaskForPageVersion(PageVersion $pageVersion, ?int $userId = null): VersionDiffTask
     {
-        // Проверяем, что для страницы еще нет задач
-        $existingTask = PageDiffDescription::where('page_id', $page->id)->first();
+        // Проверяем, что для версии страницы еще нет задач
+        $existingTask = VersionDiffTask::where('page_version_id', $pageVersion->id)->first();
         if ($existingTask) {
-            throw new \Exception('Для этой страницы уже создана задача.');
-        }
-        
-        // Проверяем, что есть предыдущая версия для сравнения
-        $currentVersion = $page->currentVersion;
-        if (!$currentVersion || !$currentVersion->previous_version_id) {
-            throw new \Exception('Невозможно создать задачу для первой версии страницы.');
+            throw new \Exception('Для этой версии страницы уже создана задача.');
         }
 
-        // Создаем запись PageDiffDescription
-        $diffDescription = PageDiffDescription::create([
-            'page_id' => $page->id,
+        // Создаем запись VersionDiffTask
+        $versionDiffTask = VersionDiffTask::create([
+            'page_version_id' => $pageVersion->id,
             'content' => '', // Будет заполнено job'ом
-            'created_by' => $userId ?? Auth::id() ?? $page->created_by,
+            'created_by' => $userId ?? Auth::id() ?? $pageVersion->page->created_by,
+            'generation_status' => VersionDiffTask::STATUS_PENDING,
         ]);
 
         // Запускаем цепочку job'ов
-        GenerateTaskDescriptionJob::dispatch($diffDescription->id);
+        GenerateTaskDescriptionJob::dispatch($versionDiffTask->id);
 
-        return $diffDescription;
+        return $versionDiffTask;
     }
     
     /**
@@ -47,7 +43,7 @@ class TaskManagementService
         $currentVersion = $page->currentVersion;
         return $currentVersion && 
                $currentVersion->previous_version_id !== null &&
-               PageDiffDescription::where('page_id', $page->id)->count() === 0 &&
+               VersionDiffTask::where('page_version_id', $currentVersion->id)->count() === 0 &&
                !$page->hasActiveDraft();
     }
 }

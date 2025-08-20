@@ -1,9 +1,9 @@
 <template>
-    <AppLayout :title="`Задача: ${task.page.title}`">
+    <AppLayout :title="`Задача: ${task.pageVersion.title}`">
         <template #header>
             <div class="flex items-center justify-between">
                 <div>
-                    <Heading :title="`Задача для страницы: ${task.page.title}`" />
+                    <Heading :title="`Задача для версии: ${task.pageVersion.title}`" />
                     <p class="mt-1 text-sm text-muted-foreground">Создана {{ formatDate(task.created_at) }} пользователем {{ task.creator?.name }}</p>
                 </div>
                 <div class="flex items-center gap-2">
@@ -23,7 +23,7 @@
 
                     <TaskExportButton />
                     <Button as-child variant="outline">
-                        <Link :href="route('pages.show', task.page.id)"> К странице</Link>
+                        <Link :href="route('pages.show', task.pageVersion.page.id)"> К странице</Link>
                     </Button>
                 </div>
             </div>
@@ -45,8 +45,12 @@
                                 <p class="mt-1 text-sm text-muted-foreground">{{ task.id }}</p>
                             </div>
                             <div>
+                                <Label class="text-sm font-medium">ID версии страницы</Label>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.id }}</p>
+                            </div>
+                            <div>
                                 <Label class="text-sm font-medium">ID страницы</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.page.id }}</p>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.page.id }}</p>
                             </div>
                             <div>
                                 <Label class="text-sm font-medium">Создатель задачи</Label>
@@ -96,42 +100,42 @@
                     <CardContent class="space-y-4">
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div>
-                                <Label class="text-sm font-medium">Заголовок</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.page.currentVersion.title }}</p>
+                                <Label class="text-sm font-medium">Заголовок версии</Label>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.title }}</p>
                             </div>
                             <div>
-                                <Label class="text-sm font-medium">Автор</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.page.creator?.name }}</p>
+                                <Label class="text-sm font-medium">Автор страницы</Label>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.page.creator?.name }}</p>
                             </div>
                             <div>
-                                <Label class="text-sm font-medium">Дата создания</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ formatDate(task.page.created_at) }}</p>
+                                <Label class="text-sm font-medium">Дата создания версии</Label>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ formatDate(task.pageVersion.created_at) }}</p>
                             </div>
-                            <div v-if="task.page.previousVersion">
+                            <div v-if="task.pageVersion.previousVersion">
                                 <Label class="text-sm font-medium">Предыдущая версия</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.page.previousVersion.id }}</p>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.previousVersion.id }}</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
                 <!-- Сравнение версий -->
-                <Card v-if="task.page.previousVersion">
+                <Card v-if="task.pageVersion.previousVersion">
                     <CardHeader>
                         <CardTitle>Сравнение версий</CardTitle>
                         <CardDescription> Изменения между предыдущей и текущей версией страницы</CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-4">
                         <!-- Сравнение заголовков -->
-                        <div v-if="task.page.title !== (task.page.previousVersion.title || '')">
+                        <div v-if="task.pageVersion.title !== (task.pageVersion.previousVersion.title || '')">
                             <Label class="text-sm font-medium">Изменение заголовка</Label>
                             <div class="mt-2 space-y-2">
                                 <div class="rounded border border-red-200 bg-red-50 p-2">
                                     <span class="text-xs font-medium text-red-600">Было:</span>
-                                    <p class="text-sm">{{ task.page.previousVersion.title || '' }}</p>
+                                    <p class="text-sm">{{ task.pageVersion.previousVersion.title || '' }}</p>
                                 </div>
                                 <div class="rounded border border-green-200 bg-green-50 p-2">
                                     <span class="text-xs font-medium text-green-600">Стало:</span>
-                                    <p class="text-sm">{{ task.page.currentVersion.title }}</p>
+                                    <p class="text-sm">{{ task.pageVersion.title }}</p>
                                 </div>
                             </div>
                         </div>
@@ -140,7 +144,7 @@
                         <div>
                             <Label class="text-sm font-medium">Изменение содержимого</Label>
                             <div class="mt-2">
-                                <DiffViewer :old-content="task.page.previousVersion.content" :new-content="task.page.currentVersion.content" />
+                                <DiffViewer :old-content="task.pageVersion.previousVersion.content" :new-content="task.pageVersion.content" />
                             </div>
                         </div>
                     </CardContent>
@@ -193,24 +197,25 @@ interface TaskData {
     generation_status: string;
     created_at: string;
     updated_at: string;
-    page: {
+    pageVersion: {
         id: number;
+        title: string;
+        content: string;
         created_at: string;
-        creator?: {
+        page: {
             id: number;
-            name: string;
-            email: string;
+            created_at: string;
+            creator?: {
+                id: number;
+                name: string;
+                email: string;
+            };
         };
-        currentVersion?: {
-            id: number
-            title: string
-            content: string
-        }
         previousVersion?: {
-            id: number
-            title: string
-            content: string
-        }
+            id: number;
+            title: string;
+            content: string;
+        };
     };
     creator: {
         id: number;

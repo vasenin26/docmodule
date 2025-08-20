@@ -2,15 +2,15 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\PageDiffDescription;
+use App\Models\VersionDiffTask;
 use Tests\TestCase;
 
-class PageDiffDescriptionTest extends TestCase
+class VersionDiffTaskTest extends TestCase
 {
     public function test_is_generating_returns_true_when_status_is_generating()
     {
-        $task = new PageDiffDescription([
-            'generation_status' => PageDiffDescription::STATUS_GENERATING
+        $task = new VersionDiffTask([
+            'generation_status' => VersionDiffTask::STATUS_GENERATING
         ]);
 
         $this->assertTrue($task->isGenerating());
@@ -19,13 +19,13 @@ class PageDiffDescriptionTest extends TestCase
     public function test_is_generating_returns_false_when_status_is_not_generating()
     {
         $statuses = [
-            PageDiffDescription::STATUS_PENDING,
-            PageDiffDescription::STATUS_COMPLETED,
-            PageDiffDescription::STATUS_FAILED
+            VersionDiffTask::STATUS_PENDING,
+            VersionDiffTask::STATUS_COMPLETED,
+            VersionDiffTask::STATUS_FAILED
         ];
 
         foreach ($statuses as $status) {
-            $task = new PageDiffDescription([
+            $task = new VersionDiffTask([
                 'generation_status' => $status
             ]);
 
@@ -35,8 +35,8 @@ class PageDiffDescriptionTest extends TestCase
 
     public function test_is_completed_returns_true_when_status_is_completed()
     {
-        $task = new PageDiffDescription([
-            'generation_status' => PageDiffDescription::STATUS_COMPLETED
+        $task = new VersionDiffTask([
+            'generation_status' => VersionDiffTask::STATUS_COMPLETED
         ]);
 
         $this->assertTrue($task->isCompleted());
@@ -45,13 +45,13 @@ class PageDiffDescriptionTest extends TestCase
     public function test_is_completed_returns_false_when_status_is_not_completed()
     {
         $statuses = [
-            PageDiffDescription::STATUS_PENDING,
-            PageDiffDescription::STATUS_GENERATING,
-            PageDiffDescription::STATUS_FAILED
+            VersionDiffTask::STATUS_PENDING,
+            VersionDiffTask::STATUS_GENERATING,
+            VersionDiffTask::STATUS_FAILED
         ];
 
         foreach ($statuses as $status) {
-            $task = new PageDiffDescription([
+            $task = new VersionDiffTask([
                 'generation_status' => $status
             ]);
 
@@ -61,8 +61,8 @@ class PageDiffDescriptionTest extends TestCase
 
     public function test_has_failed_returns_true_when_status_is_failed()
     {
-        $task = new PageDiffDescription([
-            'generation_status' => PageDiffDescription::STATUS_FAILED
+        $task = new VersionDiffTask([
+            'generation_status' => VersionDiffTask::STATUS_FAILED
         ]);
 
         $this->assertTrue($task->hasFailed());
@@ -71,13 +71,13 @@ class PageDiffDescriptionTest extends TestCase
     public function test_has_failed_returns_false_when_status_is_not_failed()
     {
         $statuses = [
-            PageDiffDescription::STATUS_PENDING,
-            PageDiffDescription::STATUS_GENERATING,
-            PageDiffDescription::STATUS_COMPLETED
+            VersionDiffTask::STATUS_PENDING,
+            VersionDiffTask::STATUS_GENERATING,
+            VersionDiffTask::STATUS_COMPLETED
         ];
 
         foreach ($statuses as $status) {
-            $task = new PageDiffDescription([
+            $task = new VersionDiffTask([
                 'generation_status' => $status
             ]);
 
@@ -87,15 +87,15 @@ class PageDiffDescriptionTest extends TestCase
 
     public function test_generation_status_constants_are_defined()
     {
-        $this->assertEquals('pending', PageDiffDescription::STATUS_PENDING);
-        $this->assertEquals('generating', PageDiffDescription::STATUS_GENERATING);
-        $this->assertEquals('completed', PageDiffDescription::STATUS_COMPLETED);
-        $this->assertEquals('failed', PageDiffDescription::STATUS_FAILED);
+        $this->assertEquals('pending', VersionDiffTask::STATUS_PENDING);
+        $this->assertEquals('generating', VersionDiffTask::STATUS_GENERATING);
+        $this->assertEquals('completed', VersionDiffTask::STATUS_COMPLETED);
+        $this->assertEquals('failed', VersionDiffTask::STATUS_FAILED);
     }
 
     public function test_generation_status_is_in_fillable_array()
     {
-        $task = new PageDiffDescription();
+        $task = new VersionDiffTask();
         $fillable = $task->getFillable();
 
         $this->assertContains('generation_status', $fillable);
@@ -103,7 +103,7 @@ class PageDiffDescriptionTest extends TestCase
 
     public function test_generation_status_has_string_cast()
     {
-        $task = new PageDiffDescription();
+        $task = new VersionDiffTask();
         $casts = $task->getCasts();
 
         $this->assertArrayHasKey('generation_status', $casts);

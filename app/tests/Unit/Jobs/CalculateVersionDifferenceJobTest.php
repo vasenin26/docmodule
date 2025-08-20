@@ -5,8 +5,8 @@ namespace Tests\Unit\Jobs;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Jobs\CalculateVersionDifferenceJob;
 use App\Jobs\GenerateTaskDescriptionJob;
-use App\Models\Page;
-use App\Models\PageDiffDescription;
+use App\Models\PageVersion;
+use App\Models\VersionDiffTask;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -24,31 +24,30 @@ class CalculateVersionDifferenceJobTest extends TestCase
         $this->diffGenerator = $this->createMock(DiffGeneratorInterface::class);
     }
 
-    public function test_job_calculates_difference_for_new_page()
+    public function test_job_calculates_difference_for_new_page_version()
     {
         Queue::fake();
 
         $user = User::factory()->create();
-        $page = Page::factory()->create([
+        $pageVersion = PageVersion::factory()->create([
             'title' => 'Test Page',
             'content' => 'Test content',
-            'created_by' => $user->id,
         ]);
 
-        $job = new CalculateVersionDifferenceJob($page->id, null);
+        $job = new CalculateVersionDifferenceJob($pageVersion->id, null);
         $job->handle($this->diffGenerator);
 
-        // Check that PageDiffDescription was created
-        $this->assertDatabaseHas('page_diff_descriptions', [
-            'page_id' => $page->id,
-            'created_by' => $user->id,
-            'generation_status' => PageDiffDescription::STATUS_PENDING,
+        // Check that VersionDiffTask was created
+        $this->assertDatabaseHas('version_diff_tasks', [
+            'page_version_id' => $pageVersion->id,
+            'created_by' => $pageVersion->page->created_by,
+            'generation_status' => VersionDiffTask::STATUS_PENDING,
             'content' => null
         ]);
 
         // Check that GenerateTaskDescriptionJob was dispatched with correct ID
         Queue::assertPushed(GenerateTaskDescriptionJob::class, function ($job) {
-            return is_int($job->pageDiffDescriptionId);
+            return is_int($job->versionDiffTaskId);
         });
     }
 

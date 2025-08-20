@@ -4,7 +4,7 @@ namespace Tests\Unit\Services;
 
 use App\Interfaces\TaskServiceInterface;
 use App\Models\Page;
-use App\Models\PageDiffDescription;
+use App\Models\VersionDiffTask;
 use App\Models\PageVersion;
 use App\Services\TaskManagementService;
 use App\Services\TaskService;
@@ -45,44 +45,44 @@ class TaskServiceTest extends TestCase
     public function test_create_task_for_page_successfully()
     {
         // Arrange
-        $expectedTask = PageDiffDescription::factory()->make([
-            'page_id' => $this->page->id
+        $expectedTask = VersionDiffTask::factory()->make([
+            'page_version_id' => $this->page->version_id
         ]);
 
         $this->mockTaskManagementService
-            ->shouldReceive('createTaskForPage')
+            ->shouldReceive('createTaskForPageVersion')
             ->once()
-            ->with($this->page, null)
+            ->with(Mockery::type(PageVersion::class), null)
             ->andReturn($expectedTask);
 
         // Act
         $task = $this->taskService->createTaskForPage($this->page);
 
         // Assert
-        $this->assertInstanceOf(PageDiffDescription::class, $task);
-        $this->assertEquals($this->page->id, $task->page_id);
+        $this->assertInstanceOf(VersionDiffTask::class, $task);
+        $this->assertEquals($this->page->version_id, $task->page_version_id);
     }
 
     public function test_create_task_for_page_with_user_id()
     {
         // Arrange
         $userId = 123;
-        $expectedTask = PageDiffDescription::factory()->make([
-            'page_id' => $this->page->id,
+        $expectedTask = VersionDiffTask::factory()->make([
+            'page_version_id' => $this->page->version_id,
             'created_by' => $userId
         ]);
 
         $this->mockTaskManagementService
-            ->shouldReceive('createTaskForPage')
+            ->shouldReceive('createTaskForPageVersion')
             ->once()
-            ->with($this->page, $userId)
+            ->with(Mockery::type(PageVersion::class), $userId)
             ->andReturn($expectedTask);
 
         // Act
         $task = $this->taskService->createTaskForPage($this->page, $userId);
 
         // Assert
-        $this->assertInstanceOf(PageDiffDescription::class, $task);
+        $this->assertInstanceOf(VersionDiffTask::class, $task);
         $this->assertEquals($userId, $task->created_by);
     }
 
@@ -124,9 +124,9 @@ class TaskServiceTest extends TestCase
         $exception = new \Exception('Task creation failed');
 
         $this->mockTaskManagementService
-            ->shouldReceive('createTaskForPage')
+            ->shouldReceive('createTaskForPageVersion')
             ->once()
-            ->with($this->page, null)
+            ->with(Mockery::type(PageVersion::class), null)
             ->andThrow($exception);
 
         // Act & Assert

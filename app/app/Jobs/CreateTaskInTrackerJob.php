@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Interfaces\TaskTrackerInterface;
-use App\Models\PageDiffDescription;
+use App\Models\VersionDiffTask;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -25,7 +25,7 @@ class CreateTaskInTrackerJob implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        public int $pageDiffDescriptionId
+        public int $versionDiffTaskId
     ) {}
 
     /**
@@ -33,32 +33,32 @@ class CreateTaskInTrackerJob implements ShouldQueue
      */
     public function handle(TaskTrackerInterface $taskTracker): void
     {
-        $pageDiffDescription = PageDiffDescription::findOrFail($this->pageDiffDescriptionId);
-        $page = $pageDiffDescription->page;
+        $versionDiffTask = VersionDiffTask::with(['pageVersion.page'])->findOrFail($this->versionDiffTaskId);
+        $page = $versionDiffTask->pageVersion->page;
 
-        // Генерируем заголовок задачи на основе информации о странице
-        $title = $this->generateTaskTitle($page);
+        // Генерируем заголовок задачи на основе информации о версии страницы
+        $title = $this->generateTaskTitle($versionDiffTask->pageVersion);
 
-        // Получаем описание из PageDiffDescription
-        $description = $pageDiffDescription->content;
+        // Получаем описание из VersionDiffTask
+        $description = $versionDiffTask->content;
 
         // Создаем задачу в трекере
         $taskTracker->createTask($title, $description);
     }
 
     /**
-     * Генерация заголовка задачи на основе информации о странице
+     * Генерация заголовка задачи на основе информации о версии страницы
      */
-    private function generateTaskTitle($page): string
+    private function generateTaskTitle($currentVersion): string
     {
-        $currentVersion = $page->currentVersion;
         $previousVersion = $currentVersion->previousVersion;
+        $page = $currentVersion->page;
 
         if (!$previousVersion) {
-            return 'New page created: ' . $page->title;
+            return 'New page created: ' . $currentVersion->title;
         }
 
-        $title = 'Page updated: ' . $page->title;
+        $title = 'Page updated: ' . $currentVersion->title;
 
         // Определяем, что именно изменилось
         $titleChanged = $currentVersion->title !== $previousVersion->title;

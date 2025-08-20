@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Jobs\GenerateTechplaneJob;
-use App\Models\PageDiffDescription;
+use App\Models\VersionDiffTask;
 use App\Models\Techplane;
 use App\Http\Requests\TaskUpdateRequest;
 use Illuminate\Http\JsonResponse;
@@ -30,18 +30,35 @@ class TaskController extends Controller implements HasMiddleware
     /**
      * Display the specified task.
      */
-    public function show(PageDiffDescription $task): Response
+    public function show(VersionDiffTask $task): Response
     {
-        $task->load(['page', 'techplane']);
+        $task->load(['pageVersion.page', 'techplane', 'llmChat', 'creator']);
 
         return Inertia::render('tasks/Show', [
             'task' => [
-                ...$task->toArray(),
-                'page' => [
-                    ...$task->page->toArray(),
-                    'currentVersion' => $task->page->currentVersion,
-                    'previousVersion' => $task->page->currentVersion->previousVersion,
+                'id' => $task->id,
+                'content' => $task->content,
+                'generation_status' => $task->generation_status,
+                'created_at' => $task->created_at,
+                'updated_at' => $task->updated_at,
+                'edited_at' => $task->edited_at,
+                'pageVersion' => [
+                    ...$task->pageVersion->toArray(),
+                    'page' => $task->pageVersion->page,
+                    'previousVersion' => $task->pageVersion->previousVersion,
                 ],
+                'creator' => $task->creator ? [
+                    'id' => $task->creator->id,
+                    'name' => $task->creator->name,
+                    'email' => $task->creator->email,
+                ] : null,
+                'llm_chat' => $task->llmChat ? [
+                    'id' => $task->llmChat->id,
+                    'messages' => $task->llmChat->messages,
+                    'created_at' => $task->llmChat->created_at,
+                    'updated_at' => $task->llmChat->updated_at,
+                ] : null,
+                'techplane' => $task->techplane,
             ]
         ]);
     }
@@ -49,17 +66,13 @@ class TaskController extends Controller implements HasMiddleware
     /**
      * Show the form for editing the specified task.
      */
-    public function edit(PageDiffDescription $task): Response
+    public function edit(VersionDiffTask $task): Response
     {
-        // Проверяем права доступа
-        if ($task->created_by !== Auth::id()) {
-            abort(403, 'У вас нет прав для редактирования этой задачи');
-        }
 
         // Загружаем связанные данные
         $task->load([
-            'page.creator',
-            'page.currentVersion',
+            'pageVersion.page.creator',
+            'pageVersion.previousVersion',
             'creator',
             'llmChat'
         ]);
@@ -72,20 +85,27 @@ class TaskController extends Controller implements HasMiddleware
                 'created_at' => $task->created_at,
                 'updated_at' => $task->updated_at,
                 'edited_at' => $task->edited_at,
-                'page' => [
-                    'id' => $task->page->id,
-                    'title' => $task->page->title,
-                    'content' => $task->page->content,
-                    'created_at' => $task->page->created_at,
-                    'creator' => [
-                        'id' => $task->page->creator->id,
-                        'name' => $task->page->creator->name,
-                        'email' => $task->page->creator->email,
+                'pageVersion' => [
+                    'id' => $task->pageVersion->id,
+                    'title' => $task->pageVersion->title,
+                    'content' => $task->pageVersion->content,
+                    'created_at' => $task->pageVersion->created_at,
+                    'page' => [
+                        'id' => $task->pageVersion->page->id,
+                        'title' => $task->pageVersion->page->title,
+                        'content' => $task->pageVersion->page->content,
+                        'created_at' => $task->pageVersion->page->created_at,
+                        'creator' => [
+                            'id' => $task->pageVersion->page->creator->id,
+                            'name' => $task->pageVersion->page->creator->name,
+                            'email' => $task->pageVersion->page->creator->email,
+                        ],
                     ],
-                    'current_version' => $task->page->currentVersion ? [
-                        'id' => $task->page->currentVersion->id,
-                        'title' => $task->page->currentVersion->title,
-                        'content' => $task->page->currentVersion->content,
+                    'previousVersion' => $task->pageVersion->previousVersion ? [
+                        'id' => $task->pageVersion->previousVersion->id,
+                        'title' => $task->pageVersion->previousVersion->title,
+                        'content' => $task->pageVersion->previousVersion->content,
+                        'created_at' => $task->pageVersion->previousVersion->created_at,
                     ] : null,
                 ],
                 'creator' => [
@@ -106,7 +126,7 @@ class TaskController extends Controller implements HasMiddleware
     /**
      * Update the specified task.
      */
-    public function update(TaskUpdateRequest $request, PageDiffDescription $task): RedirectResponse
+    public function update(TaskUpdateRequest $request, VersionDiffTask $task): RedirectResponse
     {
         // Проверяем права доступа
         if ($task->created_by !== Auth::id()) {
@@ -134,7 +154,7 @@ class TaskController extends Controller implements HasMiddleware
     /**
      * Check the generation status of a task.
      */
-    public function checkGenerationStatus(PageDiffDescription $task): JsonResponse
+    public function checkGenerationStatus(VersionDiffTask $task): JsonResponse
     {
         return response()->json([
             'status' => $task->generation_status,
@@ -146,10 +166,10 @@ class TaskController extends Controller implements HasMiddleware
     /**
      * Restart generation of task description.
      */
-    public function restartGeneration(PageDiffDescription $task): JsonResponse
+    public function restartGeneration(VersionDiffTask $task): JsonResponse
     {
         // Проверить, что генерация не выполняется в данный момент
-        if ($task->generation_status === PageDiffDescription::STATUS_GENERATING) {
+        if ($task->generation_status === VersionDiffTask::STATUS_GENERATING) {
             return response()->json([
                 'success' => false,
                 'message' => 'Генерация уже выполняется'
@@ -158,7 +178,7 @@ class TaskController extends Controller implements HasMiddleware
 
         // Сбросить статус и контент
         $task->update([
-            'generation_status' => PageDiffDescription::STATUS_PENDING,
+            'generation_status' => VersionDiffTask::STATUS_PENDING,
             'content' => null,
             'llm_chat_id' => null
         ]);
@@ -175,7 +195,7 @@ class TaskController extends Controller implements HasMiddleware
     /**
      * Создать техплан для задачи
      */
-    public function createTechplane(PageDiffDescription $task): RedirectResponse
+    public function createTechplane(VersionDiffTask $task): RedirectResponse
     {
         $techplane = Techplane::create([
             'task_id' => $task->id,

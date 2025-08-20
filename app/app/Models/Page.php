@@ -86,11 +86,11 @@ class Page extends Model
     }
 
     /**
-     * Описания различий для создания задач
+     * Описания различий для создания задач - через текущую версию
      */
     public function diffDescriptions(): HasMany
     {
-        return $this->hasMany(PageDiffDescription::class);
+        return $this->hasMany(VersionDiffTask::class, 'page_version_id', 'version_id');
     }
 
     /**

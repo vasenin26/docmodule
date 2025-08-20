@@ -59,17 +59,38 @@ export interface LLMChat {
     updated_at: string;
 }
 
-export interface PageDiffDescription {
+export interface VersionDiffTask {
     id: number;
-    page_id: number;
+    page_version_id: number;
     content: string | null;
     created_by: number;
     generation_status: string;
     llm_chat_id?: number | null;
     llm_chat?: LLMChat | null;
+    pageVersion: PageVersion;
+    creator: User;
+    techplane?: Techplane | null;
     created_at: string;
     updated_at: string;
     edited_at?: string;
+}
+
+// Для обратной совместимости
+export interface PageDiffDescription extends VersionDiffTask {
+    page_id: number;
+}
+
+export interface Techplane {
+    id: number;
+    task_id: number;
+    content: string | null;
+    created_by: number;
+    generation_status: string;
+    chat_id?: number | null;
+    task: VersionDiffTask;
+    creator: User;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface TaskUpdateFormData {

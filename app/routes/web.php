@@ -11,6 +11,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Models\Page;
+use App\Models\VersionDiffTask;
+
+// Route Model Binding для новой модели
+Route::model('task', VersionDiffTask::class);
 
 Route::get('/', function () {
     return Inertia::render('Welcome');

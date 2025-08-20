@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class PageVersion extends Model
@@ -100,6 +101,22 @@ class PageVersion extends Model
     public function nextVersion(): HasOne
     {
         return $this->hasOne(PageVersion::class, 'previous_version_id');
+    }
+
+    /**
+     * Связь с задачами
+     */
+    public function versionDiffTasks(): HasMany
+    {
+        return $this->hasMany(VersionDiffTask::class, 'page_version_id');
+    }
+
+    /**
+     * Для обратной совместимости
+     */
+    public function diffDescriptions(): HasMany
+    {
+        return $this->versionDiffTasks();
     }
 
     /**
