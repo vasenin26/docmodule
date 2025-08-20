@@ -12,8 +12,8 @@
             </div>
             <div class="flex gap-2">
                 <Button as-child variant="outline" size="sm">
-                    <Link :href="route('pages.versions.edit', [pageId, draft.id])"> 
-                        Продолжить редактирование 
+                    <Link :href="route('pages.versions.edit', [pageId, draft.id])">
+                        Продолжить редактирование
                     </Link>
                 </Button>
             </div>
@@ -40,9 +40,6 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const approveDraft = () => {
-    router.post(route('pages.draft.approve', props.draft.id));
-};
 
 const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('ru-RU', {

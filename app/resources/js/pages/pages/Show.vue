@@ -12,21 +12,21 @@
                         :page-id="page.id"
                         :can-actualize="canActualize"
                     />
-                    
+
                     <!-- Кнопка "Продолжить редактирование" для черновика -->
                     <Button v-if="page.hasActiveDraft" as-child>
                         <Link :href="route('pages.versions.edit', [page.id, page.currentDraft.id])">
                             Продолжить редактирование
                         </Link>
                     </Button>
-                    
+
                     <!-- Кнопка "Редактировать" для текущей версии -->
                     <Button v-else as-child>
                         <Link :href="route('pages.edit', page.id)">
                             Редактировать
                         </Link>
                     </Button>
-                    
+
                     <Button as-child variant="outline">
                         <Link :href="route('pages.versions', page.id)"> Версии </Link>
                     </Button>
@@ -153,15 +153,15 @@
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
                             <span class="font-medium">Текущая версия:</span>
-                            <span class="ml-2 text-muted-foreground">{{ version.id }}</span>
+                            <span class="ml-2 text-muted-foreground">{{ page.version_id }}</span>
                         </div>
                         <div>
                             <span class="font-medium">Предыдущая версия:</span>
-                            <span class="ml-2 text-muted-foreground">{{ page.previous_version_id || 'Первая версия' }}</span>
+                            <span class="ml-2 text-muted-foreground">{{ previousVersion?.id || 'Первая версия' }}</span>
                         </div>
                         <div>
                             <span class="font-medium">Дата создания версии:</span>
-                            <span class="ml-2 text-muted-foreground">{{ formatDate(version.created_at) }}</span>
+                            <span class="ml-2 text-muted-foreground">{{ formatDate(page.version_id) }}</span>
                         </div>
                         <div>
                             <span class="font-medium">Дата создания предыдущей версии:</span>

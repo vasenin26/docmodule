@@ -162,7 +162,7 @@ class Page extends Model
     /**
      * Получить текущий черновик страницы
      */
-    public function getCurrentDraft(): ?PageVersion
+    public function getCurrentDraft(int $userId): ?PageVersion
     {
         $currentVersion = $this->currentVersion;
 
@@ -170,15 +170,11 @@ class Page extends Model
             return null;
         }
 
-        // Если текущая версия сама является черновиком, то активного черновика нет
-        if ($currentVersion->is_draft) {
-            return null;
-        }
-
         // Находим черновики, которые являются дочерними для текущей версии
         return $this->versions()
             ->where('is_draft', true)
             ->where('previous_version_id', $currentVersion->id)
+//            ->whereCreatedBy($userId)
             ->orderBy('created_at', 'desc')
             ->first();
     }
@@ -186,9 +182,9 @@ class Page extends Model
     /**
      * Проверить, есть ли активный черновик
      */
-    public function hasActiveDraft(): bool
+    public function hasActiveDraft($userId): bool
     {
-        return $this->getCurrentDraft() !== null;
+        return $this->getCurrentDraft($userId) !== null;
     }
 
     /**
