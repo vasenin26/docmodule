@@ -38,6 +38,7 @@ class GenerateTechplaneJob implements ShouldQueue
     public function handle(AgentFactoryInterface $agentFactory): void
     {
         $techplane = Techplane::with(['task', 'task.page'])->findOrFail($this->techplaneId);
+        $currentVersion = $techplane->page->currentVersion;
 
         try {
             // Устанавливаем статус "generating"
@@ -46,7 +47,7 @@ class GenerateTechplaneJob implements ShouldQueue
             ]);
 
             $task = $techplane->task;
-            
+
             if (!$task) {
                 throw new Exception('Task not found for techplane');
             }
@@ -56,14 +57,14 @@ class GenerateTechplaneJob implements ShouldQueue
 
             // Получаем прикреплённые файлы из страницы
             $attachedFiles = [];
-            if ($task->page && $task->page->files) {
-                $attachedFiles = $task->page->files;
+            if ($currentVersion && $currentVersion->files) {
+                $attachedFiles =$currentVersion->files;
             }
 
             // Получаем генератор техплана
             $projectId = $task->page ? $task->page->project_id : null;
             $techplaneGenerator = $agentFactory->getTechplaneGenerator($projectId);
-            
+
             // Генерируем техплан с учётом прикреплённых файлов
             $generationResult = $techplaneGenerator->generate($taskDescription, $attachedFiles);
 

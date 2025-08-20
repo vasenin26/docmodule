@@ -33,7 +33,7 @@ class CreateTaskInTrackerJob implements ShouldQueue
      */
     public function handle(TaskTrackerInterface $taskTracker): void
     {
-        $pageDiffDescription = PageDiffDescription::with(['page.previousVersion'])->findOrFail($this->pageDiffDescriptionId);
+        $pageDiffDescription = PageDiffDescription::findOrFail($this->pageDiffDescriptionId);
         $page = $pageDiffDescription->page;
 
         // Генерируем заголовок задачи на основе информации о странице

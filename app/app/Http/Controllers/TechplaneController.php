@@ -4,22 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Jobs\GenerateTechplaneJob;
 use App\Models\Techplane;
-use App\Interfaces\DocumentationControlInterface;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class TechplaneController extends Controller
 {
-    public function __construct(
-        protected DocumentationControlInterface $documentationControl
-    ) {}
     public function show(Techplane $techplane): Response
     {
         $techplane->load(['task.page']);
-        $pageAggregate = $this->documentationControl->getCurrentPageAggregate($techplane->task->page);
-        $techplane->task->page = $pageAggregate->toArray();
 
         return Inertia::render('techplane/Show', [
             'techplane' => $techplane,

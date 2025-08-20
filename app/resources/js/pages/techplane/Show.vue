@@ -5,7 +5,7 @@
             <div class="mb-6 flex items-start justify-between">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900">Технический план</h1>
-                    <p class="mt-2 text-gray-600">Создан: {{ formatDate(techplane.created_at) }} • Автор: {{ techplane.creator.name }}</p>
+                    <p class="mt-2 text-gray-600">Создан: {{ formatDate(techplane.created_at) }} • Автор: {{ techplane.creator?.name }}</p>
                 </div>
                 <div class="flex gap-3">
                     <!-- Кнопка перегенерации -->
