@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StorePageRequest;
-use App\Http\Requests\UpdatePageRequest;
+use App\Http\Requests\Page\StorePageRequest;
+use App\Http\Requests\Page\UpdateVersionRequest;
+use App\Interfaces\TaskServiceInterface;
 use App\Models\Page;
 use App\Models\PageVersion;
 use App\Models\Project;
-use App\Interfaces\TaskServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -274,7 +274,7 @@ class PageController extends Controller
     /**
      * Update a specific version of the page.
      */
-    public function updateVersion(UpdatePageRequest $request, Page $page, PageVersion $version)
+    public function updateVersion(UpdateVersionRequest $request, Page $page, PageVersion $version)
     {
         // Проверяем, что версия принадлежит странице
         if ($version->page_id !== $page->id) {
@@ -293,7 +293,7 @@ class PageController extends Controller
         }
     }
 
-    public function update(UpdatePageRequest $request, Page $page)
+    public function update(UpdateVersionRequest $request, Page $page)
     {
         //этот метод остаётся чисто техническим, редактирование страницы возможно только админом
         abort(403);
@@ -356,11 +356,18 @@ class PageController extends Controller
     /**
      * Утвердить черновик
      */
-    public function approveDraft(Request $request, PageVersion $draft)
+    public function approveDraft(UpdateVersionRequest $request, PageVersion $draft)
     {
-        try {
-            $page = $draft->page;
+        $page = $draft->page;
 
+        if ($page->version_id === $draft->id) {
+            abort(401, 'Нельзя обновлять текущую версию');
+        }
+
+        $validated = $request->validated();
+        $draft->update($validated);
+
+        try {
             $page->approveDraft($draft);
 
             if($request->boolean('create_task'))
