@@ -191,7 +191,7 @@ class PageController extends Controller
     public function edit(Page $page)
     {
         return Inertia::render('pages/Edit', [
-            'page' => $page->currentVersion,
+            'pageVersion' => $page->currentVersion,
             'is_current_version' => true,
             'errors' => (object) [],
         ]);
@@ -204,7 +204,7 @@ class PageController extends Controller
         }
 
         return Inertia::render('pages/Edit', [
-            'page' => $version,
+            'pageVersion' => $version,
             'is_current_version' => $page->checkCurrentVersion($version->id),
             'errors' => (object) [],
         ]);
@@ -359,18 +359,19 @@ class PageController extends Controller
     public function approveDraft(Request $request, PageVersion $draft)
     {
         try {
-            // Получаем страницу из черновика
             $page = $draft->page;
 
-            $result = $this->documentationControl->approveDraftWithTask($page, $request->boolean('create_task'));
+            $page->approveDraft($draft);
 
-            if ($result->taskCreated) {
-                return redirect()->route('tasks.show', $result->taskId)
-                    ->with('success', $result->message);
+            if($request->boolean('create_task'))
+            {
+                $task = $page->createTask();
+
+                return redirect()->route('tasks.show', $task->id);
             }
 
             return redirect()->route('pages.show', $page->id)
-                ->with('success', $result->message);
+                ->with('success');
         } catch (\Exception $e) {
             return redirect()->route('pages.show', $draft->page_id)
                 ->with('error', $e->getMessage());

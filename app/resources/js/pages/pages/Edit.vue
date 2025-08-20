@@ -5,7 +5,7 @@
                 <Heading title="Редактировать страницу" />
                 <div class="flex items-center gap-2">
                     <Button as-child variant="outline">
-                        <Link :href="route('pages.show', page?.page_id)"> Просмотр </Link>
+                        <Link :href="route('pages.show', pageVersion?.page_id)"> Просмотр </Link>
                     </Button>
                     <Button as-child variant="outline">
                         <Link :href="route('pages.index')"> Назад к списку </Link>
@@ -17,11 +17,11 @@
         <div class="max-w-4xl">
             <Card>
                 <CardHeader>
-                    <CardTitle>{{ page?.title || 'Без названия' }}</CardTitle>
+                    <CardTitle>{{ pageVersion?.title || 'Без названия' }}</CardTitle>
                     <CardDescription>
                         {{ is_current_version
                             ? 'Редактирование текущей версии. При сохранении будет создан черновик.'
-                            : 'Редактирование версии. При сохранении будет создана новая версия.'
+                            : 'Редактирование версии. При сохранении содержимое версии будет обновлено.'
                         }}
                     </CardDescription>
                 </CardHeader>
@@ -118,17 +118,17 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
-interface Page {
+type PageVersion = {
+    id: number;
     title: string;
     page_id: number;
-    version_id: number;
     content: string;
     files?: string[];
 }
 
 const props = withDefaults(
     defineProps<{
-        page: Page,
+        pageVersion: PageVersion,
         is_current_version: false
         errors: any
     }>(),
@@ -140,9 +140,9 @@ const props = withDefaults(
 );
 
 const form = useForm({
-    title: props.page.title || 'Без названия',
-    content: props.page.content,
-    files: props.page?.files || [],
+    title: props.pageVersion.title || 'Без названия',
+    content: props.pageVersion.content,
+    files: props.pageVersion?.files || [],
     createTask: false,
     is_current_version: false as boolean,
 });
@@ -153,7 +153,7 @@ const processing = ref(false);
 const createDraft = () => {
     processing.value = true;
 
-    form.post(route('pages.create-draft', props.page.page_id), {
+    form.post(route('pages.create-draft', props.pageVersion.page_id), {
         onSuccess: () => {
             processing.value = false;
         },
@@ -167,8 +167,8 @@ const submit = () => {
     processing.value = true;
 
     const url = props.is_current_version
-        ? route('pages.create-draft', {page: props.page.page_id})
-        : route('pages.versions.update', [props.page.page_id, props.page.version_id]);
+        ? route('pages.create-draft', {page: props.pageVersion.page_id})
+        : route('pages.versions.update', [props.pageVersion.page_id, props.pageVersion.id]);
 
     form.put(url, {
         onSuccess: () => {
@@ -182,13 +182,18 @@ const submit = () => {
 
 const approveDraft = () => {
     if (!props.is_current_version) {
-        router.post(route('drafts.approve', props.page.version_id), {
-            create_task: form.createTask,
+        form.put(route('drafts.approve', props.pageVersion.id), {
+            onSuccess: () => {
+                processing.value = false;
+            },
+            onError: () => {
+                processing.value = false;
+            },
         });
     }
 };
 
 const cancel = () => {
-    router.visit(route('pages.show', props.page.page_id));
+    router.visit(route('pages.show', props.pageVersion.page_id));
 };
 </script>
