@@ -242,12 +242,10 @@ interface Page {
     content: string;
     files?: string[];
     created_at: string;
-    updated_at: string;
     approved_at: string;
     creator: Creator;
     parent?: Page;
     children: Page[];
-    base_id?: number;
     previous_version_id?: number;
     version_id?: number;
     current: boolean;
@@ -255,8 +253,6 @@ interface Page {
     diff_descriptions?: TaskDescription[];
     hasActiveActualization?: boolean;
     isActualized?: boolean;
-    actualizationInfo?: any;
-    hasActiveDraft?: boolean;
 }
 
 interface PreviousVersion {
