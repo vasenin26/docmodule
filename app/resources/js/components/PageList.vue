@@ -73,11 +73,8 @@
                                             <Link :href="route('pages.show', page.id)"> Просмотр </Link>
                                         </Button>
                                         <Button as-child size="sm" variant="outline">
-                                            <Link :href="page.hasActiveDraft
-                                                ? route('pages.versions.edit', [page.id, page.currentDraft.id])
-                                                : route('pages.edit', page.id)"
-                                            >
-                                                {{ page.hasActiveDraft ? 'Продолжить' : 'Редактировать' }}
+                                            <Link :href="route('pages.edit', [page.id])">
+                                                Редактировать
                                             </Link>
                                         </Button>
                                         <Button as-child size="sm" variant="outline">

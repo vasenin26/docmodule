@@ -73,7 +73,7 @@
                                         {{ version.current ? 'Текущая' : 'Восстановить' }}
                                     </Button>
                                     <Button as-child size="sm" variant="outline">
-                                        <Link :href="route('pages.show', version.id)"> Просмотр </Link>
+                                        <Link :href="route('pages.versions.edit', [version.page_id, version.id])"> Просмотр </Link>
                                     </Button>
                                 </div>
                             </div>

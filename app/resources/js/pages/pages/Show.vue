@@ -13,15 +13,7 @@
                         :can-actualize="canActualize"
                     />
 
-                    <!-- Кнопка "Продолжить редактирование" для черновика -->
-                    <Button v-if="page.hasActiveDraft" as-child>
-                        <Link :href="route('pages.versions.edit', [page.id, page.currentDraft.id])">
-                            Продолжить редактирование
-                        </Link>
-                    </Button>
-
-                    <!-- Кнопка "Редактировать" для текущей версии -->
-                    <Button v-else as-child>
+                    <Button>
                         <Link :href="route('pages.edit', page.id)">
                             Редактировать
                         </Link>
@@ -161,7 +153,7 @@
                         </div>
                         <div>
                             <span class="font-medium">Дата создания версии:</span>
-                            <span class="ml-2 text-muted-foreground">{{ formatDate(page.version_id) }}</span>
+                            <span class="ml-2 text-muted-foreground">{{ formatDate(page.created_at) }}</span>
                         </div>
                         <div>
                             <span class="font-medium">Дата создания предыдущей версии:</span>
@@ -187,12 +179,12 @@
                             <span class="ml-2 text-muted-foreground">{{ page.creator?.name }}</span>
                         </div>
                         <div>
-                            <span class="font-medium">Дата создания:</span>
+                            <span class="font-medium">Дата создания версии:</span>
                             <span class="ml-2 text-muted-foreground">{{ formatDate(page.created_at) }}</span>
                         </div>
                         <div>
-                            <span class="font-medium">Последнее обновление:</span>
-                            <span class="ml-2 text-muted-foreground">{{ formatDate(page.updated_at) }}</span>
+                            <span class="font-medium">Дата утверждения:</span>
+                            <span class="ml-2 text-muted-foreground">{{ formatDate(page.approved_at) }}</span>
                         </div>
                         <div v-if="page.children && page.children.length > 0">
                             <span class="font-medium">Дочерних страниц:</span>
@@ -251,6 +243,7 @@ interface Page {
     files?: string[];
     created_at: string;
     updated_at: string;
+    approved_at: string;
     creator: Creator;
     parent?: Page;
     children: Page[];
@@ -266,15 +259,6 @@ interface Page {
     hasActiveDraft?: boolean;
 }
 
-interface Version {
-    id: number;
-    title: string;
-    content: string;
-    files?: string[];
-    created_at: string;
-    is_current: boolean;
-}
-
 interface PreviousVersion {
     id: number;
     created_at: string;
@@ -282,7 +266,6 @@ interface PreviousVersion {
 
 const props = defineProps<{
     page: Page;
-    version: Version;
     previousVersion?: PreviousVersion;
 }>();
 

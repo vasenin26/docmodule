@@ -103,6 +103,29 @@ class PageVersion extends Model
     }
 
     /**
+     * Получить полную цепочку версий
+     */
+    public function getVersionChain(): \Illuminate\Database\Eloquent\Collection
+    {
+        // Находим первую версию в цепочке
+        $firstVersion = $this;
+        while ($firstVersion->previous_version_id) {
+            $firstVersion = $firstVersion->previousVersion;
+        }
+
+        // Собираем всю цепочку версий
+        $chain = new \Illuminate\Database\Eloquent\Collection([$firstVersion]);
+        $current = $firstVersion;
+
+        while ($current->nextVersion) {
+            $current = $current->nextVersion;
+            $chain->push($current);
+        }
+
+        return $chain;
+    }
+
+    /**
      * Создать новую версию
      */
     public function createNewVersion(array $data = []): PageVersion

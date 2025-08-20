@@ -54,7 +54,7 @@ class PageController extends Controller
 
         // Добавляем информацию о черновиках и актуализации для каждой страницы
         $pages->getCollection()->transform(function ($page) {
-            $page->hasActiveDraft = $page->hasActiveDraft();
+            $page->hasActiveDraft = $page->hasActiveDraft(Auth::id());
             $page->isActualized = $page->isActualized(); // Для черновиков
             $page->actualizationInfo = $page->getActualizationInfo(); // Информация об актуализации
             return $page;
@@ -163,7 +163,7 @@ class PageController extends Controller
             'currentVersion.previousVersion',
             'diffDescriptions.creator',
             'latestActualization.llmChat',
-            'latestActualization.createdBy'
+            'latestActualization.createdBy',
         ]);
 
         return Inertia::render('pages/Show', [
@@ -176,6 +176,8 @@ class PageController extends Controller
                 'currentDraft' => $page->getCurrentDraft(Auth::id()),
                 'version_id' => $page->currentVersion->id,
                 'created_at' => $page->currentVersion->created_at,
+                'approved_at' => $page->updated_at,
+                'creator' => $page->creator
             ],
             'currentDraft' => $page->getCurrentDraft(Auth::id()),
             'previousVersion' => $page->currentVersion->previousVersion ? [
