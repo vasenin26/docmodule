@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Interfaces\PageContextServiceFactoryInterface;
-use App\Common\DTO\ProjectDetailDTO;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -68,16 +67,13 @@ class ProjectController extends Controller
 
         // PageContextService остается без изменений
         $pageContextService = $this->pageContextServiceFactory->createForProject($project->id);
-        
+
         $project->load(['owner', 'repositories']);
         $project->pages = $pageContextService->getCurrentPages();
 
-        // Создаем DTO для проекта
-        $projectDetailDTO = ProjectDetailDTO::fromProject($project);
 
-        
         return Inertia::render('projects/Show', [
-            'project' => $projectDetailDTO->toArray(),
+            'project' => $project
         ]);
     }
 

@@ -60,13 +60,13 @@ class ActualizationService
             $actualization->update(['status' => Actualization::STATUS_PROCESSING]);
 
             $page = $actualization->page;
-            
+
             // Получить базовую страницу для анализа файлов
             $basePage = $page->previousVersion ?? $page;
-            
+
             // Получить генератор актуализации
             $generator = $this->getActualizationGenerator($basePage->project_id);
-            
+
             // Запустить генерацию
             $result = $generator->actualize(
                 $page->content ?? '',
@@ -113,7 +113,7 @@ class ActualizationService
     public function getStatus(Page $page): ?array
     {
         $latestActualization = $page->latestActualization;
-        
+
         if (!$latestActualization) {
             return null;
         }
@@ -134,7 +134,7 @@ class ActualizationService
     public function getDetails(Actualization $actualization): array
     {
         $actualization->load(['page', 'llmChat', 'createdBy']);
-        
+
         return [
             'id' => $actualization->id,
             'status' => $actualization->status,

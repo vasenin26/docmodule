@@ -136,11 +136,8 @@ export interface Page {
     creator: User;
     project?: Project;
     children: Page[];
-    currentVersion?: PageVersion;
+    current_version?: PageVersion;
     hasActiveDraft?: boolean;
-    // Для обратной совместимости
-    title?: string;
-    content?: string;
 }
 
 export interface PagesData {

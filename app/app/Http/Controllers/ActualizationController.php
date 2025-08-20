@@ -6,18 +6,17 @@ use App\Http\Requests\StoreActualizationRequest;
 use App\Models\Actualization;
 use App\Models\Page;
 use App\Services\ActualizationService;
-use App\Interfaces\DraftServiceInterface;
 use App\Common\DTO\PageDataDTO;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ActualizationController extends Controller
 {
     public function __construct(
-        private ActualizationService $actualizationService,
-        private DraftServiceInterface $draftService
+        private ActualizationService $actualizationService
     ) {
     }
 
@@ -27,16 +26,6 @@ class ActualizationController extends Controller
     public function store(StoreActualizationRequest $request, Page $page): JsonResponse
     {
         try {
-            // Создаем пустой DTO для черновика актуализации
-            $pageData = new PageDataDTO(
-                title: $page->title ?? '',
-                content: $page->content ?? '',
-                files: $page->files ?? []
-            );
-            
-            // Используем DraftService для создания черновика
-            $draft = $this->draftService->createDraft($page, $pageData);
-            
             $actualization = $this->actualizationService->initiate($page, $request->user());
 
             return response()->json([
@@ -50,25 +39,25 @@ class ActualizationController extends Controller
             ]);
 
         } catch (\RuntimeException $e) {
-            \Log::error('Actualization runtime error', [
+            Log::error('Actualization runtime error', [
                 'message' => $e->getMessage(),
                 'page_id' => $page->id,
                 'user_id' => $request->user()->id ?? 'no user',
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 422);
 
         } catch (\Exception $e) {
-            \Log::error('Actualization error', [
+            Log::error('Actualization error', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'page_id' => $page->id,
                 'user_id' => $request->user()->id ?? 'no user',
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Произошла ошибка при запуске актуализации',
