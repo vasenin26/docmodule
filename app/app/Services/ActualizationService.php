@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Factory\AgentFactory;
 use App\Models\Actualization;
 use App\Models\Page;
+use App\Models\PageVersion;
 use App\Models\User;
 use App\Jobs\ProcessPageActualizationJob;
 use App\Interfaces\ContentGenerator\ActualizationGeneratorInterface;
@@ -18,21 +19,27 @@ class ActualizationService
     }
 
     /**
-     * Инициировать процесс актуализации
+     * Инициировать процесс актуализации для конкретного черновика
      */
-    public function initiate(Page $page, User $user): Actualization
+    public function initiate(PageVersion $draft, User $user): Actualization
     {
-        // Проверить, нет ли активной актуализации
-        if ($page->hasActiveActualization()) {
-            throw new \RuntimeException('У страницы уже есть активная актуализация');
+        // Проверить, что это черновик
+        if (!$draft->is_draft) {
+            throw new \RuntimeException('Актуализация возможна только для черновиков');
         }
 
-        // Создать черновик страницы
-        $draft = $page->createDraft();
+        // Проверить, нет ли активной актуализации для этого черновика
+        if ($draft->hasActiveActualization()) {
+            throw new \RuntimeException('Для этого черновика уже есть активная актуализация');
+        }
 
-        // Создать запись актуализации
+        // Получить страницу для логирования
+        $page = $draft->page;
+
+        // Создать запись актуализации - ИСПРАВЛЕНИЕ: привязка к черновику
         $actualization = Actualization::create([
-            'page_id' => $draft->id,
+            'page_id' => $page->id,           // ID страницы
+            'page_version_id' => $draft->id,  // ID черновика - ОСНОВНАЯ СВЯЗЬ
             'status' => Actualization::STATUS_PENDING,
             'created_by' => $user->id,
         ]);
@@ -43,11 +50,30 @@ class ActualizationService
         Log::info('Actualization initiated', [
             'actualization_id' => $actualization->id,
             'page_id' => $page->id,
-            'draft_id' => $draft->id,
+            'page_version_id' => $draft->id,
+            'base_version_id' => $draft->previous_version_id, // Логируем базовую версию
             'user_id' => $user->id,
         ]);
 
         return $actualization;
+    }
+
+    /**
+     * Удобный метод для создания черновика и запуска актуализации
+     */
+    public function initiateForCurrentVersion(Page $page, User $user): Actualization
+    {
+        // Получить текущую версию страницы
+        $currentVersion = $page->currentVersion;
+        if (!$currentVersion) {
+            throw new \RuntimeException('Страница не имеет текущей версии');
+        }
+
+        // Создать черновик из текущей версии страницы
+        $draft = $page->createDraft();
+
+        // Запустить актуализацию для созданного черновика
+        return $this->initiate($draft, $user);
     }
 
     /**
@@ -59,22 +85,26 @@ class ActualizationService
             // Обновить статус на processing
             $actualization->update(['status' => Actualization::STATUS_PROCESSING]);
 
+            // Получить черновик через новую связь
+            $draft = $actualization->pageVersion;
+            if (!$draft) {
+                throw new \RuntimeException('Черновик не найден для актуализации');
+            }
+
             $page = $actualization->page;
 
-            // Получить базовую страницу для анализа файлов
-            $basePage = $page->previousVersion ?? $page;
-
             // Получить генератор актуализации
-            $generator = $this->getActualizationGenerator($basePage->project_id);
+            $generator = $this->getActualizationGenerator($page->project_id);
 
-            // Запустить генерацию
+            // Запустить генерацию актуализации
+            // Черновик уже содержит актуальный контент и файлы из текущей версии
             $result = $generator->actualize(
-                $page->content ?? '',
-                $page->files ?? []
+                $draft->content ?? '',
+                $draft->files ?? []
             );
 
             // Сохранить результат в черновике
-            $page->update([
+            $draft->update([
                 'content' => $result->result,
             ]);
 
@@ -89,6 +119,7 @@ class ActualizationService
             Log::info('Actualization completed successfully', [
                 'actualization_id' => $actualization->id,
                 'page_id' => $page->id,
+                'page_version_id' => $draft->id,
                 'chat_id' => $result->chatId,
             ]);
 
@@ -99,6 +130,7 @@ class ActualizationService
             Log::error('Actualization failed', [
                 'actualization_id' => $actualization->id,
                 'page_id' => $actualization->page_id,
+                'page_version_id' => $actualization->page_version_id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -133,7 +165,7 @@ class ActualizationService
      */
     public function getDetails(Actualization $actualization): array
     {
-        $actualization->load(['page', 'llmChat', 'createdBy']);
+        $actualization->load(['page', 'pageVersion', 'llmChat', 'createdBy']);
 
         return [
             'id' => $actualization->id,
@@ -144,8 +176,13 @@ class ActualizationService
             'page' => [
                 'id' => $actualization->page->id,
                 'title' => $actualization->page->title,
-                'content' => $actualization->page->content,
-                'files' => $actualization->page->files,
+            ],
+            'draft' => [
+                'id' => $actualization->pageVersion->id,
+                'title' => $actualization->pageVersion->title,
+                'content' => $actualization->pageVersion->content,
+                'files' => $actualization->pageVersion->files,
+                'is_draft' => $actualization->pageVersion->is_draft,
             ],
             'chat' => $actualization->llmChat ? [
                 'id' => $actualization->llmChat->id,

@@ -77,6 +77,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('actualizations.show');
     Route::delete('actualizations/{actualization}', [ActualizationController::class, 'cancel'])
         ->name('actualizations.cancel');
+    
+    // Новый маршрут для актуализации конкретного черновика
+    Route::post('/drafts/{draft}/actualize', [ActualizationController::class, 'storeForDraft'])
+        ->name('drafts.actualize');
 
     // Маршруты для задач
     Route::get('tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');

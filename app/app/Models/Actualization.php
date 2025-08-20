@@ -24,7 +24,8 @@ class Actualization extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'page_id',
+        'page_id',           // ID страницы (для удобства запросов)
+        'page_version_id',   // ID версии страницы (черновика) - ОСНОВНАЯ СВЯЗЬ
         'status',
         'llm_chat_id',
         'created_by',
@@ -41,7 +42,15 @@ class Actualization extends Model
     ];
 
     /**
-     * Страница, для которой выполняется актуализация
+     * Черновик (версия страницы), для которого выполняется актуализация
+     */
+    public function pageVersion(): BelongsTo
+    {
+        return $this->belongsTo(PageVersion::class, 'page_version_id');
+    }
+
+    /**
+     * Страница, для которой выполняется актуализация (через черновик)
      */
     public function page(): BelongsTo
     {
@@ -62,5 +71,37 @@ class Actualization extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Проверить, что актуализация привязана к черновику
+     */
+    public function validateDraftBinding(): bool
+    {
+        if (!$this->page_version_id) {
+            return false;
+        }
+
+        $pageVersion = $this->pageVersion;
+        return $pageVersion && $pageVersion->is_draft;
+    }
+
+    /**
+     * Boot метод для автоматической валидации
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($actualization) {
+            if ($actualization->page_version_id) {
+                $pageVersion = PageVersion::find($actualization->page_version_id);
+                if (!$pageVersion || !$pageVersion->is_draft) {
+                    throw new \InvalidArgumentException('Актуализация может быть привязана только к черновику');
+                }
+                // Автоматически устанавливаем page_id из черновика
+                $actualization->page_id = $pageVersion->page_id;
+            }
+        });
     }
 }

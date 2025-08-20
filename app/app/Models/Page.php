@@ -269,6 +269,17 @@ class Page extends Model
     }
 
     /**
+     * Получить все активные актуализации для страницы
+     */
+    public function getActiveActualizations(): \Illuminate\Database\Eloquent\Collection
+    {
+        return $this->actualizations()
+            ->whereIn('status', [Actualization::STATUS_PENDING, Actualization::STATUS_PROCESSING])
+            ->with(['pageVersion', 'createdBy'])
+            ->get();
+    }
+
+    /**
      * Проверить, является ли черновик актуализированным
      * Черновик считается актуализированным, если для него есть завершенная актуализация
      */

@@ -162,4 +162,37 @@ class PageVersion extends Model
 
         return $newVersion;
     }
+
+    /**
+     * Проверить, есть ли активная актуализация для этой версии
+     * Ищем актуализации, привязанные непосредственно к этой версии
+     */
+    public function hasActiveActualization(): bool
+    {
+        return Actualization::where('page_version_id', $this->id)
+            ->whereIn('status', [Actualization::STATUS_PENDING, Actualization::STATUS_PROCESSING])
+            ->exists();
+    }
+
+    /**
+     * Получить активную актуализацию для этой версии
+     */
+    public function getActiveActualization(): ?Actualization
+    {
+        return Actualization::where('page_version_id', $this->id)
+            ->whereIn('status', [Actualization::STATUS_PENDING, Actualization::STATUS_PROCESSING])
+            ->with(['pageVersion', 'createdBy'])
+            ->first();
+    }
+
+    /**
+     * Получить завершенную актуализацию для этой версии
+     */
+    public function getCompletedActualization(): ?Actualization
+    {
+        return Actualization::where('page_version_id', $this->id)
+            ->where('status', Actualization::STATUS_COMPLETED)
+            ->with(['pageVersion', 'llmChat'])
+            ->first();
+    }
 }

@@ -160,3 +160,18 @@ export interface TokenStatistics {
 export interface DashboardData {
     token_statistics: TokenStatistics;
 }
+
+export interface Actualization {
+    id: number;
+    page_id: number;
+    page_version_id: number;  // Новое поле
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    llm_chat_id?: number;
+    created_by: number;
+    created_at: string;
+    updated_at: string;
+    created_by_user?: User;
+    page?: Page;
+    page_version?: PageVersion;  // Новое поле
+    llm_chat?: LLMChat;
+}

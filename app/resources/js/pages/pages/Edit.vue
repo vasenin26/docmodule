@@ -4,6 +4,18 @@
             <div class="flex items-center justify-between">
                 <Heading title="Редактировать страницу" />
                 <div class="flex items-center gap-2">
+
+                    <!-- Кнопка актуализации только для черновиков -->
+                    <Button
+                        v-if="!is_current_version && pageVersion.is_draft"
+                        type="button"
+                        @click="showActualizeDialog"
+                        variant="outline"
+                        :disabled="processing"
+                    >
+                        Актуализировать
+                    </Button>
+
                     <Button as-child variant="outline">
                         <Link :href="route('pages.show', pageVersion?.page_id)"> Просмотр </Link>
                     </Button>
@@ -97,6 +109,19 @@
                 </CardContent>
             </Card>
         </div>
+
+        <!-- Диалог подтверждения актуализации -->
+        <ConfirmDialog
+            v-model:open="showActualizeConfirm"
+            title="Подтверждение актуализации"
+            description="При актуализации черновика его содержимое будет обновлено на основе прикрепленных файлов."
+            :warning="form.isDirty ? 'Все несохраненные изменения будут утеряны.' : undefined"
+            confirm-text="Продолжить актуализацию"
+            cancel-text="Отмена"
+            :loading="actualizationLoading"
+            @confirm="confirmActualizeDraft"
+            @cancel="cancelActualization"
+        />
     </AppLayout>
 </template>
 
@@ -112,6 +137,7 @@ import CardDescription from '@/components/ui/card/CardDescription.vue';
 import CardHeader from '@/components/ui/card/CardHeader.vue';
 import CardTitle from '@/components/ui/card/CardTitle.vue';
 import Checkbox from '@/components/ui/checkbox/Checkbox.vue';
+import { ConfirmDialog } from '@/components/ui/dialog';
 import Input from '@/components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -124,6 +150,7 @@ type PageVersion = {
     page_id: number;
     content: string;
     files?: string[];
+    is_draft?: boolean;
 }
 
 const props = withDefaults(
@@ -148,6 +175,10 @@ const form = useForm({
 });
 
 const processing = ref(false);
+
+// Состояние диалога подтверждения
+const showActualizeConfirm = ref(false);
+const actualizationLoading = ref(false);
 
 // Метод для создания черновика
 const createDraft = () => {
@@ -195,5 +226,34 @@ const approveDraft = () => {
 
 const cancel = () => {
     router.visit(route('pages.show', props.pageVersion.page_id));
+};
+
+// Показать диалог подтверждения актуализации
+const showActualizeDialog = () => {
+    showActualizeConfirm.value = true;
+};
+
+// Подтвердить актуализацию черновика
+const confirmActualizeDraft = () => {
+    actualizationLoading.value = true;
+
+    router.post(route('drafts.actualize', props.pageVersion.id), {}, {
+        onSuccess: () => {
+            showActualizeConfirm.value = false;
+            actualizationLoading.value = false;
+            // Обновить страницу или показать уведомление об успешной актуализации
+            location.reload(); // или router.reload()
+        },
+        onError: (errors) => {
+            actualizationLoading.value = false;
+            // Показать ошибку актуализации
+            console.error('Ошибка актуализации:', errors);
+        }
+    });
+};
+
+// Отменить актуализацию
+const cancelActualization = () => {
+    showActualizeConfirm.value = false;
 };
 </script>
