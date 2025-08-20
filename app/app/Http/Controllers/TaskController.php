@@ -7,21 +7,15 @@ use App\Jobs\GenerateTechplaneJob;
 use App\Models\PageDiffDescription;
 use App\Models\Techplane;
 use App\Http\Requests\TaskUpdateRequest;
-use App\Interfaces\DocumentationControlInterface;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class TaskController extends Controller implements HasMiddleware
 {
-    public function __construct(
-        protected DocumentationControlInterface $documentationControl
-    ) {}
     /**
      * Get the middleware that should be assigned to the controller.
      */
@@ -39,11 +33,16 @@ class TaskController extends Controller implements HasMiddleware
     public function show(PageDiffDescription $task): Response
     {
         $task->load(['page', 'techplane']);
-        $pageAggregate = $this->documentationControl->getCurrentPageAggregate($task->page);
-        $task->page = $pageAggregate->toArray();
 
         return Inertia::render('tasks/Show', [
-            'task' => $task,
+            'task' => [
+                ...$task->toArray(),
+                'page' => [
+                    ...$task->page->toArray(),
+                    'currentVersion' => $task->page->currentVersion,
+                    'previousVersion' => $task->page->currentVersion->previousVersion,
+                ],
+            ]
         ]);
     }
 
@@ -59,9 +58,9 @@ class TaskController extends Controller implements HasMiddleware
 
         // Загружаем связанные данные
         $task->load([
-            'page.creator', 
-            'page.currentVersion', 
-            'creator', 
+            'page.creator',
+            'page.currentVersion',
+            'creator',
             'llmChat'
         ]);
 

@@ -32,29 +32,29 @@
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <!-- Основное содержимое -->
             <div class="space-y-6 lg:col-span-1">
-                <!-- Информация о странице -->
+                <!-- Метаинформация -->
                 <Card>
                     <CardHeader>
-                        <CardTitle>Информация о странице</CardTitle>
-                        <CardDescription> Детали страницы, для которой создана задача</CardDescription>
+                        <CardTitle>Метаинформация</CardTitle>
+                        <CardDescription>Сведения о задаче</CardDescription>
                     </CardHeader>
-                    <CardContent class="space-y-4">
+                    <CardContent class="space-y-2">
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div>
-                                <Label class="text-sm font-medium">Заголовок</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.page.title }}</p>
+                                <Label class="text-sm font-medium">ID задачи</Label>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.id }}</p>
                             </div>
                             <div>
-                                <Label class="text-sm font-medium">Автор</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.page.creator.name }}</p>
+                                <Label class="text-sm font-medium">ID страницы</Label>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.page.id }}</p>
                             </div>
                             <div>
-                                <Label class="text-sm font-medium">Дата создания</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ formatDate(task.page.created_at) }}</p>
+                                <Label class="text-sm font-medium">Создатель задачи</Label>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.creator?.name }}</p>
                             </div>
-                            <div v-if="task.page.previous_version">
-                                <Label class="text-sm font-medium">Предыдущая версия</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.page.previous_version.title }}</p>
+                            <div>
+                                <Label class="text-sm font-medium">Дата создания задачи</Label>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ formatDate(task.created_at) }}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -86,61 +86,61 @@
                 <TechplanCard :techplane="task.techplane" :task-id="task.id" />
             </div>
             <div class="space-y-6 lg:col-span-1">
-                <!-- Метаинформация -->
+
+                <!-- Информация о странице -->
                 <Card>
                     <CardHeader>
-                        <CardTitle>Метаинформация</CardTitle>
-                        <CardDescription>Сведения о задаче</CardDescription>
+                        <CardTitle>Информация о странице</CardTitle>
+                        <CardDescription> Детали страницы, для которой создана задача</CardDescription>
                     </CardHeader>
-                    <CardContent class="space-y-2">
+                    <CardContent class="space-y-4">
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div>
-                                <Label class="text-sm font-medium">ID задачи</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.id }}</p>
+                                <Label class="text-sm font-medium">Заголовок</Label>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.page.currentVersion.title }}</p>
                             </div>
                             <div>
-                                <Label class="text-sm font-medium">ID страницы</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.page.id }}</p>
+                                <Label class="text-sm font-medium">Автор</Label>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.page.creator?.name }}</p>
                             </div>
                             <div>
-                                <Label class="text-sm font-medium">Создатель задачи</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.creator.name }}</p>
+                                <Label class="text-sm font-medium">Дата создания</Label>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ formatDate(task.page.created_at) }}</p>
                             </div>
-                            <div>
-                                <Label class="text-sm font-medium">Дата создания задачи</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ formatDate(task.created_at) }}</p>
+                            <div v-if="task.page.previousVersion">
+                                <Label class="text-sm font-medium">Предыдущая версия</Label>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.page.previousVersion.id }}</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-
                 <!-- Сравнение версий -->
-                <Card v-if="task.page.previous_version">
+                <Card v-if="task.page.previousVersion">
                     <CardHeader>
                         <CardTitle>Сравнение версий</CardTitle>
                         <CardDescription> Изменения между предыдущей и текущей версией страницы</CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-4">
                         <!-- Сравнение заголовков -->
-                        <div v-if="task.page.title !== (task.page.previous_version.title || '')">
+                        <div v-if="task.page.title !== (task.page.previousVersion.title || '')">
                             <Label class="text-sm font-medium">Изменение заголовка</Label>
                             <div class="mt-2 space-y-2">
                                 <div class="rounded border border-red-200 bg-red-50 p-2">
                                     <span class="text-xs font-medium text-red-600">Было:</span>
-                                    <p class="text-sm">{{ task.page.previous_version.title || '' }}</p>
+                                    <p class="text-sm">{{ task.page.previousVersion.title || '' }}</p>
                                 </div>
                                 <div class="rounded border border-green-200 bg-green-50 p-2">
                                     <span class="text-xs font-medium text-green-600">Стало:</span>
-                                    <p class="text-sm">{{ task.page.title }}</p>
+                                    <p class="text-sm">{{ task.page.currentVersion.title }}</p>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Сравнение содержимого -->
-                        <div v-if="task.page.content !== (task.page.previous_version.content || '')">
+                        <div>
                             <Label class="text-sm font-medium">Изменение содержимого</Label>
                             <div class="mt-2">
-                                <DiffViewer :old-content="task.page.previous_version.content" :new-content="task.page.content" />
+                                <DiffViewer :old-content="task.page.previousVersion.content" :new-content="task.page.currentVersion.content" />
                             </div>
                         </div>
                     </CardContent>
@@ -195,19 +195,22 @@ interface TaskData {
     updated_at: string;
     page: {
         id: number;
-        title: string;
-        content: string;
         created_at: string;
-        creator: {
+        creator?: {
             id: number;
             name: string;
             email: string;
         };
-        previous_version?: {
-            id: number;
-            title: string;
-            content: string | null;
-        };
+        currentVersion?: {
+            id: number
+            title: string
+            content: string
+        }
+        previousVersion?: {
+            id: number
+            title: string
+            content: string
+        }
     };
     creator: {
         id: number;

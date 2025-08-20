@@ -105,14 +105,14 @@
             </Card>
 
             <!-- Описания задач -->
-            <Card v-if="page.diff_descriptions && page.diff_descriptions.length > 0">
+            <Card v-if="page.diffDescriptions && page.diffDescriptions.length > 0">
                 <CardHeader>
                     <CardTitle>Связанные задачи</CardTitle>
                     <CardDescription> Задачи, созданные на основе изменений в данной версии страницы </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div class="space-y-4">
-                        <div v-for="taskDescription in page.diff_descriptions" :key="taskDescription.id" class="rounded-lg border p-4">
+                        <div v-for="taskDescription in page.diffDescriptions" :key="taskDescription.id" class="rounded-lg border p-4">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
                                     <p class="mb-2 text-sm text-muted-foreground">
@@ -250,7 +250,7 @@ interface Page {
     version_id?: number;
     current: boolean;
     currentDraft?: Draft;
-    diff_descriptions?: TaskDescription[];
+    diffDescriptions?: TaskDescription[];
     hasActiveActualization?: boolean;
     isActualized?: boolean;
 }
@@ -267,10 +267,8 @@ const props = defineProps<{
 
 const canCreateTask = computed(() => {
     return (
-        props.page.current &&
-        (!props.page.diff_descriptions || props.page.diff_descriptions.length === 0) &&
-        !props.page.currentDraft &&
-        props.page.previous_version_id !== null
+        props.previousVersion &&
+        (!props.page.diff_descriptions || props.page.diff_descriptions.length === 0)
     );
 });
 

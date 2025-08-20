@@ -177,7 +177,8 @@ class PageController extends Controller
                 'version_id' => $page->currentVersion->id,
                 'created_at' => $page->currentVersion->created_at,
                 'approved_at' => $page->updated_at,
-                'creator' => $page->creator
+                'creator' => $page->creator,
+                'diffDescriptions' => $page->diffDescriptions
             ],
             'currentDraft' => $page->getCurrentDraft(Auth::id()),
             'previousVersion' => $page->currentVersion->previousVersion ? [
@@ -382,36 +383,6 @@ class PageController extends Controller
             return redirect()->route('pages.show', $draft->page_id)
                 ->with('error', $e->getMessage());
         }
-    }
-
-    /**
-     * Получить данные черновика
-     */
-    public function getDraft(Page $page)
-    {
-        $draft = $this->draftService->getCurrentDraft($page);
-
-        if (!$draft) {
-            return response()->json(['error' => 'Черновик не найден'], 404);
-        }
-
-        // Возвращаем DTO вместо модели
-        $draftDTO = $this->documentationControl->getDraftDTO($draft);
-
-        return response()->json($draftDTO->toArray());
-    }
-
-    /**
-     * Удалить черновик
-     */
-    public function deleteDraft(Page $page)
-    {
-        if (!$this->draftService->deleteDraft($page)) {
-            return redirect()->back()->with('error', 'Черновик не найден.');
-        }
-
-        return redirect('/')
-            ->with('success', 'Черновик удален.');
     }
 
     /**

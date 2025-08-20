@@ -38,7 +38,7 @@ class CreateTaskInTrackerJob implements ShouldQueue
 
         // Генерируем заголовок задачи на основе информации о странице
         $title = $this->generateTaskTitle($page);
-        
+
         // Получаем описание из PageDiffDescription
         $description = $pageDiffDescription->content;
 
@@ -51,7 +51,8 @@ class CreateTaskInTrackerJob implements ShouldQueue
      */
     private function generateTaskTitle($page): string
     {
-        $previousVersion = $page->previousVersion;
+        $currentVersion = $page->currentVersion;
+        $previousVersion = $currentVersion->previousVersion;
 
         if (!$previousVersion) {
             return 'New page created: ' . $page->title;
@@ -60,8 +61,8 @@ class CreateTaskInTrackerJob implements ShouldQueue
         $title = 'Page updated: ' . $page->title;
 
         // Определяем, что именно изменилось
-        $titleChanged = $page->title !== $previousVersion->title;
-        $contentChanged = $page->content !== $previousVersion->content;
+        $titleChanged = $currentVersion->title !== $previousVersion->title;
+        $contentChanged = $currentVersion->content !== $previousVersion->content;
 
         if ($titleChanged && $contentChanged) {
             $title .= ' (title and content changed)';

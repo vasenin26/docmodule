@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Common\DTO\PageVersionDTO;
 use App\Observers\PageObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
