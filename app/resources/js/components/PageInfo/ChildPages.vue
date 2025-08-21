@@ -13,7 +13,7 @@
                 >
                     <div>
                         <Link :href="route('pages.show', child.id)" class="font-medium hover:underline">
-                            {{ child.title }}
+                            {{ child.current_version.title }}
                         </Link>
                         <p class="text-sm text-muted-foreground">Создано {{ formatDate(child.created_at) }}</p>
                     </div>
@@ -48,9 +48,13 @@ interface Creator {
     name: string;
 }
 
-interface ChildPage {
+export interface ChildPage {
     id: number;
-    title: string;
+    current_version: {
+        id: number
+        title: string
+        content: string
+    }
     created_at: string;
     creator?: Creator;
 }
@@ -60,7 +64,7 @@ interface Props {
     parentId: number;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
     children: () => [],
 });
 

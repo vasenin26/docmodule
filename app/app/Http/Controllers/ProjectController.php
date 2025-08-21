@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Page;
 use App\Models\Project;
 use App\Interfaces\PageContextServiceFactoryInterface;
 use Illuminate\Http\Request;
@@ -14,7 +15,10 @@ class ProjectController extends Controller
 {
     public function __construct(
         protected PageContextServiceFactoryInterface $pageContextServiceFactory
-    ) {}
+    )
+    {
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -69,11 +73,15 @@ class ProjectController extends Controller
         $pageContextService = $this->pageContextServiceFactory->createForProject($project->id);
 
         $project->load(['owner', 'repositories']);
-        $project->pages = $pageContextService->getCurrentPages();
-
+        $pages = Page::where([
+            'project_id' => $project->id,
+            'parent_id' => null,
+        ])->with(['creator', 'parent', 'children', 'currentVersion'])
+            ->paginate();
 
         return Inertia::render('projects/Show', [
-            'project' => $project
+            'project' => $project,
+            'pages' => $pages
         ]);
     }
 
@@ -139,7 +147,7 @@ class ProjectController extends Controller
         if (!$project->canAccess(Auth::user())) {
             abort(403);
         }
-        
+
         return response()->json($project);
     }
 }

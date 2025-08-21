@@ -25,9 +25,9 @@ interface Props {
     content: string;
 }
 
-const props = defineProps<Props>();
+defineProps<Props>();
 
-const showPreview = ref(false);
+const showPreview = ref(true);
 </script>
 
 <style scoped>

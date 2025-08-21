@@ -93,8 +93,11 @@ class ActualizationService
 
             $page = $actualization->page;
 
-            // Получить генератор актуализации
-            $generator = $this->getActualizationGenerator($page->project_id);
+            if(is_null($page->project_id)) {
+                throw new \RuntimeException("Актуализация возможна только в рамках проекта");
+            }
+
+            $generator = $this->agentFactory->getActualizationGenerator($page->project_id);
 
             // Запустить генерацию актуализации
             // Черновик уже содержит актуальный контент и файлы из текущей версии
@@ -192,14 +195,6 @@ class ActualizationService
                 'total_tokens' => $actualization->llmChat->total_tokens,
             ] : null,
         ];
-    }
-
-    /**
-     * Получить генератор актуализации для проекта
-     */
-    private function getActualizationGenerator(int $projectId): ActualizationGeneratorInterface
-    {
-        return $this->agentFactory->getActualizationGenerator($projectId);
     }
 
     /**

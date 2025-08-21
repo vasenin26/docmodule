@@ -23,7 +23,6 @@
 
 <script setup lang="ts">
 import Heading from '@/components/Heading.vue';
-import Icon from '@/components/Icon.vue';
 import PageList from '@/components/PageList.vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app/AppSidebarLayout.vue';

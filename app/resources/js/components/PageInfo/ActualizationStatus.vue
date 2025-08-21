@@ -41,23 +41,10 @@
 import Button from '@/components/ui/button/Button.vue';
 import { Link } from '@inertiajs/vue3';
 import { RefreshCw } from 'lucide-vue-next';
-
-interface ActualizationStatus {
-    id: number;
-    status: 'pending' | 'processing' | 'completed' | 'failed';
-    created_at: string;
-    updated_at: string;
-    created_by: string;
-    has_chat: boolean;
-}
+import { Actualization } from '@/types';
 
 interface Props {
-    actualizationStatus: ActualizationStatus | null;
-    hasActiveActualization: boolean;
-    statusText: string | null;
-    statusColor: string;
-    canCancelActualization: boolean;
-    onCancelActualization: () => void;
+    actualization: Actualization
 }
 
 const props = defineProps<Props>();

@@ -16,11 +16,6 @@ class StoreActualizationRequest extends FormRequest
             return false;
         }
 
-        $page = $this->route('page');
-        if (!$page) {
-            return false;
-        }
-
         // Простая проверка: пользователь может актуализировать страницу если он ее создатель
         // или если это общедоступная функция (в зависимости от бизнес-логики)
         return true; // Временно разрешаем всем аутентифицированным пользователям

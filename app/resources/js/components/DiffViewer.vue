@@ -3,7 +3,7 @@
         <div class="border-b bg-gray-100 px-4 py-2">
             <span class="text-gray-600">Изменения в содержимом</span>
         </div>
-        <div class="max-h-40 overflow-y-auto">
+        <div class="max-h-100 overflow-y-auto">
             <div v-for="(line, index) in diffLines" :key="index" :class="getLineClass(line)" class="px-4 py-1 whitespace-pre-wrap">
                 {{ line }}
             </div>

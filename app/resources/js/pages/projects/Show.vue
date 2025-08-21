@@ -86,7 +86,7 @@
                     </Button>
                 </div>
 
-                <div v-if="!project.pages || project.pages.length === 0">
+                <div v-if="!pages || pages.length === 0">
                     <Card>
                         <CardContent class="py-12 text-center">
                             <div class="mx-auto mb-4 h-12 w-12 text-muted-foreground">
@@ -102,7 +102,7 @@
                     </Card>
                 </div>
 
-                <PageList v-else :pages="pagesData" :project="project" :filters="{ search: '', parent_id: undefined }" :show-create-button="false" />
+                <PageList v-else :pages="pages" :project="project" :filters="{ search: '', parent_id: undefined }" :show-create-button="false" />
             </div>
 
             <!-- Репозитории -->
@@ -170,17 +170,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { PagesData, Project } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
-import { computed } from 'vue';
 
 const props = defineProps<{
     project: Project;
+    pages: PagesData
 }>();
 
-// Преобразуем страницы проекта в формат PagesData для компонента PageList
-const pagesData = computed<PagesData>(() => ({
-    data: props.project.pages || [],
-    links: [], // В контексте проекта пагинация не используется
-}));
 
 const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ru-RU', {

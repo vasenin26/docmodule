@@ -4,10 +4,11 @@
             <div class="flex items-center justify-between">
                 <div>
                     <Heading :title="page.title || 'Без названия'" />
-                    <p class="mt-1 text-sm text-muted-foreground">Создано {{ formatDate(page.created_at) }} пользователем {{ page.creator?.name }}</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Создано {{ formatDate(page.created_at) }}
+                        пользователем {{ page.creator?.name }}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <Button v-if="canCreateTask" @click="createTask" variant="default"> Создать задачу </Button>
+                    <Button v-if="canCreateTask" @click="createTask" variant="default"> Создать задачу</Button>
                     <ActualizationButton
                         :page-id="page.id"
                         :can-actualize="canActualize"
@@ -20,175 +21,172 @@
                     </Button>
 
                     <Button as-child variant="outline">
-                        <Link :href="route('pages.versions', page.id)"> Версии </Link>
+                        <Link :href="route('pages.versions', page.id)"> Версии</Link>
                     </Button>
-                    <PageListButton :page="page"/>
+                    <PageListButton :page="page" />
                 </div>
             </div>
         </template>
 
-        <div class="max-w-4xl space-y-6">
-            <!-- Информация о черновике -->
-            <DraftInfo v-if="page.currentDraft" :draft="page.currentDraft" :page-id="page.id" />
 
-            <!-- Статус актуализации -->
-            <ActualizationStatus
-                v-if="actualizationStatus"
-                :actualization-status="actualizationStatus"
-                :has-active-actualization="hasActiveActualization"
-                :status-text="statusText"
-                :status-color="statusColor"
-                :can-cancel-actualization="canCancelActualization"
-                :on-cancel-actualization="cancelActualization"
-            />
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <!-- Основное содержимое -->
+            <div class="space-y-6 lg:col-span-1">
+                <!-- Информация о черновике -->
+                <DraftInfo v-if="page.currentDraft" :draft="page.currentDraft" :page-id="page.id" />
 
-            <!-- Родительская страница -->
-            <div v-if="page.parent" class="rounded-lg bg-muted/50 p-4">
-                <p class="mb-2 text-sm text-muted-foreground">Родительская страница:</p>
-                <Link :href="route('pages.show', page.parent.id)" class="font-medium hover:underline">
-                    {{ page.parent.title }}
-                </Link>
+                <!-- Статус актуализации -->
+                <ActualizationStatus
+                    v-if="actualizationStatus"
+                    :actualization-status="actualizationStatus"
+                    :has-active-actualization="hasActiveActualization"
+                    :status-text="statusText"
+                    :status-color="statusColor"
+                    :can-cancel-actualization="canCancelActualization"
+                    :on-cancel-actualization="cancelActualization"
+                />
+
+                <!-- Родительская страница -->
+                <div v-if="page.parent" class="rounded-lg bg-muted/50 p-4">
+                    <p class="mb-2 text-sm text-muted-foreground">Родительская страница:</p>
+                    <Link :href="route('pages.show', page.parent.id)" class="font-medium hover:underline">
+                        {{ page.parent.current_version.title }}
+                    </Link>
+                </div>
+
+                <!-- Содержимое страницы -->
+                <Card>
+                    <CardContent class="p-6">
+                        <div v-if="page.content">
+                            <MarkdownRenderer :content="page.content" />
+                        </div>
+                        <div v-else class="py-8 text-center text-muted-foreground">Содержимое страницы отсутствует</div>
+                    </CardContent>
+                </Card>
+
+                <!-- Описания задач -->
+                <Card v-if="page.diffDescriptions && page.diffDescriptions.length > 0">
+                    <CardHeader>
+                        <CardTitle>Связанные задачи</CardTitle>
+                        <CardDescription> Задачи, созданные на основе изменений в данной версии страницы
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="space-y-4">
+                            <div v-for="taskDescription in page.diffDescriptions" :key="taskDescription.id"
+                                 class="rounded-lg border p-4">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <p class="mb-2 text-sm text-muted-foreground">
+                                            Создано {{ formatDate(taskDescription.created_at) }}
+                                            <span v-if="taskDescription.creator"> пользователем {{
+                                                    taskDescription.creator.name
+                                                }} </span>
+                                        </p>
+                                        <div class="prose prose-sm max-w-none">
+                                            <MarkdownRenderer :content="taskDescription.content" />
+                                        </div>
+                                    </div>
+                                    <Button as-child variant="outline" size="sm" class="ml-4">
+                                        <Link :href="route('tasks.show', taskDescription.id)"> Перейти к задаче</Link>
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
-            <!-- Информация о проекте -->
-            <Card v-if="page.project">
-                <CardHeader>
-                    <CardTitle class="text-lg">Проект</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="font-medium">{{ page.project.title }}</p>
-                            <p class="text-sm text-muted-foreground">ID: {{ page.project.id }}</p>
-                        </div>
-                        <Button as-child variant="outline" size="sm">
-                            <Link :href="route('projects.show', page.project.id)"> Перейти к проекту </Link>
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <!-- Содержимое страницы -->
-            <Card>
-                <CardContent class="p-6">
-                    <div v-if="page.content">
-                        <MarkdownRenderer :content="page.content" />
-                    </div>
-                    <div v-else class="py-8 text-center text-muted-foreground">Содержимое страницы отсутствует</div>
-                </CardContent>
-            </Card>
-
-            <!-- Прикрепленные файлы -->
-            <Card v-if="page.files && page.files.length > 0">
-                <CardHeader>
-                    <CardTitle>Прикрепленные файлы</CardTitle>
-                    <CardDescription> Файлы, связанные с данной страницей документации </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div class="space-y-2">
-                        <div v-for="(file, index) in page.files" :key="index" class="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50">
-                            <FileIcon class="h-5 w-5 text-muted-foreground" />
-                            <div class="flex-1">
-                                <p class="font-mono text-sm break-all">{{ getFileName(file) }}</p>
-                                <p class="text-xs break-all text-muted-foreground">{{ file }}</p>
+            <div class="space-y-6 lg:col-span-1">
+                <!-- Информация о странице -->
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Информация о странице</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="font-medium">ID:</span>
+                                <span class="ml-2 text-muted-foreground">{{ page.id }}</span>
                             </div>
-                            <Button as-child variant="outline" size="sm" v-if="isValidRepositoryUrl(file)">
-                                <a :href="file" target="_blank" rel="noopener noreferrer"> Открыть файл </a>
-                            </Button>
+                            <div>
+                                <span class="font-medium">Создатель:</span>
+                                <span class="ml-2 text-muted-foreground">{{ page.creator?.name }}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">Дата создания версии:</span>
+                                <span class="ml-2 text-muted-foreground">{{ formatDate(page.created_at) }}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">Дата утверждения:</span>
+                                <span class="ml-2 text-muted-foreground">{{ formatDate(page.approved_at) }}</span>
+                            </div>
+                            <div v-if="page.children && page.children.length > 0">
+                                <span class="font-medium">Дочерних страниц:</span>
+                                <span class="ml-2 text-muted-foreground">{{ page.children.length }}</span>
+                            </div>
                         </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
 
-            <!-- Описания задач -->
-            <Card v-if="page.diffDescriptions && page.diffDescriptions.length > 0">
-                <CardHeader>
-                    <CardTitle>Связанные задачи</CardTitle>
-                    <CardDescription> Задачи, созданные на основе изменений в данной версии страницы </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div class="space-y-4">
-                        <div v-for="taskDescription in page.diffDescriptions" :key="taskDescription.id" class="rounded-lg border p-4">
-                            <div class="flex items-start justify-between">
+                <!-- Дочерние страницы -->
+                <ChildPages :children="page.children" :parent-id="page.id" />
+
+                <!-- Информация о версиях -->
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Информация о версиях</CardTitle>
+                        <CardDescription> Детали версионирования страницы</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="font-medium">Текущая версия:</span>
+                                <span class="ml-2 text-muted-foreground">{{ page.version_id }}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">Предыдущая версия:</span>
+                                <span class="ml-2 text-muted-foreground">{{
+                                        previousVersion?.id || 'Первая версия'
+                                    }}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">Дата создания версии:</span>
+                                <span class="ml-2 text-muted-foreground">{{ formatDate(page.created_at) }}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">Дата создания предыдущей версии:</span>
+                                <span class="ml-2 text-muted-foreground">{{
+                                        previousVersion ? formatDate(previousVersion.created_at) : 'Первая версия'
+                                    }}</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <!-- Прикрепленные файлы -->
+                <Card v-if="page.files && page.files.length > 0">
+                    <CardHeader>
+                        <CardTitle>Прикрепленные файлы</CardTitle>
+                        <CardDescription> Файлы, связанные с данной страницей документации</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="space-y-2">
+                            <div v-for="(file, index) in page.files" :key="index"
+                                 class="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50">
+                                <FileIcon class="h-5 w-5 text-muted-foreground" />
                                 <div class="flex-1">
-                                    <p class="mb-2 text-sm text-muted-foreground">
-                                        Создано {{ formatDate(taskDescription.created_at) }}
-                                        <span v-if="taskDescription.creator"> пользователем {{ taskDescription.creator.name }} </span>
-                                    </p>
-                                    <div class="prose prose-sm max-w-none">
-                                        <MarkdownRenderer :content="taskDescription.content" />
-                                    </div>
+                                    <p class="font-mono text-sm break-all">{{ getFileName(file) }}</p>
+                                    <p class="text-xs break-all text-muted-foreground">{{ file }}</p>
                                 </div>
-                                <Button as-child variant="outline" size="sm" class="ml-4">
-                                    <Link :href="route('tasks.show', taskDescription.id)"> Перейти к задаче </Link>
+                                <Button as-child variant="outline" size="sm" v-if="isValidRepositoryUrl(file)">
+                                    <a :href="file" target="_blank" rel="noopener noreferrer"> Открыть файл </a>
                                 </Button>
                             </div>
                         </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <!-- Дочерние страницы -->
-            <ChildPages :children="page.children" :parent-id="page.id" />
-
-            <!-- Информация о версиях -->
-            <Card>
-                <CardHeader>
-                    <CardTitle>Информация о версиях</CardTitle>
-                    <CardDescription> Детали версионирования страницы </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span class="font-medium">Текущая версия:</span>
-                            <span class="ml-2 text-muted-foreground">{{ page.version_id }}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium">Предыдущая версия:</span>
-                            <span class="ml-2 text-muted-foreground">{{ previousVersion?.id || 'Первая версия' }}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium">Дата создания версии:</span>
-                            <span class="ml-2 text-muted-foreground">{{ formatDate(page.created_at) }}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium">Дата создания предыдущей версии:</span>
-                            <span class="ml-2 text-muted-foreground">{{ previousVersion ? formatDate(previousVersion.created_at) : 'Первая версия' }}</span>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <!-- Информация о странице -->
-            <Card>
-                <CardHeader>
-                    <CardTitle>Информация о странице</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span class="font-medium">ID:</span>
-                            <span class="ml-2 text-muted-foreground">{{ page.id }}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium">Создатель:</span>
-                            <span class="ml-2 text-muted-foreground">{{ page.creator?.name }}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium">Дата создания версии:</span>
-                            <span class="ml-2 text-muted-foreground">{{ formatDate(page.created_at) }}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium">Дата утверждения:</span>
-                            <span class="ml-2 text-muted-foreground">{{ formatDate(page.approved_at) }}</span>
-                        </div>
-                        <div v-if="page.children && page.children.length > 0">
-                            <span class="font-medium">Дочерних страниц:</span>
-                            <span class="ml-2 text-muted-foreground">{{ page.children.length }}</span>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     </AppLayout>
 </template>
@@ -197,7 +195,7 @@
 import DraftInfo from '@/components/PageInfo/DraftInfo.vue';
 import ActualizationStatus from '@/components/PageInfo/ActualizationStatus.vue';
 import ActualizationButton from '@/components/PageInfo/ActualizationButton.vue';
-import ChildPages from '@/components/PageInfo/ChildPages.vue';
+import ChildPages, { ChildPage } from '@/components/PageInfo/ChildPages.vue';
 import Heading from '@/components/Heading.vue';
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
 import Button from '@/components/ui/button/Button.vue';
@@ -244,7 +242,7 @@ interface Page {
     creator: Creator;
     parent?: Page;
     project?: Project;
-    children: Page[];
+    children: ChildPage[];
     previous_version_id?: number;
     version_id?: number;
     current: boolean;
@@ -279,7 +277,7 @@ const {
     canStartActualization,
     canCancelActualization,
     cancelActualization,
-    checkStatus,
+    checkStatus
 } = usePageActualization(props.page.id);
 
 // Проверяем статус при загрузке компонента
@@ -304,7 +302,7 @@ const formatDate = (date: string) => {
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit',
+        minute: '2-digit'
     });
 };
 

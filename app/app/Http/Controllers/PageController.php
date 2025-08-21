@@ -158,7 +158,9 @@ class PageController extends Controller
         $page->load([
             'creator',
             'children.creator',
+            'children.currentVersion',
             'parent',
+            'parent.currentVersion',
             'project',
             'currentVersion.previousVersion',
             'diffDescriptions.creator',
@@ -179,7 +181,9 @@ class PageController extends Controller
                 'approved_at' => $page->updated_at,
                 'creator' => $page->creator,
                 'diffDescriptions' => $page->diffDescriptions,
-                'project' => $page->project
+                'project' => $page->project,
+                'children' => $page->children,
+                'parent' => $page->parent
             ],
             'currentDraft' => $page->getCurrentDraft(Auth::id()),
             'previousVersion' => $page->currentVersion->previousVersion ? [
@@ -213,6 +217,7 @@ class PageController extends Controller
             'pageVersion' => $version,
             'page' => $page,
             'is_current_version' => $page->checkCurrentVersion($version->id),
+            'actualization' => $version->getActiveActualization(),
             'errors' => (object) [],
         ]);
     }

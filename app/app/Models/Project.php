@@ -49,8 +49,12 @@ class Project extends Model
     /**
      * Проверяет, может ли пользователь получить доступ к проекту
      */
-    public function canAccess(User $user): bool
+    public function canAccess(?User $user): bool
     {
+        if(is_null($user)) {
+            return false;
+        }
+        
         // Пользователь может получить доступ к проекту, если он является владельцем
         return $this->owner_id === $user->id;
     }

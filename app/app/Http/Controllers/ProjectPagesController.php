@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
-use App\Models\Page;
 use App\Interfaces\PageContextServiceFactoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,6 +37,8 @@ class ProjectPagesController extends Controller
         $parentId = $request->get('parent_id');
         if ($parentId) {
             $pages = $pages->where('parent_id', $parentId);
+        } else {
+            $pages = $pages->whereNull('parent_id');
         }
 
         // Преобразуем в формат пагинации для совместимости с PageList компонентом
