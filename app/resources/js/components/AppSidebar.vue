@@ -5,26 +5,44 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FileText, Folder, FolderOpen, LayoutGrid } from 'lucide-vue-next';
+import { BookOpen, FileText, Folder, FolderOpen, LayoutGrid, Settings } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { useProjectStore } from '@/stores/project';
 import AppLogo from './AppLogo.vue';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Проекты',
-        href: '/projects',
-        icon: FolderOpen,
-    },
-    {
-        title: 'Страницы',
-        href: '/pages',
-        icon: FileText,
-    },
-];
+const projectStore = useProjectStore();
+
+// Единый список всех элементов меню с маркерами projectRequired
+const allNavItems = computed((): NavItem[] => {
+    const currentProject = projectStore.selectedProject;
+
+    return [
+        {
+            title: 'Dashboard',
+            href: '/dashboard',
+            icon: LayoutGrid,
+            projectRequired: false // Dashboard всегда доступен и ведет на общий дашборд
+        },
+        {
+            title: 'Проекты',
+            href: '/projects',
+            icon: FolderOpen,
+            projectRequired: false
+        },
+        {
+            title: 'Страницы',
+            href: currentProject ? `/projects/${currentProject.id}/pages` : '/pages',
+            icon: FileText,
+            projectRequired: true
+        },
+        {
+            title: 'Настройки',
+            href: `/projects/${currentProject?.id}/edit`,
+            icon: Settings,
+            projectRequired: true
+        },
+    ];
+});
 
 const footerNavItems: NavItem[] = [
     {
@@ -55,7 +73,7 @@ const footerNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain :items="allNavItems" />
         </SidebarContent>
 
         <SidebarFooter>

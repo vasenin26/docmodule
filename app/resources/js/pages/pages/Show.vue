@@ -22,11 +22,7 @@
                     <Button as-child variant="outline">
                         <Link :href="route('pages.versions', page.id)"> Версии </Link>
                     </Button>
-                    <Button as-child variant="outline">
-                        <Link :href="page.project ? route('projects.show', page.project.id) : route('pages.index')">
-                            {{ page.project ? 'Назад к проекту' : 'Назад к списку' }}
-                        </Link>
-                    </Button>
+                    <PageListButton :page="page"/>
                 </div>
             </div>
         </template>
@@ -216,6 +212,8 @@ import { computed, onMounted } from 'vue';
 
 import { usePageActualization } from '@/composables/usePageActualization';
 import { FileIcon } from 'lucide-vue-next';
+import { Project } from '@/types';
+import PageListButton from '@/components/PageInfo/PageListButton.vue';
 
 interface Creator {
     name: string;
@@ -245,6 +243,7 @@ interface Page {
     approved_at: string;
     creator: Creator;
     parent?: Page;
+    project?: Project;
     children: Page[];
     previous_version_id?: number;
     version_id?: number;

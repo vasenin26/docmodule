@@ -4,6 +4,8 @@ use App\Http\Controllers\ActualizationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectPagesController;
+use App\Http\Controllers\ProjectSettingsController;
 use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TechplaneController;
@@ -77,7 +79,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('actualizations.show');
     Route::delete('actualizations/{actualization}', [ActualizationController::class, 'cancel'])
         ->name('actualizations.cancel');
-    
+
     // Новый маршрут для актуализации конкретного черновика
     Route::post('/drafts/{draft}/actualize', [ActualizationController::class, 'storeForDraft'])
         ->name('drafts.actualize');
@@ -96,7 +98,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('techplanes.restart-generation');
     Route::get('techplanes/{techplane}/check-generation-status', [TechplaneController::class, 'checkGenerationStatus'])
         ->name('techplanes.check-generation-status');
+
+    // НОВЫЕ маршруты в рамках проекта
+    Route::prefix('projects/{project}')->group(function () {
+        Route::get('/pages', [ProjectPagesController::class, 'index'])->name('projects.pages.index');
+    });
+
+    // API маршрут для получения проекта
+    Route::get('/api/projects/{project}', [ProjectController::class, 'apiShow'])->name('api.projects.show');
 });
+
+
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

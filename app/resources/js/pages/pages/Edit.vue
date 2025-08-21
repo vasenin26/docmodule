@@ -19,9 +19,7 @@
                     <Button as-child variant="outline">
                         <Link :href="route('pages.show', pageVersion?.page_id)"> Просмотр </Link>
                     </Button>
-                    <Button as-child variant="outline">
-                        <Link :href="route('pages.index')"> Назад к списку </Link>
-                    </Button>
+                    <PageListButton :page="page"/>
                 </div>
             </div>
         </template>
@@ -143,6 +141,8 @@ import Label from '@/components/ui/label/Label.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import PageListButton from '@/components/PageInfo/PageListButton.vue';
+import {Page} from '@/types/index.ts'
 
 type PageVersion = {
     id: number;
@@ -155,6 +155,7 @@ type PageVersion = {
 
 const props = withDefaults(
     defineProps<{
+        page: Page,
         pageVersion: PageVersion,
         is_current_version: false
         errors: any

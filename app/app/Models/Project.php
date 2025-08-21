@@ -45,4 +45,13 @@ class Project extends Model
     {
         return $this->belongsToMany(Repository::class);
     }
+
+    /**
+     * Проверяет, может ли пользователь получить доступ к проекту
+     */
+    public function canAccess(User $user): bool
+    {
+        // Пользователь может получить доступ к проекту, если он является владельцем
+        return $this->owner_id === $user->id;
+    }
 }

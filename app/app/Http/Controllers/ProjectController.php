@@ -129,4 +129,17 @@ class ProjectController extends Controller
         return redirect()->route('projects.index')
             ->with('success', 'Проект успешно удален');
     }
+
+    /**
+     * API метод для получения проекта
+     */
+    public function apiShow(Project $project)
+    {
+        // Проверяем доступ пользователя к проекту
+        if (!$project->canAccess(Auth::user())) {
+            abort(403);
+        }
+        
+        return response()->json($project);
+    }
 }

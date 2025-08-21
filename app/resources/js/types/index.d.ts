@@ -10,11 +10,17 @@ export interface BreadcrumbItem {
     href: string;
 }
 
+export interface Breadcrumb {
+    title: string;
+    href?: string;
+}
+
 export interface NavItem {
     title: string;
     href: string;
     icon?: LucideIcon;
     isActive?: boolean;
+    projectRequired?: boolean; // НОВОЕ ПОЛЕ: требуется ли выбранный проект
 }
 
 export type AppPageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {

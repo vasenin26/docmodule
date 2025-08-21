@@ -178,7 +178,8 @@ class PageController extends Controller
                 'created_at' => $page->currentVersion->created_at,
                 'approved_at' => $page->updated_at,
                 'creator' => $page->creator,
-                'diffDescriptions' => $page->diffDescriptions
+                'diffDescriptions' => $page->diffDescriptions,
+                'project' => $page->project
             ],
             'currentDraft' => $page->getCurrentDraft(Auth::id()),
             'previousVersion' => $page->currentVersion->previousVersion ? [
@@ -190,7 +191,10 @@ class PageController extends Controller
 
     public function edit(Page $page)
     {
+        $page->load(['project']);
+
         return Inertia::render('pages/Edit', [
+            'page' => $page,
             'pageVersion' => $page->currentVersion,
             'is_current_version' => true,
             'errors' => (object) [],
@@ -203,8 +207,11 @@ class PageController extends Controller
             abort(404);
         }
 
+        $page->load(['project']);
+
         return Inertia::render('pages/Edit', [
             'pageVersion' => $version,
+            'page' => $page,
             'is_current_version' => $page->checkCurrentVersion($version->id),
             'errors' => (object) [],
         ]);
@@ -398,7 +405,7 @@ class PageController extends Controller
             if (!$currentVersion) {
                 throw new \Exception('У страницы нет текущей версии');
             }
-            
+
             $versionDiffTask = $this->taskService->createTaskForPageVersion($currentVersion);
 
             return redirect()->route('tasks.show', $versionDiffTask->id)

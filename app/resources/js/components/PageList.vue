@@ -70,10 +70,12 @@
                                 <td class="p-4">
                                     <div class="flex items-center gap-2">
                                         <Button as-child size="sm" variant="outline">
-                                            <Link :href="route('pages.show', page.id)"> Просмотр </Link>
+                                            <Link :href="props.project ? route('pages.show', [page.id]) : route('pages.show', page.id)">
+                                                Просмотр
+                                            </Link>
                                         </Button>
                                         <Button as-child size="sm" variant="outline">
-                                            <Link :href="route('pages.edit', [page.id])">
+                                            <Link :href="props.project ? route('pages.edit', [page.id]) : route('pages.edit', [page.id])">
                                                 Редактировать
                                             </Link>
                                         </Button>
@@ -237,7 +239,8 @@ const clearSearch = () => {
 
 const deletePage = (pageId: number) => {
     if (confirm('Вы уверены, что хотите удалить эту страницу?')) {
-        router.delete(route('pages.destroy', pageId));
+        const deleteRoute = props.project ? route('projects.pages.destroy', [props.project.id, pageId]) : route('pages.destroy', pageId);
+        router.delete(deleteRoute);
     }
 };
 </script>
