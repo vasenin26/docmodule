@@ -16,3 +16,13 @@ export function getStupidStore(key: string) {
 
     return storages[key];
 }
+
+
+
+export function formatDate(dateString: string){
+    return new Date(dateString).toLocaleDateString('ru-RU', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+}

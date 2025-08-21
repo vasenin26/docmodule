@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import ExpenseCard from '@/components/dashboard/ExpenseCard.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem, type DashboardData } from '@/types';
+import { type BreadcrumbItem, type TokenStatistics, type Project } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import PlaceholderPattern from '../components/PlaceholderPattern.vue';
+import Projects from '@/components/dashboard/Projects.vue';
 
-defineProps<DashboardData>();
+defineProps<{
+    token_statistics: TokenStatistics;
+    projects: Project[];
+}>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -32,9 +36,11 @@ const breadcrumbs: BreadcrumbItem[] = [
                     <PlaceholderPattern />
                 </div>
             </div>
-            <div class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
-                <PlaceholderPattern />
+            <div class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border p-5">
+                <Projects :projects="projects" />
             </div>
         </div>
+
+
     </AppLayout>
 </template>

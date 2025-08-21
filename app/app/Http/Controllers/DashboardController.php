@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\LLMChat;
+use App\Models\Project;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,8 +20,14 @@ class DashboardController extends Controller
     {
         $tokenStatistics = $this->getTokenStatistics();
 
+        $projects = Project::where('owner_id', Auth::id())
+            ->with(['owner'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return Inertia::render('Dashboard', [
-            'token_statistics' => $tokenStatistics
+            'token_statistics' => $tokenStatistics,
+            'projects' => $projects,
         ]);
     }
 

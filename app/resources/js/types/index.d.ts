@@ -157,10 +157,6 @@ export interface TokenStatistics {
     total_tokens: number;
 }
 
-export interface DashboardData {
-    token_statistics: TokenStatistics;
-}
-
 export interface Actualization {
     id: number;
     page_id: number;
