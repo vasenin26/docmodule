@@ -6,35 +6,32 @@ use App\Common\DTO\DifferenceDataDTO;
 use App\Common\DTO\LLMGenerationResult;
 use App\Interfaces\ContentGenerator\DiffDescriptionGeneratorInterface;
 use App\Interfaces\LLM\ContentGenerator;
+use App\Interfaces\LLM\PromptProviderInterface;
 use App\Models\LLMChat;
 use App\Models\Repository;
 use Illuminate\Support\Facades\Log;
 
-class DiffDescriptionGenerator implements DiffDescriptionGeneratorInterface
+readonly class DiffDescriptionGenerator implements DiffDescriptionGeneratorInterface
 {
 
     /**
      * @param ContentGenerator $llmGenerator
+     * @param PromptProviderInterface $promptProvider
      * @param array<Repository> $repositories
      */
     public function __construct(
-        private ContentGenerator $llmGenerator,
-        private array            $repositories = [],
+        private ContentGenerator        $llmGenerator,
+        private PromptProviderInterface $promptProvider,
+        private array                   $repositories = [],
     )
     {
     }
 
-    /**
-     * Generate task description based on version difference data
-     *
-     * @param DifferenceDataDTO $differenceData Data about the difference between versions
-     * @return string Generated task description
-     */
     public function generate(DifferenceDataDTO $differenceData): LLMGenerationResult
     {
         try {
             $prompt = $this->buildPrompt($differenceData);
-            $llmResult = $this->llmGenerator->generate($prompt, $this->getSystemPrompt());
+            $llmResult = $this->llmGenerator->generate($prompt, $this->promptProvider->getDescriptionGeneratorRole());
 
             $chat = LLMChat::create([
                 'messages' => $llmResult->messages,
@@ -86,48 +83,21 @@ class DiffDescriptionGenerator implements DiffDescriptionGeneratorInterface
         $changes[] = $differenceData->newVersionContent . "\n";
         $changes[] = "--------- \n";
 
-        return "Создай описание задачи на основе следующих изменений в документации:\n\n" .
-            implode("\n\n", $changes) .
-            "\n\nОписание должно быть понятным для разработчиков и содержать основную суть изменений.";
-    }
-
-    /**
-     * Get the system prompt for the AI model
-     */
-    private function getSystemPrompt(): string
-    {
-        $prompt = "Ты - опытный менеджер продукта, который создает краткие и информативные описания задач на основе изменений в документации. " .
-            "Твоя задача сформировать задачу для разработчиков на основе изменений в документации. " .
-            "На основе различия необходимо сформировать описание требуемых изменений необходимых для того, " .
-            "чтобы привести кодовую базу к состоянию удовлетворяющему новую версию документации." .
-
-            "Документация являются абсолютной истиной, если поведение продукта не соответствует документации необходимо составить план работ для приведения системы в соответствие с инструкциями" .
-
-            "Файлы проекта доступны в репозиториях. Изучай кодовую базу проекта с помощью утилит git, чтобы понять какие изменения необходимо внести," .
-            "чтобы привести код проекта в соответствие с документацией" .
-
-            "Описание должно быть:\n" .
-            "- Информативным\n" .
-            "- Понятным для  разработчиков\n" .
-            "- На русском языке\n" .
-            "- Без технических деталей, если они не критичны\n" .
-            "- Задача должна включить только описание необходимых изменений\n" .
-            "- Задача должна быть в формате markdown\n";
-
         if (!empty($this->repositories)) {
-            $prompt .= "Проект включает следующие репозитории: \n";
+            $changes[] = "Проект включает следующие репозитории: \n";
 
             foreach ($this->repositories as $repository) {
-                $prompt .= '- ' . $repository->url . "\n";
+                $changes[] = '- ' . $repository->url . "\n";
             }
 
-            $prompt .= "\n Исследуй репозиторий чтобы получить дополнительную " .
+            $changes[] = "\n Исследуй репозиторий чтобы получить дополнительную " .
                 "информацию о продукте и создать лучшее описание задачи. \n\n";
         }
 
-        $prompt .= "\n\nСохрани описание в хранилище.";
-
-        return $prompt;
+        return "Создай описание задачи на основе следующих изменений в документации:\n\n" .
+            implode("\n\n", $changes) .
+            "\n\nОписание должно быть понятным для разработчиков и содержать основную суть изменений." .
+            "\n\nСохрани описание в хранилище.";
     }
 
     /**
