@@ -6,7 +6,6 @@
                 <div class="flex items-center gap-2">
                     <!-- Кнопка актуализации только для черновиков -->
                     <Button
-                        v-if="!is_current_version && pageVersion.is_draft"
                         type="button"
                         @click="showActualizeDialog"
                         variant="outline"
@@ -144,6 +143,7 @@ import { Actualization, Page } from '@/types/index.ts';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import ActualizationStatus from '@/components/PageInfo/ActualizationStatus.vue';
+import ActualizationButton from '@/components/PageInfo/ActualizationButton.vue';
 
 type PageVersion = {
     id: number;

@@ -9,16 +9,17 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <Button v-if="canCreateTask" @click="createTask" variant="default"> Создать задачу</Button>
-                    <ActualizationButton
-                        :page-id="page.id"
-                        :can-actualize="canActualize"
-                    />
 
                     <Button>
                         <Link :href="route('pages.edit', page.id)">
                             Редактировать
                         </Link>
                     </Button>
+
+                    <ActualizationButton
+                        :page-id="page.id"
+                        :can-actualize="canActualize"
+                    />
 
                     <Button as-child variant="outline">
                         <Link :href="route('pages.versions', page.id)"> Версии</Link>

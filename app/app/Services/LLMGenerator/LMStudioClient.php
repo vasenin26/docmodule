@@ -41,6 +41,11 @@ class LMStudioClient implements ContentGenerator
 
         $tools = $this->toolsFactory->withAllTools();
 
+        // Извлекаем детализированную информацию о токенах
+        $promptTokens = 0;
+        $completionTokens = 0;
+        $totalTokens = 0;
+
         do {
             $answer = null;
 
@@ -94,47 +99,18 @@ class LMStudioClient implements ContentGenerator
                     ];
 
                     if ($tools->isResultFunction($toolCall->function->name)) {
-                        var_dump('RESULT');
                         $answer = $toolResult;
                     }
                 }
             }
 
-        } while (is_null($answer));
-
-        // Извлекаем детализированную информацию о токенах
-        $promptTokens = null;
-        $completionTokens = null;
-        $totalTokens = null;
-
-        try {
-            if (isset($result->usage)) {
-                $promptTokens = $result->usage->promptTokens ?? null;
-                $completionTokens = $result->usage->completionTokens ?? null;
-                $totalTokens = $result->usage->totalTokens ?? null;
-
-                // Логируем использование токенов для мониторинга расходов
-                Log::info('OpenAI API usage', [
-                    'prompt_tokens' => $promptTokens,
-                    'completion_tokens' => $completionTokens,
-                    'total_tokens' => $totalTokens,
-                ]);
-            } else {
-                // Если информация о токенах недоступна, устанавливаем 0 для всех полей
-                $promptTokens = 0;
-                $completionTokens = 0;
-                $totalTokens = 0;
-                Log::warning('Информация о токенах недоступна в ответе OpenAI API');
+            if (!is_null($result->usage)) {
+                $promptTokens += $result->usage->promptTokens ?? 0;
+                $completionTokens += $result->usage->completionTokens ?? 0;
+                $totalTokens += $result->usage->totalTokens ?? 0;
             }
-        } catch (\Exception $e) {
-            // В случае ошибки устанавливаем 0 для всех полей
-            $promptTokens = 0;
-            $completionTokens = 0;
-            $totalTokens = 0;
-            Log::error('Ошибка при извлечении информации о токенах', [
-                'error' => $e->getMessage()
-            ]);
-        }
+
+        } while (is_null($answer));
 
         return new LLMResultDTO(
             $answer,
