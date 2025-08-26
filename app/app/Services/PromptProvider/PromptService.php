@@ -7,6 +7,11 @@ use App\Interfaces\LLM\PromptProviderInterface;
 class PromptService implements PromptProviderInterface
 {
 
+    public function __construct(
+        private readonly DefaultPrompts $defaultProvider,
+        private readonly ProjectPrompts $userPrompts,
+    ) {}
+
     public function getDescriptionGeneratorRole(): string
     {
         return "Ты - опытный менеджер продукта, который создает краткие и информативные описания задач на основе изменений в документации. " .
@@ -26,6 +31,5 @@ class PromptService implements PromptProviderInterface
             "- Без технических деталей, если они не критичны\n" .
             "- Задача должна включить только описание необходимых изменений\n" .
             "- Задача должна быть в формате markdown\n";
-
     }
 }
