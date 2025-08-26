@@ -30,7 +30,14 @@ readonly class DiffDescriptionGenerator implements DiffDescriptionGeneratorInter
     public function generate(DifferenceDataDTO $differenceData): LLMGenerationResult
     {
         try {
-            $prompt = $this->buildPrompt($differenceData);
+            // Получаем прикрепленные файлы из страницы, если они есть
+            $attachedFiles = [];
+            if ($differenceData->newVersionId) {
+                // Здесь можно добавить логику получения прикрепленных файлов
+                // Пока оставляем пустым массивом
+            }
+            
+            $prompt = $this->promptProvider->getDescriptionGeneratorInstructions($differenceData, $this->repositories, $attachedFiles);
             $llmResult = $this->llmGenerator->generate($prompt, $this->promptProvider->getDescriptionGeneratorRole());
 
             $chat = LLMChat::create([
@@ -52,53 +59,7 @@ readonly class DiffDescriptionGenerator implements DiffDescriptionGeneratorInter
         }
     }
 
-    /**
-     * Build the prompt for the AI model
-     */
-    private function buildPrompt(DifferenceDataDTO $differenceData): string
-    {
-        $changes = [];
 
-        if ($differenceData->diffOutput && !empty($differenceData->diffOutput)) {
-            $changes[] = "Изменения в формате git diff:\n" . $differenceData->diffOutput;
-        } else {
-            // Fallback to old format for backward compatibility
-            if (!empty($differenceData->addedLines)) {
-                $changes[] = "Добавлено строк: " . count($differenceData->addedLines);
-                $changes[] = "Добавленный код:\n" . implode("\n", array_slice($differenceData->addedLines, 0, 10));
-            }
-
-            if (!empty($differenceData->removedLines)) {
-                $changes[] = "Удалено строк: " . count($differenceData->removedLines);
-                $changes[] = "Удаленный код:\n" . implode("\n", array_slice($differenceData->removedLines, 0, 10));
-            }
-        }
-
-        if ($differenceData->newVersionTitle) {
-            $changes[] = "Страница: " . $differenceData->newVersionTitle;
-        }
-
-        $changes[] = "Новая версия: ";
-        $changes[] = "--------- \n";
-        $changes[] = $differenceData->newVersionContent . "\n";
-        $changes[] = "--------- \n";
-
-        if (!empty($this->repositories)) {
-            $changes[] = "Проект включает следующие репозитории: \n";
-
-            foreach ($this->repositories as $repository) {
-                $changes[] = '- ' . $repository->url . "\n";
-            }
-
-            $changes[] = "\n Исследуй репозиторий чтобы получить дополнительную " .
-                "информацию о продукте и создать лучшее описание задачи. \n\n";
-        }
-
-        return "Создай описание задачи на основе следующих изменений в документации:\n\n" .
-            implode("\n\n", $changes) .
-            "\n\nОписание должно быть понятным для разработчиков и содержать основную суть изменений." .
-            "\n\nСохрани описание в хранилище.";
-    }
 
     /**
      * Generate fallback description when OpenAI API fails

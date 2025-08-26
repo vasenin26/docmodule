@@ -47,6 +47,14 @@ class Project extends Model
     }
 
     /**
+     * Get the prompts for the project.
+     */
+    public function prompts(): HasMany
+    {
+        return $this->hasMany(Prompt::class);
+    }
+
+    /**
      * Проверяет, может ли пользователь получить доступ к проекту
      */
     public function canAccess(?User $user): bool

@@ -16,6 +16,11 @@ use App\Interfaces\TaskServiceInterface;
 use App\Services\DiffGenerator\DiffGeneratorService;
 use App\Services\LLMGenerator\LMStudioClient;
 use App\Services\PageContext\PageContextServiceFactory;
+use App\Services\PromptProvider\PromptServiceFactory;
+use App\Services\PromptProvider\PromptSourceFactory;
+use App\Services\PromptProvider\PromptSourceFactoryInterface;
+use App\Services\PromptProvider\PromptTemplateRenderer;
+use App\Services\PromptProvider\PromptTemplateRendererInterface;
 use App\Services\RepositoryService\RepositoryProvider;
 use App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorFactory;
 use App\Services\TaskDescriptionGenerator\TechplaneGeneratorFactory;
@@ -60,6 +65,11 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->bind(TaskServiceInterface::class, TaskService::class);
+
+        // Регистрация сервисов системы промптов
+        $this->app->bind(PromptTemplateRendererInterface::class, PromptTemplateRenderer::class);
+        $this->app->bind(PromptSourceFactoryInterface::class, PromptSourceFactory::class);
+        $this->app->bind(PromptServiceFactory::class, PromptServiceFactory::class);
     }
 
     /**
