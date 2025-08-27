@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectPagesController;
+use App\Http\Controllers\ProjectPromptController;
 use App\Http\Controllers\ProjectSettingsController;
 use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\TaskController;
@@ -103,6 +104,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('projects/{project}')->group(function () {
         Route::get('/pages', [ProjectPagesController::class, 'index'])->name('projects.pages.index');
     });
+
+    // Маршруты для промптов проекта
+    Route::get('projects/{project}/prompts', [ProjectPromptController::class, 'index'])
+        ->name('projects.prompts.index');
+    Route::get('projects/{project}/prompts/{type}', [ProjectPromptController::class, 'show'])
+        ->name('projects.prompts.show');
+    Route::post('projects/{project}/prompts', [ProjectPromptController::class, 'store'])
+        ->name('projects.prompts.store');
+    Route::delete('projects/{project}/prompts/{type}', [ProjectPromptController::class, 'destroy'])
+        ->name('projects.prompts.destroy');
+    Route::post('projects/{project}/prompts/preview', [ProjectPromptController::class, 'preview'])
+        ->name('projects.prompts.preview');
 
     // API маршрут для получения проекта
     Route::get('/api/projects/{project}', [ProjectController::class, 'apiShow'])->name('api.projects.show');

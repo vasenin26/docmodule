@@ -24,6 +24,12 @@
                                     Редактировать
                                 </Link>
                             </DropdownMenuItem>
+                            <DropdownMenuItem as-child>
+                                <Link :href="route('projects.prompts.index', project.id)" class="flex items-center">
+                                    <Icon name="message-square" class="mr-2 h-4 w-4" />
+                                    Настроить промпты
+                                </Link>
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem class="flex items-center text-destructive" @click="deleteProject">
                                 <Icon name="trash-2" class="mr-2 h-4 w-4" />
