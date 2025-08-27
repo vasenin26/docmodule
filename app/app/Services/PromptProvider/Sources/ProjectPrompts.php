@@ -2,8 +2,9 @@
 
 namespace App\Services\PromptProvider\Sources;
 
-use App\Enums\PromptType;
+use App\Common\Enums\PromptType;
 use App\Models\Prompt;
+use App\Services\PromptProvider\Interface\PromptSourceInterface;
 
 class ProjectPrompts implements PromptSourceInterface
 {
@@ -16,7 +17,7 @@ class ProjectPrompts implements PromptSourceInterface
         $prompt = Prompt::where('project_id', $this->projectId)
             ->where('type', $type->value)
             ->first();
-            
+
         return $prompt?->content;
     }
 }

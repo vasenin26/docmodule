@@ -17,28 +17,21 @@ readonly class DiffDescriptionGenerator implements DiffDescriptionGeneratorInter
     /**
      * @param ContentGenerator $llmGenerator
      * @param PromptProviderInterface $promptProvider
-     * @param array<Repository> $repositories
      */
     public function __construct(
         private ContentGenerator        $llmGenerator,
         private PromptProviderInterface $promptProvider,
-        private array                   $repositories = [],
     )
     {
     }
 
-    public function generate(DifferenceDataDTO $differenceData): LLMGenerationResult
+    public function generate(DifferenceDataDTO $differenceData, $repositories, $attachedFiles): LLMGenerationResult
     {
         try {
-            // Получаем прикрепленные файлы из страницы, если они есть
-            $attachedFiles = [];
-            if ($differenceData->newVersionId) {
-                // Здесь можно добавить логику получения прикрепленных файлов
-                // Пока оставляем пустым массивом
-            }
-            
-            $prompt = $this->promptProvider->getDescriptionGeneratorInstructions($differenceData, $this->repositories, $attachedFiles);
-            $llmResult = $this->llmGenerator->generate($prompt, $this->promptProvider->getDescriptionGeneratorRole());
+            $prompt = $this->promptProvider->getDescriptionGeneratorInstructions($differenceData, $repositories, $attachedFiles);
+            $role = $this->promptProvider->getDescriptionGeneratorRole();
+
+            $llmResult = $this->llmGenerator->generate($prompt, $role);
 
             $chat = LLMChat::create([
                 'messages' => $llmResult->messages,
@@ -54,7 +47,6 @@ readonly class DiffDescriptionGenerator implements DiffDescriptionGeneratorInter
                 'difference_data' => $differenceData->toArray(),
             ]);
 
-            // Возвращаем fallback описание в случае ошибки
             return $this->generateFallbackDescription($differenceData);
         }
     }

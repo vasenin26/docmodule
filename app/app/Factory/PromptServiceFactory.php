@@ -1,6 +1,10 @@
 <?php
 
-namespace App\Services\PromptProvider;
+namespace App\Factory;
+
+use App\Services\PromptProvider\Interface\PromptSourceFactoryInterface;
+use App\Services\PromptProvider\Interface\PromptTemplateRendererInterface;
+use App\Services\PromptProvider\PromptService;
 
 class PromptServiceFactory
 {
@@ -13,12 +17,13 @@ class PromptServiceFactory
     {
         $defaultPrompts = $this->sourceFactory->createDefaultSource();
         $projectPrompts = $this->sourceFactory->createProjectSource($projectId);
-        return new PromptService($defaultPrompts, $this->templateRenderer, $projectPrompts);
+
+        return new PromptService($this->templateRenderer, $defaultPrompts, $projectPrompts);
     }
 
     public function createDefaultPromptService(): PromptService
     {
         $defaultPrompts = $this->sourceFactory->createDefaultSource();
-        return new PromptService($defaultPrompts, $this->templateRenderer);
+        return new PromptService($this->templateRenderer, $defaultPrompts);
     }
 }

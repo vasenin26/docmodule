@@ -2,6 +2,8 @@
 
 namespace App\Services\PromptProvider;
 
+use App\Services\PromptProvider\Interface\PromptTemplateRendererInterface;
+
 class PromptTemplateRenderer implements PromptTemplateRendererInterface
 {
     private \Mustache_Engine $mustache;

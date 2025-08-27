@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Services\PageContext;
+namespace App\Factory;
 
 use App\Interfaces\PageContextServiceFactoryInterface;
 use App\Interfaces\PageContextServiceInterface;
+use App\Services\PageContext\PageContextService;
 
 class PageContextServiceFactory implements PageContextServiceFactoryInterface
 {

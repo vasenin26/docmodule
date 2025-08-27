@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Enums\PromptType;
-use App\Models\Prompt;
+use App\Common\Enums\PromptType;
 use App\Models\Project;
+use App\Models\Prompt;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -14,7 +14,7 @@ class PromptSeeder extends Seeder
     {
         $user = User::first();
         $project = Project::first();
-        
+
         if ($user && $project) {
             Prompt::create([
                 'project_id' => $project->id,

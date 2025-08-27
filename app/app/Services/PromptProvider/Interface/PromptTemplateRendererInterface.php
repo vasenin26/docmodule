@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\PromptProvider;
+namespace App\Services\PromptProvider\Interface;
 
 interface PromptTemplateRendererInterface
 {

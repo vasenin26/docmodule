@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\PromptProvider\Sources;
+namespace App\Services\PromptProvider\Interface;
 
-use App\Enums\PromptType;
+use App\Common\Enums\PromptType;
 
 interface PromptSourceInterface
 {

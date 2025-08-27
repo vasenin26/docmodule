@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Factory\AgentFactory;
+use App\Factory\PageContextServiceFactory;
+use App\Factory\PromptServiceFactory;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Interfaces\Factory\AgentFactoryInterface;
 use App\Interfaces\Factory\TaskDescriptionGeneratorFactoryInterface;
@@ -11,16 +13,14 @@ use App\Interfaces\Factory\ToolServiceFactoryInterface;
 use App\Interfaces\GitRepoProviderInterface;
 use App\Interfaces\LLM\ContentGenerator;
 use App\Interfaces\PageContextServiceFactoryInterface;
-use App\Interfaces\TaskTrackerInterface;
 use App\Interfaces\TaskServiceInterface;
+use App\Interfaces\TaskTrackerInterface;
 use App\Services\DiffGenerator\DiffGeneratorService;
 use App\Services\LLMGenerator\LMStudioClient;
-use App\Services\PageContext\PageContextServiceFactory;
-use App\Services\PromptProvider\PromptServiceFactory;
+use App\Services\PromptProvider\Interface\PromptSourceFactoryInterface;
+use App\Services\PromptProvider\Interface\PromptTemplateRendererInterface;
 use App\Services\PromptProvider\PromptSourceFactory;
-use App\Services\PromptProvider\PromptSourceFactoryInterface;
 use App\Services\PromptProvider\PromptTemplateRenderer;
-use App\Services\PromptProvider\PromptTemplateRendererInterface;
 use App\Services\RepositoryService\RepositoryProvider;
 use App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorFactory;
 use App\Services\TaskDescriptionGenerator\TechplaneGeneratorFactory;
