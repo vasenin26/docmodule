@@ -16,12 +16,6 @@ class PromptService implements PromptProviderInterface
         private readonly ?PromptSourceInterface $projectPrompts = null,
     ) {}
 
-    public function getDescriptionGeneratorRole(): string
-    {
-        $prompt = $this->getPrompt(PromptType::TASK_MANAGER);
-        return $prompt ?? 'Роль не определена';
-    }
-
     private function getPrompt(PromptType $type): ?string
     {
         if ($this->projectPrompts) {
@@ -33,6 +27,12 @@ class PromptService implements PromptProviderInterface
         }
 
         return $this->defaultProvider->getPrompt($type);
+    }
+
+    public function getDescriptionGeneratorRole(): string
+    {
+        $prompt = $this->getPrompt(PromptType::TASK_MANAGER);
+        return $prompt ?? 'Роль не определена';
     }
 
     public function getDescriptionGeneratorInstructions(DifferenceDataDTO $differenceData, array $repositories = [], array $attachedFiles = []): string

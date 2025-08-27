@@ -2,7 +2,7 @@
     <AppLayout :title="`Редактировать ${project.title}`">
         <div class="mx-auto max-w-2xl">
             <div class="mb-6">
-                <Heading>Редактировать проект</Heading>
+                <Heading title="Параметры проекта"></Heading>
                 <p class="mt-2 text-muted-foreground">Измените информацию о проекте</p>
             </div>
 
@@ -163,25 +163,25 @@ const isValidUrl = (url: string) => {
             return false;
         }
     }
-    
+
     // Проверка SSH формата
     if (url.startsWith('git@')) {
         const parts = url.split(':');
         if (parts.length !== 2) return false;
-        
+
         const domainPart = parts[0];
         const pathPart = parts[1];
-        
+
         // Проверяем формат git@domain
         if (!domainPart.includes('@') || domainPart.split('@').length !== 2) return false;
-        
+
         // Проверяем, что это GitHub
         if (!domainPart.includes('github.com')) return false;
-        
+
         // Проверяем, что путь не пустой
         return pathPart.length > 0;
     }
-    
+
     return false;
 };
 
