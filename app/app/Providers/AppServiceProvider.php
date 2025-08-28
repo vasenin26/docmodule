@@ -15,6 +15,7 @@ use App\Interfaces\LLM\ContentGenerator;
 use App\Interfaces\PageContextServiceFactoryInterface;
 use App\Interfaces\TaskServiceInterface;
 use App\Interfaces\TaskTrackerInterface;
+use App\Interfaces\AgentTaskManagerInterface;
 use App\Services\DiffGenerator\DiffGeneratorService;
 use App\Services\LLMGenerator\LMStudioClient;
 use App\Services\PromptProvider\Interface\PromptSourceFactoryInterface;
@@ -26,6 +27,7 @@ use App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorFactory;
 use App\Services\TaskDescriptionGenerator\TechplaneGeneratorFactory;
 use App\Services\TaskManagementService;
 use App\Services\TaskService;
+use App\Services\AgentTaskManagerService;
 use App\Services\TaskTracker\Integration\FakeIntegration;
 use App\Services\TaskTracker\TaskTrackerService;
 use App\Services\ToolsService\ToolServiceFactory;
@@ -58,6 +60,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Регистрация сервиса управления задачами
         $this->app->singleton(TaskManagementService::class);
+
+        // Регистрация сервиса управления задачами агентов
+        $this->app->bind(
+            AgentTaskManagerInterface::class,
+            AgentTaskManagerService::class
+        );
 
         $this->app->singleton(GitRepoProviderInterface::class, RepositoryProvider::class);
 

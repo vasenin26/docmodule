@@ -24,29 +24,8 @@ class LLMChat extends Model
         'updated_at' => 'datetime',
     ];
 
-    /**
-     * Переопределяем update для защиты исторических данных
-     * При попытке изменения непустого поля messages выбрасывается исключение
-     */
-    public function update(array $attributes = [], array $options = [])
-    {
-        // Проверяем, есть ли попытка изменить messages, если они уже сохранены
-        if (isset($attributes['messages']) && $this->hasMessages()) {
-            throw new \Exception('Изменение сохраненной истории переписки запрещено для сохранения исторических данных');
-        }
-
-        return parent::update($attributes, $options);
-    }
-
-    /**
-     * Проверка наличия сообщений в чате
-     * 
-     * @return bool
-     */
-    public function hasMessages(): bool
-    {
-        return !empty($this->messages) && is_array($this->messages) && count($this->messages) > 0;
-    }
+    // УДАЛЕНЫ методы update() и hasMessages() с ограничениями
+    // Теперь используется стандартное поведение Eloquent
 
     /**
      * Проверка был ли рассчитан размер токенов (любого типа)
@@ -99,5 +78,92 @@ class LLMChat extends Model
     public function getTokensOrZero(): int
     {
         return $this->getTotalTokensOrZero();
+    }
+
+    /**
+     * Добавить новые методы для работы с агентами
+     */
+
+    /**
+     * Проверить, есть ли сообщения в чате (новая реализация без ограничений)
+     * 
+     * @return bool
+     */
+    public function hasMessages(): bool
+    {
+        return !empty($this->messages) && is_array($this->messages) && count($this->messages) > 0;
+    }
+
+    /**
+     * Безопасно обновить сообщения чата (для агентов)
+     * 
+     * @param array $messages Новые сообщения
+     * @param array $tokenStats Статистика токенов для добавления
+     * @return bool
+     */
+    public function updateMessages(array $messages, array $tokenStats = []): bool
+    {
+        $updateData = ['messages' => $messages];
+
+        // Добавляем статистику токенов если предоставлена
+        if (!empty($tokenStats)) {
+            if (isset($tokenStats['prompt_tokens'])) {
+                $updateData['prompt_tokens'] = $this->getPromptTokensOrZero() + $tokenStats['prompt_tokens'];
+            }
+            if (isset($tokenStats['completion_tokens'])) {
+                $updateData['completion_tokens'] = $this->getCompletionTokensOrZero() + $tokenStats['completion_tokens'];
+            }
+            if (isset($tokenStats['total_tokens'])) {
+                $updateData['total_tokens'] = $this->getTotalTokensOrZero() + $tokenStats['total_tokens'];
+            }
+        }
+
+        return $this->update($updateData);
+    }
+
+    /**
+     * Получить количество сообщений в чате
+     * 
+     * @return int
+     */
+    public function getMessagesCount(): int
+    {
+        return $this->hasMessages() ? count($this->messages) : 0;
+    }
+
+    /**
+     * Получить последнее сообщение из чата
+     * 
+     * @return array|null
+     */
+    public function getLastMessage(): ?array
+    {
+        if (!$this->hasMessages()) {
+            return null;
+        }
+
+        return end($this->messages);
+    }
+
+    /**
+     * Scope для поиска чатов с сообщениями
+     */
+    public function scopeWithMessages($query)
+    {
+        return $query->whereNotNull('messages')
+                    ->where('messages', '!=', '[]')
+                    ->where('messages', '!=', '');
+    }
+
+    /**
+     * Scope для поиска пустых чатов
+     */
+    public function scopeEmpty($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('messages')
+              ->orWhere('messages', '[]')
+              ->orWhere('messages', '');
+        });
     }
 }
