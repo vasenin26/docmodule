@@ -11,7 +11,9 @@
             </div>
         </template>
 
-        <div class="max-w-4xl">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <!-- Основное содержимое -->
+            <div class="space-y-6 lg:col-span-1">
             <Card>
                 <CardHeader>
                     <CardTitle>Новая страница</CardTitle>
@@ -73,8 +75,6 @@
                             <InputError v-if="errors.content" :message="errors.content" />
                             <p class="text-xs text-muted-foreground">Поддерживается формат Markdown</p>
 
-                            <!-- Предварительный просмотр -->
-                            <MarkdownPreview :content="form.content" />
                         </div>
 
                         <!-- Прикрепленные файлы -->
@@ -96,6 +96,12 @@
                     </form>
                 </CardContent>
             </Card>
+            </div>
+
+            <div class="space-y-6 lg:col-span-1">
+                <!-- Предварительный просмотр -->
+                <MarkdownPreview :content="form.content" />
+            </div>
         </div>
     </AppLayout>
 </template>
