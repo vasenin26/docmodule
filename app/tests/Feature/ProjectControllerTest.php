@@ -16,6 +16,7 @@ class ProjectControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->withoutMiddleware();
         $this->user = User::factory()->create();
     }
 

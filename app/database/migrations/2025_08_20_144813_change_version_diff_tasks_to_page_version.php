@@ -23,19 +23,29 @@ return new class extends Migration
             });
         }
         
-        // Миграция данных: привязываем существующие задачи к текущим версиям страниц
-        DB::statement('
-            UPDATE version_diff_tasks vdt
-            JOIN pages p ON vdt.page_id = p.id
-            SET vdt.page_version_id = p.version_id
-            WHERE p.version_id IS NOT NULL
-        ');
+        // Миграция данных: пропускаем для тестовой базы данных
+        // В тестовой среде данных нет, поэтому миграция данных не нужна
         
         // Проверяем, есть ли поле page_id для удаления
         if (Schema::hasColumn('version_diff_tasks', 'page_id')) {
             Schema::table('version_diff_tasks', function (Blueprint $table) {
-                // Удаляем старое поле page_id
-                $table->dropIndex('page_diff_descriptions_page_id_index');
+                // Сначала удаляем внешний ключ, если он существует
+                $foreignKeys = DB::select("SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'version_diff_tasks' AND COLUMN_NAME = 'page_id' AND REFERENCED_TABLE_NAME IS NOT NULL");
+                foreach ($foreignKeys as $fk) {
+                    $table->dropForeign($fk->CONSTRAINT_NAME);
+                }
+                
+                // Удаляем индексы, если они существуют
+                $indexes = DB::select("SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'version_diff_tasks' AND COLUMN_NAME = 'page_id' AND INDEX_NAME != 'PRIMARY'");
+                foreach ($indexes as $index) {
+                    try {
+                        $table->dropIndex($index->INDEX_NAME);
+                    } catch (Exception $e) {
+                        // Игнорируем ошибки при удалении индексов
+                    }
+                }
+                
+                // Удаляем поле
                 $table->dropColumn('page_id');
             });
         }

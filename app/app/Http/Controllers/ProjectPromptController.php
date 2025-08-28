@@ -80,8 +80,11 @@ class ProjectPromptController extends Controller
     {
         $promptType = PromptType::from($request->input('type'));
         
-        $prompt = $project->prompts()->updateOrCreate(
-            ['type' => $promptType->value],
+        $prompt = Prompt::updateOrCreate(
+            [
+                'type' => $promptType->value, 
+                'project_id' => $project->id
+            ],
             [
                 'content' => $request->input('content'),
                 'created_by' => $request->user()->id,

@@ -11,7 +11,19 @@ class StorePromptRequest extends FormRequest
     public function authorize(): bool
     {
         $project = $this->route('project');
-        return $project && $project->owner_id === $this->user()->id;
+        
+        // Если project - это модель (через route model binding)
+        if (is_object($project) && isset($project->owner_id)) {
+            return $project->owner_id === $this->user()->id;
+        }
+        
+        // Если project - это ID (строка/число)
+        if (is_string($project) || is_numeric($project)) {
+            $projectModel = \App\Models\Project::find($project);
+            return $projectModel && $projectModel->owner_id === $this->user()->id;
+        }
+        
+        return false;
     }
 
     public function rules(): array

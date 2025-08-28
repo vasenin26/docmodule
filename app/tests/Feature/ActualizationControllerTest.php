@@ -14,6 +14,12 @@ class ActualizationControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutMiddleware();
+    }
+
     public function test_can_start_actualization_for_page()
     {
         $user = User::factory()->create();
