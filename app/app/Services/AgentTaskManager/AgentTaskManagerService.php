@@ -1,15 +1,16 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\AgentTaskManager;
 
 use App\Interfaces\AgentTaskManagerInterface;
+use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\AgentTask;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Database\QueryException;
 
 class AgentTaskManagerService implements AgentTaskManagerInterface
 {
@@ -51,9 +52,6 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
         }
     }
 
-    /**
-     * Назначить задачу агенту с обеспечением thread-safety
-     */
     public function assignTaskToAgent(string $agentId): ?AgentTask
     {
         try {
@@ -106,20 +104,17 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
                 'error' => $e->getMessage(),
                 'code' => $e->getCode(),
             ]);
-            
+
             // Повторная попытка для deadlock ошибок
             if ($e->getCode() === '40001' || strpos($e->getMessage(), 'Deadlock') !== false) {
                 sleep(rand(1, 3)); // Случайная задержка
                 return $this->assignTaskToAgent($agentId); // Рекурсивный вызов
             }
-            
+
             throw $e;
         }
     }
 
-    /**
-     * Получить следующую ожидающую задачу
-     */
     public function getNextWaitingTask(): ?AgentTask
     {
         return AgentTask::waiting()
@@ -127,58 +122,43 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
             ->first();
     }
 
-    /**
-     * Отметить задачу как выполняющуюся
-     */
     public function markAsProcessing(int $taskId): void
     {
         $task = AgentTask::findOrFail($taskId);
         $task->update(['status' => AgentTask::STATUS_PROCESSING]);
-        
+
         Log::info('Task marked as processing', ['task_id' => $taskId]);
     }
 
-    /**
-     * Отметить задачу как завершенную
-     */
     public function markAsCompleted(int $taskId): void
     {
         $task = AgentTask::findOrFail($taskId);
         $task->update(['status' => AgentTask::STATUS_SUCCESS]);
-        
+
         Log::info('Task marked as completed', ['task_id' => $taskId]);
     }
 
-    /**
-     * Отметить задачу как неудачную
-     */
     public function markAsFailed(int $taskId): void
     {
         $task = AgentTask::findOrFail($taskId);
         $task->update(['status' => AgentTask::STATUS_FAILED]);
-        
+
         Log::error('Task marked as failed', ['task_id' => $taskId]);
     }
 
-    /**
-     * Получить задачи агента
-     */
     public function getAgentTasks(string $agentId, string $status = null): Collection
     {
         $query = AgentTask::forAgent($agentId);
-        
+
         if ($status) {
             $query->where('status', $status);
         }
-        
+
         return $query->with(['project', 'creator', 'llmChat'])
                     ->orderBy('created_at', 'desc')
                     ->get();
     }
 
-    /**
-     * Сбросить зависшие задачи
-     */
     public function resetStuckTasks(int $minutesStuck = 60): int
     {
         try {

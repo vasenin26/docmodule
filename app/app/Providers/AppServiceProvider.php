@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Factory\AgentFactory;
 use App\Factory\PageContextServiceFactory;
 use App\Factory\PromptServiceFactory;
+use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Interfaces\Factory\AgentFactoryInterface;
 use App\Interfaces\Factory\TaskDescriptionGeneratorFactoryInterface;
@@ -15,7 +16,9 @@ use App\Interfaces\LLM\ContentGenerator;
 use App\Interfaces\PageContextServiceFactoryInterface;
 use App\Interfaces\TaskServiceInterface;
 use App\Interfaces\TaskTrackerInterface;
-use App\Interfaces\AgentTaskManagerInterface;
+use App\Models\Project;
+use App\Policies\ProjectPolicy;
+use App\Services\AgentTaskManager\AgentTaskManagerService;
 use App\Services\DiffGenerator\DiffGeneratorService;
 use App\Services\LLMGenerator\LMStudioClient;
 use App\Services\PromptProvider\Interface\PromptSourceFactoryInterface;
@@ -27,14 +30,11 @@ use App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorFactory;
 use App\Services\TaskDescriptionGenerator\TechplaneGeneratorFactory;
 use App\Services\TaskManagementService;
 use App\Services\TaskService;
-use App\Services\AgentTaskManagerService;
 use App\Services\TaskTracker\Integration\FakeIntegration;
 use App\Services\TaskTracker\TaskTrackerService;
 use App\Services\ToolsService\ToolServiceFactory;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
-use App\Models\Project;
-use App\Policies\ProjectPolicy;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {

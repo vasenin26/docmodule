@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Common\DTO\AgentTaskUpdateDTO;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Agent\GetTaskRequest;
 use App\Http\Requests\Agent\GetTaskDetailsRequest;
+use App\Http\Requests\Agent\GetTaskRequest;
 use App\Http\Requests\Agent\UpdateTaskRequest;
+use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Models\AgentTask;
-use App\Services\AgentTaskManagerService;
+use App\Services\AgentTaskManager\AgentTaskManagerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 
@@ -16,7 +17,9 @@ class AgentController extends Controller
 {
     public function __construct(
         private readonly AgentTaskManagerService $taskManager
-    ) {}
+    )
+    {
+    }
 
     /**
      * Получить задачу для выполнения агентом
@@ -28,7 +31,7 @@ class AgentController extends Controller
 
         try {
             $task = $this->taskManager->assignTaskToAgent($agentId);
-            
+
             if (!$task) {
                 return response()->json([
                     'task_id' => null,
@@ -68,7 +71,7 @@ class AgentController extends Controller
     public function getTaskDetails(GetTaskDetailsRequest $request, int $id): JsonResponse
     {
         $agentId = $request->getAgentId();
-        
+
         try {
             $task = AgentTask::with(['project', 'llmChat'])
                 ->where('id', $id)
@@ -138,12 +141,11 @@ class AgentController extends Controller
      * Обновить состояние задачи
      * PUT /api/agent/task/{id}
      */
-    public function updateTask(UpdateTaskRequest $request, int $id): JsonResponse
+    public function updateTask(AgentResultHandlerFactoryInterface $handlerFactory, UpdateTaskRequest $request, int $id): JsonResponse
     {
         $agentId = $request->getAgentId();
-        
+
         try {
-            // Найти и проверить задачу
             $task = AgentTask::where('id', $id)
                 ->where('agent_id', $agentId) // КРИТИЧНО: проверяем принадлежность
                 ->where('status', AgentTask::STATUS_PROCESSING)
@@ -160,54 +162,31 @@ class AgentController extends Controller
                 ], 404);
             }
 
-            // Создать DTO из валидированных данных
             $updateData = AgentTaskUpdateDTO::fromArray([
                 'chat' => $request->getChatMessages(),
                 'stats' => $request->getTokenStats(),
                 'result' => $request->getResult(),
             ]);
 
-            // Обновляем чат
-            $chat = $task->llmChat;
-            $chat->update([
+            $task->llmChat->update([
                 'messages' => $updateData->chat,
                 'prompt_tokens' => ($chat->prompt_tokens ?? 0) + ($updateData->stats->prompt_tokens ?? 0),
                 'completion_tokens' => ($chat->completion_tokens ?? 0) + ($updateData->stats->completion_tokens ?? 0),
                 'total_tokens' => ($chat->total_tokens ?? 0) + ($updateData->stats->total_tokens ?? 0),
             ]);
 
-            // Если есть результат, завершаем задачу
-            if ($request->isFinalUpdate()) {
-                $task->update(['status' => AgentTask::STATUS_SUCCESS]);
-                
-                // Передаем результат обработчику
-                $this->handleTaskResult($task, $updateData->result);
+            $task->update(['status' => AgentTask::STATUS_SUCCESS]);
 
-                Log::info('Task completed via API', [
-                    'task_id' => $task->id,
-                    'agent_id' => $agentId,
-                    'result_length' => strlen($updateData->result),
-                ]);
+            $handler = $handlerFactory->createTaskHandler($task);
 
-                return response()->json([
-                    'status' => 'completed',
-                    'message' => 'Task finished successfully'
-                ]);
-            } else {
-                // Просто обновляем время последней активности
-                $task->touch();
-
-                Log::debug('Task progress updated via API', [
-                    'task_id' => $task->id,
-                    'agent_id' => $agentId,
-                    'messages_count' => count($updateData->chat),
-                ]);
-
-                return response()->json([
-                    'status' => 'updated',
-                    'message' => 'Task progress saved'
-                ]);
+            if (null !== $task->handler) {
+                $handler->handleResult($updateData->result);
             }
+
+            return response()->json([
+                'status' => 'updated',
+                'message' => 'Task progress saved'
+            ]);
 
         } catch (\Exception $e) {
             Log::error('API: Failed to update task', [
@@ -222,51 +201,6 @@ class AgentController extends Controller
         }
     }
 
-    /**
-     * Обработать результат выполнения задачи
-     */
-    private function handleTaskResult(AgentTask $task, string $result): void
-    {
-        try {
-            $handlerClass = $task->handler;
-            
-            if (!class_exists($handlerClass)) {
-                Log::error('Handler class not found', [
-                    'task_id' => $task->id,
-                    'handler' => $handlerClass,
-                ]);
-                return;
-            }
-
-            $handler = app($handlerClass);
-            
-            if (!method_exists($handler, 'handleResult')) {
-                Log::error('Handler method not found', [
-                    'task_id' => $task->id,
-                    'handler' => $handlerClass,
-                ]);
-                return;
-            }
-
-            $handler->handleResult($result);
-
-            Log::info('Task result handled successfully', [
-                'task_id' => $task->id,
-                'handler' => $handlerClass,
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Failed to handle task result', [
-                'task_id' => $task->id,
-                'handler' => $task->handler,
-                'error' => $e->getMessage(),
-            ]);
-        }
-    }
-
-    /**
-     * Логирование подозрительных действий
-     */
     private function logSuspiciousActivity($request, string $action, array $context = []): void
     {
         Log::warning("Suspicious agent activity: {$action}", array_merge([
