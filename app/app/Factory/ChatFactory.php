@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Factory;
 
 use App\Common\DTO\DifferenceDataDTO;
 use App\Interfaces\Factory\LLMChatFactoryInterface;
@@ -21,9 +21,14 @@ class ChatFactory implements LLMChatFactoryInterface
         $prompt = $this->promptProvider->getDescriptionGeneratorInstructions($differenceData, $repositories, $attachedFiles);
         $role = $this->promptProvider->getDescriptionGeneratorRole();
 
-        $chat = new LLMChat();
+        $chat = new LLMChat([
+            'messages' => [],
+            'prompt_tokens' => 0,
+            'completion_tokens' => 0,
+            'total_tokens' => 0,
+        ]);
 
-        $chat->addSystem($role);
+        $chat->addSystemMessage($role);
         $chat->addUserMessage($prompt);
 
         $chat->save();

@@ -9,12 +9,16 @@ class LLMChat extends Model
 {
     use HasFactory;
 
+    const ROLE_SYSTEM = 'system';
+    const ROLE_USER = 'user';
+
+
     protected $table = 'llm_chats';
 
     protected $fillable = [
         'messages',
         'prompt_tokens',
-        'completion_tokens', 
+        'completion_tokens',
         'total_tokens',
     ];
 
@@ -24,24 +28,21 @@ class LLMChat extends Model
         'updated_at' => 'datetime',
     ];
 
-    // УДАЛЕНЫ методы update() и hasMessages() с ограничениями
-    // Теперь используется стандартное поведение Eloquent
-
     /**
      * Проверка был ли рассчитан размер токенов (любого типа)
-     * 
+     *
      * @return bool
      */
     public function isTokensCalculated(): bool
     {
-        return $this->prompt_tokens !== null || 
-               $this->completion_tokens !== null || 
-               $this->total_tokens !== null;
+        return $this->prompt_tokens !== null ||
+            $this->completion_tokens !== null ||
+            $this->total_tokens !== null;
     }
 
     /**
      * Получение токенов запроса с fallback на 0
-     * 
+     *
      * @return int
      */
     public function getPromptTokensOrZero(): int
@@ -51,7 +52,7 @@ class LLMChat extends Model
 
     /**
      * Получение токенов ответа с fallback на 0
-     * 
+     *
      * @return int
      */
     public function getCompletionTokensOrZero(): int
@@ -61,7 +62,7 @@ class LLMChat extends Model
 
     /**
      * Получение общих токенов с fallback на 0
-     * 
+     *
      * @return int
      */
     public function getTotalTokensOrZero(): int
@@ -71,9 +72,9 @@ class LLMChat extends Model
 
     /**
      * Получение токенов с fallback на 0 (legacy метод)
-     * @deprecated Используйте getTotalTokensOrZero()
-     * 
      * @return int
+     * @deprecated Используйте getTotalTokensOrZero()
+     *
      */
     public function getTokensOrZero(): int
     {
@@ -86,7 +87,7 @@ class LLMChat extends Model
 
     /**
      * Проверить, есть ли сообщения в чате (новая реализация без ограничений)
-     * 
+     *
      * @return bool
      */
     public function hasMessages(): bool
@@ -96,7 +97,7 @@ class LLMChat extends Model
 
     /**
      * Безопасно обновить сообщения чата (для агентов)
-     * 
+     *
      * @param array $messages Новые сообщения
      * @param array $tokenStats Статистика токенов для добавления
      * @return bool
@@ -123,7 +124,7 @@ class LLMChat extends Model
 
     /**
      * Получить количество сообщений в чате
-     * 
+     *
      * @return int
      */
     public function getMessagesCount(): int
@@ -133,7 +134,7 @@ class LLMChat extends Model
 
     /**
      * Получить последнее сообщение из чата
-     * 
+     *
      * @return array|null
      */
     public function getLastMessage(): ?array
@@ -151,8 +152,8 @@ class LLMChat extends Model
     public function scopeWithMessages($query)
     {
         return $query->whereNotNull('messages')
-                    ->where('messages', '!=', '[]')
-                    ->where('messages', '!=', '');
+            ->where('messages', '!=', '[]')
+            ->where('messages', '!=', '');
     }
 
     /**
@@ -162,8 +163,28 @@ class LLMChat extends Model
     {
         return $query->where(function ($q) {
             $q->whereNull('messages')
-              ->orWhere('messages', '[]')
-              ->orWhere('messages', '');
+                ->orWhere('messages', '[]')
+                ->orWhere('messages', '');
         });
+    }
+
+    public function addSystemMessage(string $content): void
+    {
+        $this->addMessage(self::ROLE_SYSTEM, $content);
+    }
+
+    public function addUserMessage(string $content): void
+    {
+        $this->addMessage(self::ROLE_USER, $content);
+    }
+
+    public function addMessage(string $role, string $content): void
+    {
+        $messages = [...$this->messages, [
+            'role' => $role,
+            'content' => $content,
+        ]];
+
+        $this->attributes['messages'] = json_encode($messages);
     }
 }

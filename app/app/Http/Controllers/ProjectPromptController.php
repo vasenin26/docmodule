@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Common\DTO\PromptDTO;
 use App\Common\Enums\PromptType;
-use App\Factory\PromptServiceFactory;
+use App\Factory\PromptProviderFactory;
 use App\Http\Requests\Prompt\StorePromptRequest;
 use App\Models\Project;
 use App\Models\Prompt;
@@ -17,7 +17,7 @@ use Inertia\Response;
 class ProjectPromptController extends Controller
 {
     public function __construct(
-        private readonly PromptServiceFactory $promptServiceFactory,
+        private readonly PromptProviderFactory $promptServiceFactory,
     ) {}
 
     public function index(Project $project): Response
@@ -29,12 +29,12 @@ class ProjectPromptController extends Controller
         // Получаем все типы промптов с их содержимым
         $promptService = $this->promptServiceFactory->createProjectPromptService($project->id);
         $defaultPromptService = $this->promptServiceFactory->createDefaultPromptService();
-        
+
         $prompts = [];
         foreach (PromptType::cases() as $type) {
             $projectPrompt = $project->prompts()->where('type', $type->value)->first();
             $defaultPrompt = $defaultPromptService->getPrompt($type);
-            
+
             $prompts[] = [
                 'type' => $type->value,
                 'label' => $type->getLabel(),
@@ -79,10 +79,10 @@ class ProjectPromptController extends Controller
     public function store(StorePromptRequest $request, Project $project): array
     {
         $promptType = PromptType::from($request->input('type'));
-        
+
         $prompt = Prompt::updateOrCreate(
             [
-                'type' => $promptType->value, 
+                'type' => $promptType->value,
                 'project_id' => $project->id
             ],
             [
@@ -133,7 +133,7 @@ class ProjectPromptController extends Controller
 
         // Создаем временный сервис с mock данными
         $templateRenderer = app(\App\Services\PromptProvider\Interface\PromptTemplateRendererInterface::class);
-        
+
         // Фиктивные данные для предварительного просмотра
         $mockData = [
             'diff' => "Пример изменений в коде\n+ добавленная строка\n- удаленная строка",
@@ -148,7 +148,7 @@ class ProjectPromptController extends Controller
 
         try {
             $rendered = $templateRenderer->render($content, $mockData);
-            
+
             return [
                 'success' => true,
                 'rendered_content' => $rendered,

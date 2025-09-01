@@ -3,16 +3,21 @@
 namespace App\Providers;
 
 use App\Factory\AgentFactory;
+use App\Factory\AgentResultFactory;
+use App\Factory\ChatFactory;
 use App\Factory\PageContextServiceFactory;
-use App\Factory\PromptServiceFactory;
+use App\Factory\PromptProviderFactory;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Interfaces\Factory\AgentFactoryInterface;
+use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
+use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Interfaces\Factory\TaskDescriptionGeneratorFactoryInterface;
 use App\Interfaces\Factory\TechplaneGeneratorFactoryInterface;
 use App\Interfaces\Factory\ToolServiceFactoryInterface;
 use App\Interfaces\GitRepoProviderInterface;
 use App\Interfaces\LLM\ContentGenerator;
+use App\Interfaces\LLM\PromptProviderInterface;
 use App\Interfaces\PageContextServiceFactoryInterface;
 use App\Interfaces\TaskServiceInterface;
 use App\Interfaces\TaskTrackerInterface;
@@ -23,6 +28,7 @@ use App\Services\DiffGenerator\DiffGeneratorService;
 use App\Services\LLMGenerator\LMStudioClient;
 use App\Services\PromptProvider\Interface\PromptSourceFactoryInterface;
 use App\Services\PromptProvider\Interface\PromptTemplateRendererInterface;
+use App\Services\PromptProvider\PromptService;
 use App\Services\PromptProvider\PromptSourceFactory;
 use App\Services\PromptProvider\PromptTemplateRenderer;
 use App\Services\RepositoryService\RepositoryProvider;
@@ -58,15 +64,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ToolServiceFactoryInterface::class, ToolServiceFactory::class);
         $this->app->bind(ContentGenerator::class, LMStudioClient::class);
 
-        // Регистрация сервиса управления задачами
-        $this->app->singleton(TaskManagementService::class);
-
         // Регистрация сервиса управления задачами агентов
         $this->app->bind(
             AgentTaskManagerInterface::class,
             AgentTaskManagerService::class
         );
 
+        // @deprecate проект не управляет репозиториями
         $this->app->singleton(GitRepoProviderInterface::class, RepositoryProvider::class);
 
         // Регистрация фабрики PageContextService
@@ -75,12 +79,14 @@ class AppServiceProvider extends ServiceProvider
             PageContextServiceFactory::class
         );
 
-        $this->app->bind(TaskServiceInterface::class, TaskService::class);
+        $this->app->bind(TaskServiceInterface::class, TaskManagementService::class);
 
         // Регистрация сервисов системы промптов
         $this->app->bind(PromptTemplateRendererInterface::class, PromptTemplateRenderer::class);
         $this->app->bind(PromptSourceFactoryInterface::class, PromptSourceFactory::class);
-        $this->app->bind(PromptServiceFactory::class, PromptServiceFactory::class);
+        $this->app->bind(PromptProviderFactory::class, PromptProviderFactory::class);
+
+        $this->app->bind(AgentResultHandlerFactoryInterface::class, AgentResultFactory::class);
     }
 
     /**

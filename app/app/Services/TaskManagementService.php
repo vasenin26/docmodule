@@ -2,55 +2,114 @@
 
 namespace App\Services;
 
+
+use App\Common\DTO\DifferenceDataDTO;
+use App\Factory\ChatFactory;
+use App\Factory\PromptProviderFactory;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
-use App\Interfaces\Factory\LLMChatFactoryInterface;
-use App\Models\Page;
+use App\Interfaces\TaskServiceInterface;
 use App\Models\PageVersion;
 use App\Models\VersionDiffTask;
+use App\Services\DiffGenerator\DiffGeneratorService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
-class TaskManagementService
+final readonly class TaskManagementService implements TaskServiceInterface
 {
-    /**
-     * Создать задачу для версии страницы
-     */
+    public function __construct(
+        private AgentResultHandlerFactoryInterface $agentResultHandlerFactory,
+        private AgentTaskManagerInterface          $agentTaskManager,
+        private PromptProviderFactory              $promptProviderFactory,
+        private DiffGeneratorService               $diffGenerator,
+    )
+    {
+    }
+
     public function createTaskForPageVersion(
-        AgentResultHandlerFactoryInterface $agentResultHandlerFactory,
-        AgentTaskManagerInterface $agentTaskManager,
-        LLMChatFactoryInterface $chatFactory,
         PageVersion $pageVersion,
-        ?int $userId = null
+        ?int        $userId = null
     ): VersionDiffTask
     {
         $existingTask = VersionDiffTask::where('page_version_id', $pageVersion->id)->first();
+
         if ($existingTask) {
             throw new \Exception('Для этой версии страницы уже создана задача.');
         }
 
-        $versionDiffTask = VersionDiffTask::create([
-            'page_version_id' => $pageVersion->id,
-            'content' => '', // Будет заполнено job'ом
-            'created_by' => $userId ?? Auth::id() ?? $pageVersion->page->created_by,
-            'generation_status' => VersionDiffTask::STATUS_PENDING,
-        ]);
+        $page = $pageVersion->page;
 
-        $chat = $chatFactory->createChatForGenerateDescription($versionDiffTask);
-        $handler = $agentResultHandlerFactory->createVersionDiffResultHandler($versionDiffTask);
-        $agentTaskManager->createTask($handler, $pageVersion->page->projectId, $chat->id);
+        return DB::transaction(function () use ($pageVersion, $userId, $page) {
+            try {
+                $versionDiffTask = VersionDiffTask::create([
+                    'page_version_id' => $pageVersion->id,
+                    'content' => '', // Будет заполнено job'ом
+                    'created_by' => $userId ?? Auth::id() ?? $page->created_by,
+                    'generation_status' => VersionDiffTask::STATUS_PENDING,
+                ]);
 
-        return $versionDiffTask;
+                $promptProvider = $this->promptProviderFactory->createProjectPromptService($page->project_id);
+
+                $chat = (new ChatFactory($promptProvider))->createChatForGenerateDescription(
+                    $this->createDifferenceDataDTO($pageVersion, $this->diffGenerator),
+                    $page->project->repositories->pluck('url')->toArray(),
+                    $pageVersion->files
+                );
+
+                $handler = $this->agentResultHandlerFactory->createVersionDiffResultHandler($versionDiffTask);
+                $this->agentTaskManager->createTask($handler, $page->project_id, $chat->id);
+            } catch (\Exception $e) {
+                Log::error($e->getMessage());
+
+                throw $e;
+            }
+
+            return $versionDiffTask;
+        });
     }
 
-    /**
-     * Проверить можно ли создать задачу для страницы
-     */
-    public function canCreateTaskForPage(Page $page): bool
+    private function createDifferenceDataDTO($currentVersion, DiffGeneratorService $diffGenerator): DifferenceDataDTO
     {
-        $currentVersion = $page->currentVersion;
-        return $currentVersion &&
-               $currentVersion->previous_version_id !== null &&
-               VersionDiffTask::where('page_version_id', $currentVersion->id)->count() === 0 &&
-               !$page->hasActiveDraft();
+        $previousVersion = $currentVersion->previousVersion;
+
+        if (!$previousVersion) {
+            // Новая страница
+            return new DifferenceDataDTO(
+                diffOutput: null,
+                newVersionTitle: $currentVersion->title,
+                isNewPage: true,
+                titleChanged: false,
+                contentChanged: false,
+                newVersionId: $currentVersion->id,
+                newVersionContent: $currentVersion->content,
+                previousVersionId: null,
+                previousVersionTitle: null,
+                previousVersionContent: null
+            );
+        }
+
+        // Обновленная страница
+        $titleChanged = $currentVersion->title !== $previousVersion->title;
+        $contentChanged = $currentVersion->content !== $previousVersion->content;
+
+        // Генерируем diff если есть изменения
+        $diffOutput = null;
+        if ($titleChanged || $contentChanged) {
+            $diffOutput = $diffGenerator->generateDiff($previousVersion->content, $currentVersion->content);
+        }
+
+        return new DifferenceDataDTO(
+            diffOutput: $diffOutput,
+            newVersionTitle: $currentVersion->title,
+            isNewPage: false,
+            titleChanged: $titleChanged,
+            contentChanged: $contentChanged,
+            newVersionId: $currentVersion->id,
+            newVersionContent: $currentVersion->content,
+            previousVersionId: $previousVersion->id,
+            previousVersionTitle: $previousVersion->title,
+            previousVersionContent: $previousVersion->content
+        );
     }
 }

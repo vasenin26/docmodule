@@ -15,7 +15,7 @@ class VersionDiffResultHandler implements AgentResultHandlerInterface
     {
     }
 
-    public function getKey(): string
+    public static function getKey(): string
     {
         return 'versionDiffResultHandler';
     }

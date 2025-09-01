@@ -8,11 +8,11 @@ use App\Interfaces\LLM\PromptProviderInterface;
 use App\Services\PromptProvider\Interface\PromptSourceInterface;
 use App\Services\PromptProvider\Interface\PromptTemplateRendererInterface;
 
-class PromptService implements PromptProviderInterface
+readonly class PromptService implements PromptProviderInterface
 {
     public function __construct(
-        private readonly PromptTemplateRendererInterface $templateRenderer,
-        private readonly PromptSourceInterface $promptSource,
+        private PromptTemplateRendererInterface $templateRenderer,
+        private PromptSourceInterface           $promptSource,
     ) {}
 
     public function getDescriptionGeneratorRole(): string
