@@ -4,20 +4,17 @@ namespace App\Providers;
 
 use App\Factory\AgentFactory;
 use App\Factory\AgentResultFactory;
-use App\Factory\ChatFactory;
 use App\Factory\PageContextServiceFactory;
 use App\Factory\PromptProviderFactory;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Interfaces\Factory\AgentFactoryInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
-use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Interfaces\Factory\TaskDescriptionGeneratorFactoryInterface;
 use App\Interfaces\Factory\TechplaneGeneratorFactoryInterface;
 use App\Interfaces\Factory\ToolServiceFactoryInterface;
 use App\Interfaces\GitRepoProviderInterface;
 use App\Interfaces\LLM\ContentGenerator;
-use App\Interfaces\LLM\PromptProviderInterface;
 use App\Interfaces\PageContextServiceFactoryInterface;
 use App\Interfaces\TaskServiceInterface;
 use App\Interfaces\TaskTrackerInterface;
@@ -28,13 +25,11 @@ use App\Services\DiffGenerator\DiffGeneratorService;
 use App\Services\LLMGenerator\LMStudioClient;
 use App\Services\PromptProvider\Interface\PromptSourceFactoryInterface;
 use App\Services\PromptProvider\Interface\PromptTemplateRendererInterface;
-use App\Services\PromptProvider\PromptService;
 use App\Services\PromptProvider\PromptSourceFactory;
 use App\Services\PromptProvider\PromptTemplateRenderer;
 use App\Services\RepositoryService\RepositoryProvider;
 use App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorFactory;
 use App\Services\TaskDescriptionGenerator\TechplaneGeneratorFactory;
-use App\Services\TaskManagementService;
 use App\Services\TaskService;
 use App\Services\TaskTracker\Integration\FakeIntegration;
 use App\Services\TaskTracker\TaskTrackerService;
@@ -79,7 +74,7 @@ class AppServiceProvider extends ServiceProvider
             PageContextServiceFactory::class
         );
 
-        $this->app->bind(TaskServiceInterface::class, TaskManagementService::class);
+        $this->app->bind(TaskServiceInterface::class, TaskService::class);
 
         // Регистрация сервисов системы промптов
         $this->app->bind(PromptTemplateRendererInterface::class, PromptTemplateRenderer::class);
