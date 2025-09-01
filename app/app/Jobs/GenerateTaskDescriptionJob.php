@@ -3,7 +3,9 @@
 namespace App\Jobs;
 
 use App\Common\DTO\DifferenceDataDTO;
+use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentFactoryInterface;
+use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Models\VersionDiffTask;
 use App\Services\DiffGenerator\DiffGeneratorService;
 use Exception;

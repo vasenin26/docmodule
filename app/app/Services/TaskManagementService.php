@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
-use App\Jobs\GenerateTaskDescriptionJob;
+use App\Interfaces\AgentTaskManagerInterface;
+use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
+use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Models\Page;
 use App\Models\PageVersion;
 use App\Models\VersionDiffTask;
@@ -13,15 +15,19 @@ class TaskManagementService
     /**
      * Создать задачу для версии страницы
      */
-    public function createTaskForPageVersion(PageVersion $pageVersion, ?int $userId = null): VersionDiffTask
+    public function createTaskForPageVersion(
+        AgentResultHandlerFactoryInterface $agentResultHandlerFactory,
+        AgentTaskManagerInterface $agentTaskManager,
+        LLMChatFactoryInterface $chatFactory,
+        PageVersion $pageVersion,
+        ?int $userId = null
+    ): VersionDiffTask
     {
-        // Проверяем, что для версии страницы еще нет задач
         $existingTask = VersionDiffTask::where('page_version_id', $pageVersion->id)->first();
         if ($existingTask) {
             throw new \Exception('Для этой версии страницы уже создана задача.');
         }
 
-        // Создаем запись VersionDiffTask
         $versionDiffTask = VersionDiffTask::create([
             'page_version_id' => $pageVersion->id,
             'content' => '', // Будет заполнено job'ом
@@ -29,19 +35,20 @@ class TaskManagementService
             'generation_status' => VersionDiffTask::STATUS_PENDING,
         ]);
 
-        // Запускаем цепочку job'ов
-        GenerateTaskDescriptionJob::dispatch($versionDiffTask->id);
+        $chat = $chatFactory->createChatForGenerateDescription($versionDiffTask);
+        $handler = $agentResultHandlerFactory->createVersionDiffResultHandler($versionDiffTask);
+        $agentTaskManager->createTask($handler, $pageVersion->page->projectId, $chat->id);
 
         return $versionDiffTask;
     }
-    
+
     /**
      * Проверить можно ли создать задачу для страницы
      */
     public function canCreateTaskForPage(Page $page): bool
     {
         $currentVersion = $page->currentVersion;
-        return $currentVersion && 
+        return $currentVersion &&
                $currentVersion->previous_version_id !== null &&
                VersionDiffTask::where('page_version_id', $currentVersion->id)->count() === 0 &&
                !$page->hasActiveDraft();

@@ -4,7 +4,9 @@ namespace App\Services\TaskDescriptionGenerator;
 
 use App\Common\DTO\DifferenceDataDTO;
 use App\Common\DTO\LLMGenerationResult;
+use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\ContentGenerator\DiffDescriptionGeneratorInterface;
+use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\LLM\ContentGenerator;
 use App\Interfaces\LLM\PromptProviderInterface;
 use App\Models\LLMChat;

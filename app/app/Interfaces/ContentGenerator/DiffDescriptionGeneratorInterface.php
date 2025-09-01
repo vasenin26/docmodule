@@ -4,6 +4,7 @@ namespace App\Interfaces\ContentGenerator;
 
 use App\Common\DTO\DifferenceDataDTO;
 use App\Common\DTO\LLMGenerationResult;
+use App\Models\LLMChat;
 use App\Models\Repository;
 
 interface DiffDescriptionGeneratorInterface

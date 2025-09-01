@@ -9,4 +9,6 @@ interface AgentResultHandlerFactoryInterface
 {
 
     public function createTaskHandler(AgentTask $task): ?AgentResultHandlerInterface;
+
+    public function createVersionDiffResultHandler($versionDiffTask): AgentResultHandlerInterface;
 }
