@@ -24,7 +24,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
     ): int {
         try {
             $task = AgentTask::create([
-                'handler' => $handler->getKey(),
+                'handler' => $handler::class,
                 'handler_options' => $handler->getOptions(),
                 'project_id' => $projectId,
                 'created_by' => Auth::id(),
@@ -34,7 +34,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
 
             Log::info('Agent task created', [
                 'task_id' => $task->id,
-                'handler' => $handler->getKey(),
+                'handler' => $handler::class,
                 'project_id' => $projectId,
                 'chat_id' => $chatId,
                 'created_by' => Auth::id(),
@@ -43,7 +43,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
             return $task->id;
         } catch (\Exception $e) {
             Log::error('Failed to create agent task', [
-                'handler' => $handler->getKey(),
+                'handler' => $handler::class,
                 'project_id' => $projectId,
                 'chat_id' => $chatId,
                 'error' => $e->getMessage(),

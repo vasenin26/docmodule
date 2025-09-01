@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Factory\AgentFactory;
-use App\Factory\AgentResultFactory;
+use App\Factory\AgentResultHandlerFactory;
 use App\Factory\PageContextServiceFactory;
 use App\Factory\PromptProviderFactory;
 use App\Interfaces\AgentTaskManagerInterface;
@@ -81,7 +81,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PromptSourceFactoryInterface::class, PromptSourceFactory::class);
         $this->app->bind(PromptProviderFactory::class, PromptProviderFactory::class);
 
-        $this->app->bind(AgentResultHandlerFactoryInterface::class, AgentResultFactory::class);
+        $this->app->bind(AgentResultHandlerFactoryInterface::class, AgentResultHandlerFactory::class);
     }
 
     /**
