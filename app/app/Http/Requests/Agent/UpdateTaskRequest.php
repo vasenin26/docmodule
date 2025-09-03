@@ -28,18 +28,21 @@ class UpdateTaskRequest extends FormRequest
                 'max:36',
             ],
             'chat' => [
-                'required',
+                'nullable',
                 'array',
-                'min:1',
-                'max:1000', // Лимит на количество сообщений
             ],
             'chat.*.role' => [
                 'required',
                 'string',
-                Rule::in(['user', 'assistant', 'system']),
+                Rule::in(['user', 'assistant', 'system', 'tool']),
             ],
             'chat.*.content' => [
-                'required',
+                'nullable',
+                'string',
+                'max:65535', // Лимит VARCHAR
+            ],
+            'chat.*.tool_call_id' => [
+                'nullable',
                 'string',
                 'max:65535', // Лимит VARCHAR
             ],
@@ -86,7 +89,7 @@ class UpdateTaskRequest extends FormRequest
         return [
             'agent_id.required' => 'Agent ID is required',
             'agent_id.uuid' => 'Agent ID must be a valid UUID',
-            'chat.required' => 'Chat messages are required',
+            'chat.nullable' => 'Chat must be an array or null',
             'chat.array' => 'Chat must be an array of messages',
             'chat.min' => 'At least one chat message is required',
             'chat.max' => 'Too many chat messages (max: 1000)',
@@ -121,7 +124,7 @@ class UpdateTaskRequest extends FormRequest
     private function validateAgentId($validator): void
     {
         $agentId = $this->input('agent_id');
-        
+
         if ($agentId && !$this->isValidUuid($agentId)) {
             $validator->errors()->add('agent_id', 'Invalid UUID format');
         }
@@ -133,21 +136,21 @@ class UpdateTaskRequest extends FormRequest
     private function validateChatMessages($validator): void
     {
         $chat = $this->input('chat', []);
-        
+
+        // Если chat равен null или пустой массив, это валидно
+        if (empty($chat)) {
+            return;
+        }
+
         foreach ($chat as $index => $message) {
             if (!is_array($message)) {
                 $validator->errors()->add("chat.{$index}", 'Message must be an object');
                 continue;
             }
-            
+
             // Проверяем обязательные поля
-            if (!isset($message['role']) || !isset($message['content'])) {
+            if (!isset($message['role']) || !array_key_exists('content', $message)) {
                 $validator->errors()->add("chat.{$index}", 'Message must have role and content fields');
-            }
-            
-            // Проверяем, что content не пустой
-            if (isset($message['content']) && trim($message['content']) === '') {
-                $validator->errors()->add("chat.{$index}.content", 'Message content cannot be empty');
             }
         }
     }
@@ -158,12 +161,12 @@ class UpdateTaskRequest extends FormRequest
     private function validateTokenStats($validator): void
     {
         $stats = $this->input('stats', []);
-        
+
         // Проверяем консистентность токенов
         $prompt = $stats['prompt_tokens'] ?? null;
         $completion = $stats['completion_tokens'] ?? null;
         $total = $stats['total_tokens'] ?? null;
-        
+
         if ($prompt !== null && $completion !== null && $total !== null) {
             if ($total < ($prompt + $completion)) {
                 $validator->errors()->add('stats.total_tokens', 'Total tokens cannot be less than sum of prompt and completion tokens');
@@ -194,7 +197,7 @@ class UpdateTaskRequest extends FormRequest
 
     public function getChatMessages(): array
     {
-        return $this->validated('chat');
+        return $this->validated('chat') ?? [];
     }
 
     public function getTokenStats(): array

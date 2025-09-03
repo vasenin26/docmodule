@@ -22,6 +22,8 @@ class Project extends Model
         'owner_id',
     ];
 
+
+
     /**
      * Get the owner that owns the project.
      */

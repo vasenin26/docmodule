@@ -10,11 +10,6 @@ Route::prefix('agent')->name('agent.')->group(function () {
         ->name('task.get')
         ->middleware(['throttle:60,1']);
 
-    Route::get('task/{id}', [AgentController::class, 'getTaskDetails'])
-        ->name('task.details')
-        ->where('id', '[0-9]+')
-        ->middleware(['throttle:120,1']);
-
     Route::put('task/{id}', [AgentController::class, 'updateTask'])
         ->name('task.update')
         ->where('id', '[0-9]+')

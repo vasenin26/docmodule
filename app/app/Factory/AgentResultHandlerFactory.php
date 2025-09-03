@@ -15,10 +15,11 @@ class AgentResultHandlerFactory implements AgentResultHandlerFactoryInterface
         $handlerClass = $task->handler;
         $implementationClass = class_implements($handlerClass);
 
-        if(in_array(AgentResultHandlerInterface::class, class_implements($implementationClass))) {
+        if(in_array(AgentResultHandlerInterface::class, $implementationClass)) {
             try {
                 return $handlerClass::createFromTask($task);
             } catch (\Exception $e) {
+                Log::warning($e->getMessage());
                 return null;
             }
         }

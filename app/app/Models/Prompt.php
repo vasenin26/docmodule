@@ -17,6 +17,8 @@ class Prompt extends Model
         'created_by',
     ];
 
+
+
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);

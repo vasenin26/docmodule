@@ -15,6 +15,8 @@ class Techplane extends Model
         'generation_status',
     ];
 
+
+
     // Константы статусов
     public const STATUS_PENDING = 'pending';
     public const STATUS_GENERATING = 'generating'; 

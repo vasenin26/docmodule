@@ -22,11 +22,12 @@ class LLMChat extends Model
         'total_tokens',
     ];
 
-    protected $casts = [
-        'messages' => 'array',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'messages' => 'array',
+        ];
+    }
 
     /**
      * Проверка был ли рассчитан размер токенов (любого типа)

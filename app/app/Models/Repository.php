@@ -18,13 +18,16 @@ class Repository extends Model
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the attributes that should be cast.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'options' => 'array',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'options' => 'array',
+        ];
+    }
 
     /**
      * The projects that belong to the repository.

@@ -24,17 +24,15 @@ class PageVersion extends Model
         'is_draft',
     ];
 
-    protected $casts = [
-        'files' => 'array',
-    ];
-
-    /**
-     * Получить список файлов версии
-     */
-    public function getFilesAttribute($value): array
+    protected function casts(): array
     {
-        return $value ? json_decode($value, true) : [];
+        return [
+            'files' => 'array',
+            'is_draft' => 'boolean',
+        ];
     }
+
+
 
     /**
      * Валидировать ссылки на файлы в репозиториях

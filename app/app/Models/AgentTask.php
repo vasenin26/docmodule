@@ -20,11 +20,12 @@ class AgentTask extends Model
         'agent_id',
     ];
 
-    protected $casts = [
-        'handler_options' => 'array',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'handler_options' => 'array',
+        ];
+    }
 
     // Константы статусов для type safety
     public const STATUS_WAIT = 'wait';

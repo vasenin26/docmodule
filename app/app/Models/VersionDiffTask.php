@@ -28,12 +28,12 @@ class VersionDiffTask extends Model
         'edited_at',
     ];
 
-    protected $casts = [
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-        'generation_status' => 'string',
-        'edited_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'edited_at' => 'datetime',
+        ];
+    }
 
     // Константы для статусов
     public const STATUS_PENDING = 'pending';

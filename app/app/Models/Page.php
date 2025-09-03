@@ -33,6 +33,18 @@ class Page extends Model
     ];
 
     /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'deleted_at' => 'datetime',
+        ];
+    }
+
+    /**
      * Пользователь, создавший страницу
      */
     public function creator(): BelongsTo
