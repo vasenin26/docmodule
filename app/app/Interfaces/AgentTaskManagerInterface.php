@@ -18,6 +18,7 @@ interface AgentTaskManagerInterface
      */
     public function createTask(
         AgentResultHandlerInterface $handler,
+        int $creatorId,
         int $projectId,
         int $chatId
     ): int;

@@ -16,7 +16,6 @@ use App\Interfaces\Factory\ToolServiceFactoryInterface;
 use App\Interfaces\GitRepoProviderInterface;
 use App\Interfaces\LLM\ContentGenerator;
 use App\Interfaces\PageContextServiceFactoryInterface;
-use App\Interfaces\TaskServiceInterface;
 use App\Interfaces\TaskTrackerInterface;
 use App\Models\Project;
 use App\Policies\ProjectPolicy;
@@ -30,7 +29,6 @@ use App\Services\PromptProvider\PromptTemplateRenderer;
 use App\Services\RepositoryService\RepositoryProvider;
 use App\Services\TaskDescriptionGenerator\TaskDescriptionGeneratorFactory;
 use App\Services\TaskDescriptionGenerator\TechplaneGeneratorFactory;
-use App\Services\TaskService;
 use App\Services\TaskTracker\Integration\FakeIntegration;
 use App\Services\TaskTracker\TaskTrackerService;
 use App\Services\ToolsService\ToolServiceFactory;
@@ -73,8 +71,6 @@ class AppServiceProvider extends ServiceProvider
             PageContextServiceFactoryInterface::class,
             PageContextServiceFactory::class
         );
-
-        $this->app->bind(TaskServiceInterface::class, TaskService::class);
 
         // Регистрация сервисов системы промптов
         $this->app->bind(PromptTemplateRendererInterface::class, PromptTemplateRenderer::class);

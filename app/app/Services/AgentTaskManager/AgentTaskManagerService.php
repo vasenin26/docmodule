@@ -19,6 +19,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
      */
     public function createTask(
         AgentResultHandlerInterface $handler,
+        int $creatorId,
         int $projectId,
         int $chatId
     ): int {
@@ -27,7 +28,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
                 'handler' => $handler::class,
                 'handler_options' => $handler->getOptions(),
                 'project_id' => $projectId,
-                'created_by' => Auth::id(),
+                'created_by' => $creatorId,
                 'chat_id' => $chatId,
                 'status' => AgentTask::STATUS_WAIT,
             ]);
@@ -37,7 +38,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
                 'handler' => $handler::class,
                 'project_id' => $projectId,
                 'chat_id' => $chatId,
-                'created_by' => Auth::id(),
+                'created_by' => $creatorId,
             ]);
 
             return $task->id;

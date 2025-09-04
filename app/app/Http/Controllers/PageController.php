@@ -4,19 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Page\StorePageRequest;
 use App\Http\Requests\Page\UpdateVersionRequest;
-use App\Interfaces\TaskServiceInterface;
+use App\Jobs\GenerateTaskDescriptionJob;
 use App\Models\Page;
 use App\Models\PageVersion;
 use App\Models\Project;
+use App\Models\VersionDiffTask;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class PageController extends Controller
 {
     public function __construct(
-        protected TaskServiceInterface $taskService
     ) {}
     /**
      * Display a listing of the resource.
@@ -387,8 +386,10 @@ class PageController extends Controller
             {
                 $currentVersion = $page->currentVersion;
                 if ($currentVersion) {
-                    $task = $this->taskService->createTaskForPageVersion($currentVersion);
-                    return redirect()->route('tasks.show', $task->id);
+
+                    $versionDiffTask = $this->createTaskForPage($page);
+
+                    return redirect()->route('tasks.show', $versionDiffTask->id);
                 }
             }
 
@@ -400,9 +401,6 @@ class PageController extends Controller
         }
     }
 
-    /**
-     * Создать задачу для страницы
-     */
     public function createTask(Page $page)
     {
         try {
@@ -412,7 +410,7 @@ class PageController extends Controller
                 throw new \Exception('У страницы нет текущей версии');
             }
 
-            $versionDiffTask = $this->taskService->createTaskForPageVersion($currentVersion);
+            $versionDiffTask = $this->createTaskForPage($page);
 
             return redirect()->route('tasks.show', $versionDiffTask->id)
                 ->with('success', 'Задача создана и обрабатывается.');
@@ -421,5 +419,25 @@ class PageController extends Controller
             return redirect()->route('pages.show', $page->id)
                 ->with('error', 'Не удалось создать задачу: ' . $e->getMessage());
         }
+    }
+
+    private function createTaskForPage(Page $page): VersionDiffTask
+    {
+        // Получаем текущую версию страницы
+        $currentVersion = $page->currentVersion;
+        if (!$currentVersion) {
+            throw new \Exception('У страницы нет текущей версии');
+        }
+
+        $versionDiffTask = VersionDiffTask::create([
+            'page_version_id' => $currentVersion->id,
+            'content' => '', // Будет заполнено job'ом
+            'created_by' => $userId ?? Auth::id() ?? $page->created_by,
+            'generation_status' => VersionDiffTask::STATUS_PENDING,
+        ]);
+
+        GenerateTaskDescriptionJob::dispatch($versionDiffTask->id);
+
+        return $versionDiffTask;
     }
 }

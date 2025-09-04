@@ -31,26 +31,6 @@ class UpdateTaskRequest extends FormRequest
                 'nullable',
                 'array',
             ],
-            'chat.*.role' => [
-                'required',
-                'string',
-                Rule::in(['user', 'assistant', 'system', 'tool']),
-            ],
-            'chat.*.content' => [
-                'nullable',
-                'string',
-                'max:65535', // Лимит VARCHAR
-            ],
-            'chat.*.tool_call_id' => [
-                'nullable',
-                'string',
-                'max:65535', // Лимит VARCHAR
-            ],
-            'chat.*.id' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
             'stats' => [
                 'required',
                 'array',
@@ -113,7 +93,6 @@ class UpdateTaskRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $this->validateAgentId($validator);
-            $this->validateChatMessages($validator);
             $this->validateTokenStats($validator);
         });
     }
@@ -127,31 +106,6 @@ class UpdateTaskRequest extends FormRequest
 
         if ($agentId && !$this->isValidUuid($agentId)) {
             $validator->errors()->add('agent_id', 'Invalid UUID format');
-        }
-    }
-
-    /**
-     * Валидация сообщений чата
-     */
-    private function validateChatMessages($validator): void
-    {
-        $chat = $this->input('chat', []);
-
-        // Если chat равен null или пустой массив, это валидно
-        if (empty($chat)) {
-            return;
-        }
-
-        foreach ($chat as $index => $message) {
-            if (!is_array($message)) {
-                $validator->errors()->add("chat.{$index}", 'Message must be an object');
-                continue;
-            }
-
-            // Проверяем обязательные поля
-            if (!isset($message['role']) || !array_key_exists('content', $message)) {
-                $validator->errors()->add("chat.{$index}", 'Message must have role and content fields');
-            }
         }
     }
 

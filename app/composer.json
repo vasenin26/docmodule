@@ -16,6 +16,7 @@
         "laravel/tinker": "^2.10.1",
         "mustache/mustache": "*",
         "openai-php/laravel": "^0.15.0",
+        "sebastian/diff": "^6.0",
         "tightenco/ziggy": "^2.4"
     },
     "require-dev": {

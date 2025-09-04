@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Common\DTO\DifferenceDataDTO;
+use App\Factory\ChatFactory;
+use App\Factory\PromptProviderFactory;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentFactoryInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
@@ -34,53 +36,35 @@ class GenerateTaskDescriptionJob implements ShouldQueue
      */
     public function __construct(
         public int $versionDiffTaskId
-    ) {}
+    )
+    {
+    }
 
     /**
      * Execute the job.
      */
-    public function handle(AgentFactoryInterface $agentFactory, DiffGeneratorService $diffGenerator): void
+    public function handle(
+        PromptProviderFactory              $promptProviderFactory,
+        DiffGeneratorService               $diffGenerator,
+        AgentResultHandlerFactoryInterface $agentResultHandlerFactory,
+        AgentTaskManagerInterface          $agentTaskManager,
+    ): void
     {
         $versionDiffTask = VersionDiffTask::with(['pageVersion.page', 'pageVersion.previousVersion'])->findOrFail($this->versionDiffTaskId);
+        $page = $versionDiffTask->pageVersion->page;
+        $pageVersion = $versionDiffTask->pageVersion;
 
-        try {
-            // Устанавливаем статус "generating"
-            $versionDiffTask->update([
-                'generation_status' => VersionDiffTask::STATUS_GENERATING
-            ]);
+        $promptProvider = $promptProviderFactory->createProjectPromptService($page->project_id);
 
-            // Создаем DifferenceDataDTO на основе информации о версии страницы
-            $differenceData = $this->createDifferenceDataDTO($versionDiffTask->pageVersion, $diffGenerator);
+        $chat = (new ChatFactory($promptProvider))->createChatForGenerateDescription(
+            $this->createDifferenceDataDTO($pageVersion, $diffGenerator),
+            $page->project->repositories->pluck('url')->toArray(),
+            $pageVersion->files
+        );
 
-            // Генерируем описание задачи
-            $descriptionGenerator = $agentFactory->getDescriptionGenerator($versionDiffTask->pageVersion->page->project_id);
-            $generationResult = $descriptionGenerator->generate($differenceData);
+        $handler = $agentResultHandlerFactory->createVersionDiffResultHandler($versionDiffTask);
 
-            // Сохраняем сгенерированное описание и обновляем статус
-            $versionDiffTask->update([
-                'content' => $generationResult->result,
-                'generation_status' => VersionDiffTask::STATUS_COMPLETED,
-                'llm_chat_id' => $generationResult->chatId
-            ]);
-
-            // Запускаем следующий job в цепочке
-            CreateTaskInTrackerJob::dispatch($this->versionDiffTaskId);
-        } catch (Exception $e) {
-            // Логируем ошибку
-            Log::error('Failed to generate task description', [
-                'version_diff_task_id' => $this->versionDiffTaskId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            // Устанавливаем статус "failed"
-            $versionDiffTask->update([
-                'generation_status' => VersionDiffTask::STATUS_FAILED
-            ]);
-
-            // Перебрасываем исключение для обработки системой очередей
-            throw $e;
-        }
+        $agentTaskManager->createTask($handler, $versionDiffTask->created_by, $page->project_id, $chat->id);
     }
 
     /**
