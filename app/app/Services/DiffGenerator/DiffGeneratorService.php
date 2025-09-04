@@ -40,11 +40,27 @@ class DiffGeneratorService implements DiffGeneratorInterface
             return implode("\n", $diffOutput);
         }
 
-        $differ = new Differ(new UnifiedDiffOutputBuilder);
-        $diffOutput = $differ->diff($oldLines, $newLines);
+        // Handle content changes
+        $oldLines = array_filter($oldLines, function($line) { return $line !== ''; });
+        $newLines = array_filter($newLines, function($line) { return $line !== ''; });
 
-        return $this->collapseMovedLines($diffOutput);
+        $deletedLines = array_diff($oldLines, $newLines);
+        $addedLines = array_diff($newLines, $oldLines);
+
+        foreach ($deletedLines as $line) {
+            $diffOutput[] = "- {$line}";
+        }
+
+        foreach ($addedLines as $line) {
+            $diffOutput[] = "+ {$line}";
+        }
+
+        $diffOutput = implode("\n", $diffOutput);
+
+        return $diffOutput;
     }
+
+
 
 
     /**
@@ -111,5 +127,4 @@ class DiffGeneratorService implements DiffGeneratorInterface
 
         return implode("\n", $result);
     }
-
 }
