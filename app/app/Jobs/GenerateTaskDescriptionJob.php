@@ -3,11 +3,11 @@
 namespace App\Jobs;
 
 use App\Common\DTO\DifferenceDataDTO;
-use App\Factory\ChatFactory;
 use App\Factory\PromptProviderFactory;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentFactoryInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
+use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Models\VersionDiffTask;
 use App\Services\DiffGenerator\DiffGeneratorService;
 use Exception;
@@ -48,6 +48,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
         DiffGeneratorService               $diffGenerator,
         AgentResultHandlerFactoryInterface $agentResultHandlerFactory,
         AgentTaskManagerInterface          $agentTaskManager,
+        LLMChatFactoryInterface           $chatFactory,
     ): void
     {
         $versionDiffTask = VersionDiffTask::with(['pageVersion.page', 'pageVersion.previousVersion'])->findOrFail($this->versionDiffTaskId);
@@ -56,7 +57,8 @@ class GenerateTaskDescriptionJob implements ShouldQueue
 
         $promptProvider = $promptProviderFactory->createProjectPromptService($page->project_id);
 
-        $chat = (new ChatFactory($promptProvider))->createChatForGenerateDescription(
+        $chat = $chatFactory->createChatForGenerateDescription(
+            $promptProvider,
             $this->createDifferenceDataDTO($pageVersion, $diffGenerator),
             $page->project->repositories->pluck('url')->toArray(),
             $pageVersion->files

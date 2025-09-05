@@ -2,7 +2,11 @@
 
 namespace App\Jobs;
 
-use App\Interfaces\Factory\AgentFactoryInterface;
+use App\Common\DTO\GeneratorContextDTO;
+use App\Factory\PromptProviderFactory;
+use App\Interfaces\AgentTaskManagerInterface;
+use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
+use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Models\Techplane;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -35,65 +39,41 @@ class GenerateTechplaneJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(AgentFactoryInterface $agentFactory): void
-    {
+    public function handle(
+        PromptProviderFactory $promptProviderFactory,
+        AgentResultHandlerFactoryInterface $agentResultHandlerFactory,
+        AgentTaskManagerInterface $agentTaskManager,
+        LLMChatFactoryInterface $chatFactory,
+    ): void {
         $techplane = Techplane::with(['task.pageVersion.page'])->findOrFail($this->techplaneId);
-        $currentVersion = $techplane->task->pageVersion;
-
-        try {
-            // Устанавливаем статус "generating"
-            $techplane->update([
-                'generation_status' => Techplane::STATUS_GENERATING
-            ]);
-
-            $task = $techplane->task;
-
-            if (!$task) {
-                throw new Exception('Task not found for techplane');
-            }
-
-            // Получаем описание задачи
-            $taskDescription = $task->content ?? 'Описание задачи отсутствует';
-
-            // Получаем прикреплённые файлы из версии страницы
-            $attachedFiles = [];
-            if ($currentVersion && $currentVersion->files) {
-                $attachedFiles = $currentVersion->files;
-            }
-
-            // Получаем генератор техплана
-            $projectId = $task->pageVersion->page->project_id;
-            $techplaneGenerator = $agentFactory->getTechplaneGenerator($projectId);
-
-            // Генерируем техплан с учётом прикреплённых файлов
-            $generationResult = $techplaneGenerator->generate($taskDescription, $attachedFiles);
-
-            // Сохраняем сгенерированный техплан и обновляем статус
-            $techplane->update([
-                'content' => $generationResult->result,
-                'generation_status' => Techplane::STATUS_COMPLETED,
-                'chat_id' => $generationResult->chatId
-            ]);
-
-        } catch (Exception $e) {
-            // Логируем ошибку
-            Log::error('Failed to generate techplane', [
-                'techplane_id' => $this->techplaneId,
-                'task_id' => $task->id ?? null,
-                'page_version_id' => $task->pageVersion->id ?? null,
-                'page_id' => $task->pageVersion->page->id ?? null,
-                'attached_files_count' => count($attachedFiles ?? []),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            // Устанавливаем статус "failed"
-            $techplane->update([
-                'generation_status' => Techplane::STATUS_FAILED
-            ]);
-
-            // Перебрасываем исключение для обработки системой очередей
-            throw $e;
-        }
+        $task = $techplane->task;
+        $page = $task->pageVersion->page;
+        
+        // Устанавливаем статус "generating"
+        $techplane->update(['generation_status' => Techplane::STATUS_GENERATING]);
+        
+        $promptProvider = $promptProviderFactory->createProjectPromptService($page->project_id);
+        
+        $taskDescription = $task->content ?? 'Описание задачи отсутствует';
+        
+        // Создаем контекст для генерации
+        $context = new GeneratorContextDTO(
+            attachedFiles: $task->pageVersion->files ?? [],
+            repositories: $page->project->repositories->pluck('url')->toArray(),
+            projectId: $page->project_id
+        );
+        
+        $chat = $chatFactory->createChatForTechplane(
+            $promptProvider,
+            $taskDescription,
+            $context
+        );
+        
+        $techplane->chat_id = $chat->id;
+        $techplane->save();
+        
+        $handler = $agentResultHandlerFactory->createTechplaneResultHandler($techplane);
+        
+        $agentTaskManager->createTask($handler, $task->created_by, $page->project_id, $chat->id);
     }
 }

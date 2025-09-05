@@ -5,6 +5,8 @@ namespace App\Factory;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\AgentTask;
+use App\Models\Techplane;
+use App\Services\AgentTaskManager\Handlers\TechplaneResultHandler;
 use App\Services\AgentTaskManager\Handlers\VersionDiffResultHandler;
 use Illuminate\Support\Facades\Log;
 
@@ -32,5 +34,10 @@ class AgentResultHandlerFactory implements AgentResultHandlerFactoryInterface
     public function createVersionDiffResultHandler($versionDiffTask): AgentResultHandlerInterface
     {
         return new VersionDiffResultHandler($versionDiffTask);
+    }
+
+    public function createTechplaneResultHandler(Techplane $techplane): AgentResultHandlerInterface
+    {
+        return new TechplaneResultHandler($techplane);
     }
 }

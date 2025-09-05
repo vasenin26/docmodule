@@ -3,6 +3,7 @@
 namespace App\Interfaces\LLM;
 
 use App\Common\DTO\DifferenceDataDTO;
+use App\Common\DTO\GeneratorContextDTO;
 use App\Models\Repository;
 
 /**
@@ -27,4 +28,18 @@ interface PromptProviderInterface
      * @param string[] $attachedFiles
      */
     public function getDescriptionGeneratorInstructions(DifferenceDataDTO $differenceData, array $repositories = [], array $attachedFiles = []): string;
+
+    /**
+     * Системный промпт: определяет роль TechLead для генерации техпланов
+     */
+    public function getTechLeadRole(): string;
+
+    /**
+     * Пользовательский промпт: возвращает инструкции для генерации техплана
+     * с подстановкой переменных из описания задачи и контекста
+     *
+     * @param string $taskDescription Описание задачи для которой генерируется техплан
+     * @param GeneratorContextDTO $context Контекст генерации (файлы, репозитории и т.д.)
+     */
+    public function getTechplaneGeneratorInstructions(string $taskDescription, GeneratorContextDTO $context): string;
 }
