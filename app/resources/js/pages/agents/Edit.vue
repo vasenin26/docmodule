@@ -169,10 +169,6 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Отладочная информация
-console.log('Agent data:', props.agent)
-console.log('Agent token:', props.agent.token)
-
 const form = useForm({
   name: props.agent.name,
 })
@@ -222,4 +218,12 @@ const regenerateToken = () => {
 }
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('
+  return new Date(date).toLocaleDateString('ru-RU', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+</script>
