@@ -5,6 +5,7 @@ namespace App\Services\AgentTaskManager;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
+use App\Models\Agent;
 use App\Models\AgentTask;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
@@ -53,24 +54,24 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
         }
     }
 
-    public function assignTaskToAgent(string $agentId): ?AgentTask
+    public function assignTaskToAgent(Agent $agent, string $instanceUuid): ?AgentTask
     {
         try {
             // Сначала проверяем, есть ли у агента уже назначенная задача
-            $existingTask = AgentTask::where('agent_id', $agentId)
+            $existingTask = AgentTask::where('agent_uuid', $instanceUuid)
                 ->where('status', AgentTask::STATUS_PROCESSING)
                 ->first();
 
             if ($existingTask) {
                 Log::debug('Agent already has active task', [
-                    'agent_id' => $agentId,
+                    'agent_id' => $instanceUuid,
                     'task_id' => $existingTask->id,
                 ]);
                 return $existingTask;
             }
 
             // Если нет активной задачи, ищем новую с блокировкой
-            return DB::transaction(function () use ($agentId) {
+            return DB::transaction(function () use ($instanceUuid, $agent) {
                 $waitingTask = AgentTask::where('status', AgentTask::STATUS_WAIT)
                     ->whereNull('agent_id')
                     ->orderBy('created_at')
@@ -80,20 +81,22 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
                 if ($waitingTask) {
                     // Назначаем задачу агенту
                     $waitingTask->update([
-                        'agent_id' => $agentId,
+                        'agent_id' => $agent->id,
+                        'agent_uuid' => $instanceUuid,
                         'status' => AgentTask::STATUS_PROCESSING
                     ]);
 
                     Log::info('Task assigned to agent', [
                         'task_id' => $waitingTask->id,
-                        'agent_id' => $agentId,
+                        'agent_id' => $agent->id,
+                        'agent_id' => $instanceUuid,
                     ]);
 
                     return $waitingTask->fresh(); // Обновляем модель из БД
                 }
 
                 Log::debug('No waiting tasks available for agent', [
-                    'agent_id' => $agentId,
+                    'agent_id' => $instanceUuid,
                 ]);
 
                 return null;
@@ -101,7 +104,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
 
         } catch (QueryException $e) {
             Log::error('Database error during task assignment', [
-                'agent_id' => $agentId,
+                'agent_id' => $instanceUuid,
                 'error' => $e->getMessage(),
                 'code' => $e->getCode(),
             ]);
@@ -109,7 +112,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
             // Повторная попытка для deadlock ошибок
             if ($e->getCode() === '40001' || strpos($e->getMessage(), 'Deadlock') !== false) {
                 sleep(rand(1, 3)); // Случайная задержка
-                return $this->assignTaskToAgent($agentId); // Рекурсивный вызов
+                return $this->assignTaskToAgent($agent, $instanceUuid); // Рекурсивный вызов
             }
 
             throw $e;

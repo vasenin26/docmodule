@@ -13,7 +13,7 @@ use App\Services\AgentTaskManager\AgentTaskManagerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 
-class AgentController extends Controller
+class TaskController extends Controller
 {
     public function __construct(
         private readonly AgentTaskManagerService $taskManager
@@ -31,7 +31,9 @@ class AgentController extends Controller
         $agentUuid = $request->getAgentUuid(); // Получаем UUID от клиента
 
         try {
-            $task = $this->taskManager->assignTaskToAgent($agent);
+            Log::info($agentUuid);
+
+            $task = $this->taskManager->assignTaskToAgent($agent, $agentUuid);
 
             if (!$task) {
                 return response()->json([

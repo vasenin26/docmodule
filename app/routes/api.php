@@ -1,11 +1,23 @@
 <?php
 
-use App\Http\Controllers\Api\AgentController;
+use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\PageController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('agent')->name('agent.')->middleware(['agent.jwt'])->group(function () {
-    Route::post('task', [AgentController::class, 'getTask'])->name('task.get');
-    Route::put('task/{id}', [AgentController::class, 'updateTask'])->name('task.update');
+    Route::post('task', [TaskController::class, 'getTask'])->name('task.get');
+    Route::put('task/{id}', [TaskController::class, 'updateTask'])->name('task.update');
+    
+    // Page API routes
+    Route::get('page/{id}', [PageController::class, 'getPage'])->name('page.get');
+    Route::get('pages', [PageController::class, 'getPages'])->name('pages.list');
+    Route::get('pages/hierarchy', [PageController::class, 'getPageHierarchy'])->name('pages.hierarchy');
+    Route::get('page/{id}/children', [PageController::class, 'getPageChildren'])->name('page.children');
+    Route::get('page/{id}/parent', [PageController::class, 'getPageParent'])->name('page.parent');
+    Route::get('page/{id}/related', [PageController::class, 'getRelatedPages'])->name('page.related');
+    Route::get('page/{id}/actualization', [PageController::class, 'getPageActualization'])->name('page.actualization');
+    Route::get('page/{id}/files', [PageController::class, 'getPageFiles'])->name('page.files');
+    Route::get('page/{id}/tasks', [PageController::class, 'getPageTasks'])->name('page.tasks');
 });
 
 Route::prefix('admin/agent')->middleware(['auth', 'admin'])->group(function () {

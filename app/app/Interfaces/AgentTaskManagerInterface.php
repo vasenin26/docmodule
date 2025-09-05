@@ -3,6 +3,7 @@
 namespace App\Interfaces;
 
 use App\Interfaces\LLM\AgentResultHandlerInterface;
+use App\Models\Agent;
 use App\Models\AgentTask;
 
 interface AgentTaskManagerInterface
@@ -31,7 +32,7 @@ interface AgentTaskManagerInterface
      * @return AgentTask|null Назначенная задача или null если очередь пуста
      * @throws \Illuminate\Database\QueryException При ошибках БД
      */
-    public function assignTaskToAgent(string $agentId): ?AgentTask;
+    public function assignTaskToAgent(Agent $agent, string $agentId): ?AgentTask;
 
     /**
      * Получить следующую ожидающую задачу из очереди (без назначения)
