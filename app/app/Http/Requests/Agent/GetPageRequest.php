@@ -19,9 +19,7 @@ class GetPageRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'id' => 'required|integer|min:1',
-        ];
+        return [];
     }
 
     /**
@@ -29,11 +27,7 @@ class GetPageRequest extends FormRequest
      */
     public function messages(): array
     {
-        return [
-            'id.required' => 'Page ID is required',
-            'id.integer' => 'Page ID must be an integer',
-            'id.min' => 'Page ID must be greater than 0',
-        ];
+        return [];
     }
 
     /**
