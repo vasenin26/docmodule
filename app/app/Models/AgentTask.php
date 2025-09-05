@@ -17,7 +17,8 @@ class AgentTask extends Model
         'created_by',
         'chat_id',
         'status',
-        'agent_id',
+        'agent_uuid',  // переименовано из agent_id
+        'agent_id',    // новая колонка для связи с Agent
     ];
 
     protected function casts(): array
@@ -55,6 +56,11 @@ class AgentTask extends Model
     public function llmChat(): BelongsTo
     {
         return $this->belongsTo(LLMChat::class, 'chat_id');
+    }
+
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(Agent::class);
     }
 
     // Status check methods
@@ -97,6 +103,12 @@ class AgentTask extends Model
     public function scopeForAgent($query, string $agentId)
     {
         return $query->where('agent_id', $agentId);
+    }
+
+    // Scope для поиска по UUID агента
+    public function scopeForAgentUuid($query, string $agentUuid)
+    {
+        return $query->where('agent_uuid', $agentUuid);
     }
 
     public function scopeStuck($query, int $minutesAgo = 30)

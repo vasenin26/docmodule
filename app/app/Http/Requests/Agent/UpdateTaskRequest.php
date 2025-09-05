@@ -21,7 +21,7 @@ class UpdateTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'agent_id' => [
+            'agent_uuid' => [
                 'required',
                 'string',
                 'uuid',
@@ -67,8 +67,8 @@ class UpdateTaskRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'agent_id.required' => 'Agent ID is required',
-            'agent_id.uuid' => 'Agent ID must be a valid UUID',
+            'agent_uuid.required' => 'Agent UUID is required',
+            'agent_uuid.uuid' => 'Agent UUID must be a valid UUID',
             'chat.nullable' => 'Chat must be an array or null',
             'chat.array' => 'Chat must be an array of messages',
             'chat.min' => 'At least one chat message is required',
@@ -92,20 +92,20 @@ class UpdateTaskRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $this->validateAgentId($validator);
+            $this->validateAgentUuid($validator);
             $this->validateTokenStats($validator);
         });
     }
 
     /**
-     * Валидация agent_id
+     * Валидация agent_uuid
      */
-    private function validateAgentId($validator): void
+    private function validateAgentUuid($validator): void
     {
-        $agentId = $this->input('agent_id');
+        $agentUuid = $this->input('agent_uuid');
 
-        if ($agentId && !$this->isValidUuid($agentId)) {
-            $validator->errors()->add('agent_id', 'Invalid UUID format');
+        if ($agentUuid && !$this->isValidUuid($agentUuid)) {
+            $validator->errors()->add('agent_uuid', 'Invalid UUID format');
         }
     }
 
@@ -139,9 +139,9 @@ class UpdateTaskRequest extends FormRequest
     /**
      * Get validated data with helper methods
      */
-    public function getAgentId(): string
+    public function getAgentUuid(): string
     {
-        return $this->validated('agent_id');
+        return $this->validated('agent_uuid');
     }
 
     public function getTaskId(): int

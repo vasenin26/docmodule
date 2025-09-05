@@ -3,18 +3,9 @@
 use App\Http\Controllers\Api\AgentController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('agent')->name('agent.')->group(function () {
-
-    // Получить задачу для выполнения
-    Route::post('task', [AgentController::class, 'getTask'])
-        ->name('task.get')
-        ->middleware(['throttle:60,1']);
-
-    Route::put('task/{id}', [AgentController::class, 'updateTask'])
-        ->name('task.update')
-        ->where('id', '[0-9]+')
-        ->middleware(['throttle:120,1']);
-
+Route::prefix('agent')->name('agent.')->middleware(['agent.jwt'])->group(function () {
+    Route::post('task', [AgentController::class, 'getTask'])->name('task.get');
+    Route::put('task/{id}', [AgentController::class, 'updateTask'])->name('task.update');
 });
 
 Route::prefix('admin/agent')->middleware(['auth', 'admin'])->group(function () {

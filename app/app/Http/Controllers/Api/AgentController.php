@@ -27,10 +27,11 @@ class AgentController extends Controller
      */
     public function getTask(GetTaskRequest $request): JsonResponse
     {
-        $agentId = $request->getAgentId();
+        $agent = $request->get('agent'); // Получаем агента из middleware
+        $agentUuid = $request->getAgentUuid(); // Получаем UUID от клиента
 
         try {
-            $task = $this->taskManager->assignTaskToAgent($agentId);
+            $task = $this->taskManager->assignTaskToAgent($agent);
 
             if (!$task) {
                 return response()->json([
@@ -39,15 +40,23 @@ class AgentController extends Controller
                 ], 404);
             }
 
+            // Записываем agent_uuid от клиента и agent_id для связи с Agent
+            $task->update([
+                'agent_uuid' => $agentUuid,
+                'agent_id' => $agent->id,
+            ]);
+
             Log::info('Task assigned via API', [
                 'task_id' => $task->id,
-                'agent_id' => $agentId,
+                'agent_id' => $agent->id,
+                'agent_uuid' => $agentUuid,
                 'handler' => $task->handler,
             ]);
 
         } catch (\Exception $e) {
             Log::error('API: Failed to assign task to agent', [
-                'agent_id' => $agentId,
+                'agent_id' => $agent->id,
+                'agent_uuid' => $agentUuid,
                 'error' => $e->getMessage(),
             ]);
 
@@ -59,6 +68,7 @@ class AgentController extends Controller
 
         return response()->json([
             'id' => $task->id,
+            'agent_uuid' => $task->agent_uuid, // Возвращаем UUID для внешнего агента
             'project_id' => $task->project_id,
             'chat' => [
                 'messages' => $task->llmChat->messages ?? [],
@@ -72,17 +82,20 @@ class AgentController extends Controller
      */
     public function updateTask(AgentResultHandlerFactoryInterface $handlerFactory, UpdateTaskRequest $request, int $id): JsonResponse
     {
-        $agentId = $request->getAgentId();
+        $agent = $request->get('agent'); // Получаем агента из middleware
 
         try {
             $task = AgentTask::where('id', $id)
-                ->where('agent_id', $agentId) // КРИТИЧНО: проверяем принадлежность
+                ->where('agent_uuid', $request->getAgentUuid()) // Проверяем по UUID от клиента
+                ->where('agent_id', $agent->id) // Дополнительная проверка принадлежности агенту
                 ->where('status', AgentTask::STATUS_PROCESSING)
                 ->first();
 
             if (!$task) {
                 $this->logSuspiciousActivity($request, 'task_update_denied', [
                     'requested_task_id' => $id,
+                    'agent_id' => $agent->id,
+                    'agent_uuid' => $request->getAgentUuid(),
                     'reason' => 'task_not_found_or_not_owned'
                 ]);
 
@@ -97,7 +110,8 @@ class AgentController extends Controller
                 'result' => $request->getResult(),
             ]);
 
-            $task->llmChat->update([
+            $chat = $task->llmChat;
+            $chat->update([
                 'messages' => $updateData->chat,
                 'prompt_tokens' => ($chat->prompt_tokens ?? 0) + ($updateData->stats->prompt_tokens ?? 0),
                 'completion_tokens' => ($chat->completion_tokens ?? 0) + ($updateData->stats->completion_tokens ?? 0),
@@ -116,7 +130,8 @@ class AgentController extends Controller
         } catch (\Exception $e) {
             Log::error('API: Failed to update task', [
                 'task_id' => $id,
-                'agent_id' => $agentId,
+                'agent_id' => $agent->id,
+                'agent_uuid' => $request->getAgentUuid(),
                 'error' => $e->getMessage(),
             ]);
 
@@ -129,7 +144,8 @@ class AgentController extends Controller
     private function logSuspiciousActivity($request, string $action, array $context = []): void
     {
         Log::warning("Suspicious agent activity: {$action}", array_merge([
-            'agent_id' => $request->input('agent_id'),
+            'agent_id' => $request->get('agent')?->id,
+            'agent_uuid' => $request->getAgentUuid(),
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'url' => $request->fullUrl(),

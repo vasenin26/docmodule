@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActualizationController;
+use App\Http\Controllers\AgentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProjectController;
@@ -119,6 +120,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // API маршрут для получения проекта
     Route::get('/api/projects/{project}', [ProjectController::class, 'apiShow'])->name('api.projects.show');
+
+    // Маршруты для агентов проекта
+    Route::get('projects/{project}/agents', [AgentController::class, 'index'])
+        ->name('projects.agents.index');
+    Route::get('projects/{project}/agents/create', [AgentController::class, 'create'])
+        ->name('projects.agents.create');
+    Route::post('projects/{project}/agents', [AgentController::class, 'store'])
+        ->name('projects.agents.store');
+    Route::get('projects/{project}/agents/{agent}/edit', [AgentController::class, 'edit'])
+        ->name('projects.agents.edit');
+    Route::put('projects/{project}/agents/{agent}', [AgentController::class, 'update'])
+        ->name('projects.agents.update');
+    Route::delete('projects/{project}/agents/{agent}', [AgentController::class, 'destroy'])
+        ->name('projects.agents.destroy');
+    Route::post('projects/{project}/agents/{agent}/regenerate-token', [AgentController::class, 'regenerateToken'])
+        ->name('projects.agents.regenerate-token');
 });
 
 

@@ -21,7 +21,7 @@ class GetTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'agent_id' => [
+            'agent_uuid' => [
                 'required',
                 'string',
                 'uuid',
@@ -36,9 +36,9 @@ class GetTaskRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'agent_id.required' => 'Agent ID is required',
-            'agent_id.uuid' => 'Agent ID must be a valid UUID',
-            'agent_id.max' => 'Agent ID cannot exceed 36 characters',
+            'agent_uuid.required' => 'Agent UUID is required',
+            'agent_uuid.uuid' => 'Agent UUID must be a valid UUID',
+            'agent_uuid.max' => 'Agent UUID cannot exceed 36 characters',
         ];
     }
 
@@ -48,7 +48,7 @@ class GetTaskRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'agent_id' => 'agent identifier',
+            'agent_uuid' => 'agent identifier',
         ];
     }
 
@@ -58,11 +58,11 @@ class GetTaskRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $agentId = $this->input('agent_id');
+            $agentUuid = $this->input('agent_uuid');
             
             // Дополнительная проверка формата UUID
-            if ($agentId && !$this->isValidUuid($agentId)) {
-                $validator->errors()->add('agent_id', 'Invalid UUID format');
+            if ($agentUuid && !$this->isValidUuid($agentUuid)) {
+                $validator->errors()->add('agent_uuid', 'Invalid UUID format');
             }
         });
     }
@@ -76,10 +76,10 @@ class GetTaskRequest extends FormRequest
     }
 
     /**
-     * Get the validated agent ID
+     * Get the validated agent UUID
      */
-    public function getAgentId(): string
+    public function getAgentUuid(): string
     {
-        return $this->validated('agent_id');
+        return $this->validated('agent_uuid');
     }
 }

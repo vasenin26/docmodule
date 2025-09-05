@@ -57,6 +57,14 @@ class Project extends Model
     }
 
     /**
+     * Get the agents for the project.
+     */
+    public function agents(): HasMany
+    {
+        return $this->hasMany(Agent::class);
+    }
+
+    /**
      * Проверяет, может ли пользователь получить доступ к проекту
      */
     public function canAccess(?User $user): bool
