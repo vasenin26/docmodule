@@ -5,7 +5,9 @@ namespace App\Factory;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\AgentTask;
+use App\Models\Actualization;
 use App\Models\Techplane;
+use App\Services\AgentTaskManager\Handlers\ActualizationResultHandler;
 use App\Services\AgentTaskManager\Handlers\TechplaneResultHandler;
 use App\Services\AgentTaskManager\Handlers\VersionDiffResultHandler;
 use Illuminate\Support\Facades\Log;
@@ -39,5 +41,10 @@ class AgentResultHandlerFactory implements AgentResultHandlerFactoryInterface
     public function createTechplaneResultHandler(Techplane $techplane): AgentResultHandlerInterface
     {
         return new TechplaneResultHandler($techplane);
+    }
+
+    public function createActualizationResultHandler(Actualization $actualization): AgentResultHandlerInterface
+    {
+        return new ActualizationResultHandler($actualization);
     }
 }

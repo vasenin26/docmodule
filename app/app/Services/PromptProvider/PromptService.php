@@ -2,6 +2,7 @@
 
 namespace App\Services\PromptProvider;
 
+use App\Common\DTO\ActualizationContextDTO;
 use App\Common\DTO\DifferenceDataDTO;
 use App\Common\DTO\GeneratorContextDTO;
 use App\Common\Enums\PromptType;
@@ -54,6 +55,26 @@ readonly class PromptService implements PromptProviderInterface
         return $this->templateRenderer->render($prompt, [
             'task_description' => $taskDescription,
             ...$context->toArray(), // Разворачиваем контекст
+        ]);
+    }
+
+    public function getDocumentationSpecialistRole(): string
+    {
+        $prompt = $this->promptSource->getPrompt(PromptType::DOCUMENTATION_SPECIALIST_ROLE);
+        return $prompt ?? 'Роль специалиста по документации не определена';
+    }
+
+    public function getActualizationInstructions(string $currentContent, ActualizationContextDTO $context): string
+    {
+        $prompt = $this->promptSource->getPrompt(PromptType::ACTUALIZATION_INSTRUCTIONS);
+
+        if (!$prompt) {
+            return 'Инструкции для актуализации не найдены';
+        }
+
+        return $this->templateRenderer->render($prompt, [
+            'current_content' => $currentContent,
+            ...$context->toArray(),
         ]);
     }
 

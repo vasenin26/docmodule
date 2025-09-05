@@ -2,20 +2,17 @@
 
 namespace App\Services;
 
-use App\Factory\AgentFactory;
 use App\Models\Actualization;
 use App\Models\Page;
 use App\Models\PageVersion;
 use App\Models\User;
 use App\Jobs\ProcessPageActualizationJob;
-use App\Interfaces\ContentGenerator\ActualizationGeneratorInterface;
 use Illuminate\Support\Facades\Log;
 
 class ActualizationService
 {
-    public function __construct(
-        private AgentFactory $agentFactory,
-    ) {
+    public function __construct()
+    {
     }
 
     /**
@@ -74,72 +71,6 @@ class ActualizationService
 
         // Запустить актуализацию для созданного черновика
         return $this->initiate($draft, $user);
-    }
-
-    /**
-     * Обработать актуализацию
-     */
-    public function process(Actualization $actualization): void
-    {
-        try {
-            // Обновить статус на processing
-            $actualization->update(['status' => Actualization::STATUS_PROCESSING]);
-
-            // Получить черновик через новую связь
-            $draft = $actualization->pageVersion;
-            if (!$draft) {
-                throw new \RuntimeException('Черновик не найден для актуализации');
-            }
-
-            $page = $actualization->page;
-
-            if(is_null($page->project_id)) {
-                throw new \RuntimeException("Актуализация возможна только в рамках проекта");
-            }
-
-            $generator = $this->agentFactory->getActualizationGenerator($page->project_id);
-
-            // Запустить генерацию актуализации
-            // Черновик уже содержит актуальный контент и файлы из текущей версии
-            $result = $generator->actualize(
-                $draft->content ?? '',
-                $draft->files ?? []
-            );
-
-            // Сохранить результат в черновике
-            $draft->update([
-                'content' => $result->result,
-            ]);
-
-            // Прикрепить чат к актуализации (если есть)
-            if ($result->chatId) {
-                $actualization->update(['llm_chat_id' => $result->chatId]);
-            }
-
-            // Обновить статус актуализации на completed
-            $actualization->update(['status' => Actualization::STATUS_COMPLETED]);
-
-            Log::info('Actualization completed successfully', [
-                'actualization_id' => $actualization->id,
-                'page_id' => $page->id,
-                'page_version_id' => $draft->id,
-                'chat_id' => $result->chatId,
-            ]);
-
-        } catch (\Exception $e) {
-            // Обновить статус на failed
-            $actualization->update(['status' => Actualization::STATUS_FAILED]);
-
-            Log::error('Actualization failed', [
-                'actualization_id' => $actualization->id,
-                'page_id' => $actualization->page_id,
-                'page_version_id' => $actualization->page_version_id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            throw $e;
-        }
     }
 
     /**

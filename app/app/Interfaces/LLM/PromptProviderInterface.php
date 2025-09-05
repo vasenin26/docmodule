@@ -2,6 +2,7 @@
 
 namespace App\Interfaces\LLM;
 
+use App\Common\DTO\ActualizationContextDTO;
 use App\Common\DTO\DifferenceDataDTO;
 use App\Common\DTO\GeneratorContextDTO;
 use App\Models\Repository;
@@ -42,4 +43,18 @@ interface PromptProviderInterface
      * @param GeneratorContextDTO $context Контекст генерации (файлы, репозитории и т.д.)
      */
     public function getTechplaneGeneratorInstructions(string $taskDescription, GeneratorContextDTO $context): string;
+
+    /**
+     * Системный промпт: определяет роль специалиста по документации для актуализации
+     */
+    public function getDocumentationSpecialistRole(): string;
+
+    /**
+     * Пользовательский промпт: возвращает инструкции для актуализации документации
+     * с подстановкой переменных из текущего содержимого и контекста
+     *
+     * @param string $currentContent Текущее содержимое документации
+     * @param ActualizationContextDTO $context Контекст актуализации (файлы, репозитории и т.д.)
+     */
+    public function getActualizationInstructions(string $currentContent, ActualizationContextDTO $context): string;
 }

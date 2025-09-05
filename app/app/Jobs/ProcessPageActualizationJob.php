@@ -2,8 +2,12 @@
 
 namespace App\Jobs;
 
+use App\Common\DTO\ActualizationContextDTO;
+use App\Factory\PromptProviderFactory;
+use App\Interfaces\AgentTaskManagerInterface;
+use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
+use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Models\Actualization;
-use App\Services\ActualizationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -36,49 +40,53 @@ class ProcessPageActualizationJob implements ShouldQueue
     /**
      * Выполнить задачу
      */
-    public function handle(ActualizationService $actualizationService): void
-    {
-        try {
-            $actualization = Actualization::findOrFail($this->actualizationId);
-            
-            Log::info('Processing page actualization job started', [
-                'actualization_id' => $this->actualizationId,
-                'page_id' => $actualization->page_id,
-                'attempt' => $this->attempts(),
-            ]);
-
-            $actualizationService->process($actualization);
-
-            Log::info('Processing page actualization job completed', [
-                'actualization_id' => $this->actualizationId,
-                'page_id' => $actualization->page_id,
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Processing page actualization job failed', [
-                'actualization_id' => $this->actualizationId,
-                'attempt' => $this->attempts(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Если это последняя попытка, обновляем статус на failed
-            if ($this->attempts() >= $this->tries) {
-                try {
-                    $actualization = Actualization::find($this->actualizationId);
-                    if ($actualization) {
-                        $actualization->update(['status' => Actualization::STATUS_FAILED]);
-                    }
-                } catch (\Exception $updateException) {
-                    Log::error('Failed to update actualization status to failed', [
-                        'actualization_id' => $this->actualizationId,
-                        'error' => $updateException->getMessage(),
-                    ]);
-                }
-            }
-
-            throw $e;
-        }
+    public function handle(
+        PromptProviderFactory $promptProviderFactory,
+        AgentResultHandlerFactoryInterface $agentResultHandlerFactory,
+        AgentTaskManagerInterface $agentTaskManager,
+        LLMChatFactoryInterface $chatFactory,
+    ): void {
+        $actualization = Actualization::with(['pageVersion.page', 'page'])->findOrFail($this->actualizationId);
+        $draft = $actualization->pageVersion;
+        $page = $actualization->page;
+        
+        Log::info('Processing page actualization job started', [
+            'actualization_id' => $this->actualizationId,
+            'page_id' => $actualization->page_id,
+        ]);
+        
+        // Устанавливаем статус "processing"
+        $actualization->update(['status' => Actualization::STATUS_PROCESSING]);
+        
+        $promptProvider = $promptProviderFactory->createProjectPromptService($page->project_id);
+        
+        $currentContent = $draft->content ?? '';
+        
+        // Создаем контекст для актуализации
+        $context = new ActualizationContextDTO(
+            attachedFiles: $draft->files ?? [],
+            repositories: $page->project->repositories->pluck('url')->toArray(),
+            projectId: $page->project_id
+        );
+        
+        $chat = $chatFactory->createChatForActualization(
+            $promptProvider,
+            $currentContent,
+            $context
+        );
+        
+        $actualization->llm_chat_id = $chat->id;
+        $actualization->save();
+        
+        $handler = $agentResultHandlerFactory->createActualizationResultHandler($actualization);
+        
+        $agentTaskManager->createTask($handler, $actualization->created_by, $page->project_id, $chat->id);
+        
+        Log::info('Processing page actualization job completed - agent task created', [
+            'actualization_id' => $this->actualizationId,
+            'page_id' => $actualization->page_id,
+            'chat_id' => $chat->id,
+        ]);
     }
 
     /**
@@ -86,7 +94,7 @@ class ProcessPageActualizationJob implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        Log::error('Page actualization job ultimately failed', [
+        Log::error('Page actualization job failed', [
             'actualization_id' => $this->actualizationId,
             'error' => $exception->getMessage(),
             'trace' => $exception->getTraceAsString(),

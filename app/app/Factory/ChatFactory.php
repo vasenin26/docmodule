@@ -2,6 +2,7 @@
 
 namespace App\Factory;
 
+use App\Common\DTO\ActualizationContextDTO;
 use App\Common\DTO\DifferenceDataDTO;
 use App\Common\DTO\GeneratorContextDTO;
 use App\Interfaces\Factory\LLMChatFactoryInterface;
@@ -38,6 +39,19 @@ class ChatFactory implements LLMChatFactoryInterface
     {
         $prompt = $promptProvider->getTechplaneGeneratorInstructions($taskDescription, $context);
         $role = $promptProvider->getTechLeadRole();
+
+        $chat = $this->createBasicChat();
+        $chat->addSystemMessage($role);
+        $chat->addUserMessage($prompt);
+        $chat->save();
+
+        return $chat;
+    }
+
+    public function createChatForActualization(PromptProviderInterface $promptProvider, string $currentContent, ActualizationContextDTO $context): LLMChat
+    {
+        $prompt = $promptProvider->getActualizationInstructions($currentContent, $context);
+        $role = $promptProvider->getDocumentationSpecialistRole();
 
         $chat = $this->createBasicChat();
         $chat->addSystemMessage($role);

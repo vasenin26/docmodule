@@ -8,6 +8,8 @@ enum PromptType: string
     case TASK_DESCRIPTION = 'task-description';
     case TECHLEAD_ROLE = 'techlead-role';
     case TECHPLANE_INSTRUCTIONS = 'techplane-instructions';
+    case DOCUMENTATION_SPECIALIST_ROLE = 'documentation-specialist-role';
+    case ACTUALIZATION_INSTRUCTIONS = 'actualization-instructions';
 
     public function getFileName(): string
     {
@@ -21,6 +23,8 @@ enum PromptType: string
             self::TASK_DESCRIPTION => 'Инструкции генерации',
             self::TECHLEAD_ROLE => 'Роль TechLead',
             self::TECHPLANE_INSTRUCTIONS => 'Инструкции техплана',
+            self::DOCUMENTATION_SPECIALIST_ROLE => 'Роль специалиста по документации',
+            self::ACTUALIZATION_INSTRUCTIONS => 'Инструкции актуализации',
         };
     }
 }

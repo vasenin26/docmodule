@@ -6,6 +6,7 @@ use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\AgentTask;
 use App\Models\Techplane;
 use App\Models\VersionDiffTask;
+use App\Models\Actualization;
 
 interface AgentResultHandlerFactoryInterface
 {
@@ -15,4 +16,6 @@ interface AgentResultHandlerFactoryInterface
     public function createVersionDiffResultHandler(VersionDiffTask $versionDiffTask): AgentResultHandlerInterface;
     
     public function createTechplaneResultHandler(Techplane $techplane): AgentResultHandlerInterface;
+
+    public function createActualizationResultHandler(Actualization $actualization): AgentResultHandlerInterface;
 }
