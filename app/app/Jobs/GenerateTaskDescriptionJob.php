@@ -5,7 +5,6 @@ namespace App\Jobs;
 use App\Common\DTO\DifferenceDataDTO;
 use App\Factory\PromptProviderFactory;
 use App\Interfaces\AgentTaskManagerInterface;
-use App\Interfaces\Factory\AgentFactoryInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Models\VersionDiffTask;
