@@ -15,7 +15,7 @@
 {{#repositories}}
 ## Доступные репозитории
 {{#repositories}}
-- **{{name}}**: {{url}}
+- {{.}}
 {{/repositories}}
 {{/repositories}}
 

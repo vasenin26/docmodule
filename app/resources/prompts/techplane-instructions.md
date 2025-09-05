@@ -16,7 +16,7 @@
 {{#repositories}}
 ## Репозитории проекта
 {{#repositories}}
-- **{{name}}**: {{url}}
+- {{.}}
 {{/repositories}}
 {{/repositories}}
 
