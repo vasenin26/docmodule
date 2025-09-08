@@ -7,12 +7,6 @@ services:
     image: docmodule-app:prod
     env_file:
       - .env
-    environment:
-      - APP_ENV=production
-      - APP_DEBUG=false
-      - DB_CONNECTION=pgsql
-      - DB_HOST=db
-      - DB_PORT=5432
     depends_on:
       - db
     ports:

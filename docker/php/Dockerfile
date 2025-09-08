@@ -97,6 +97,7 @@ WORKDIR /var/www/html
 # Copy PHP app
 COPY --from=vendor /var/www/html/vendor ./vendor
 COPY app/ .
+RUN mv .env.prod .env
 
 # Copy built frontend
 COPY --from=frontend /var/www/html/public/build ./public/build
