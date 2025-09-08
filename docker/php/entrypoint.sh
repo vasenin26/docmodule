@@ -1,34 +1,21 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -e
 
-# Wait for DB if configured
-if [ -n "${DB_HOST:-}" ] && [ -n "${DB_PORT:-}" ]; then
-  echo "Waiting for database ${DB_HOST}:${DB_PORT}..."
-  for i in {1..60}; do
-    if (echo > "/dev/tcp/${DB_HOST}/${DB_PORT}") >/dev/null 2>&1; then
-      echo "Database is up"
-      break
-    fi
-    echo "... still waiting (${i})"
-    sleep 1
-  done
+# 1. Настройка прав
+chown -R www-data:www-data storage bootstrap/cache
+chmod -R 775 bootstrap/cache
+find storage -type d -exec chmod 775 {} \;
+find storage -type f -exec chmod 664 {} \;
+
+# 2. Миграции + seed (только если база доступна)
+if php artisan migrate:status >/dev/null 2>&1; then
+    php artisan migrate --force
 fi
 
-cd /var/www/html
+# 3. Очистка кешей, не трогая таблицу cache, если БД недоступна
+php artisan config:clear || true
+php artisan route:clear || true
+php artisan view:clear || true
 
-# Ensure key exists
-if [ ! -f storage/oauth-private.key ] && [ -f artisan ]; then
-  php artisan key:generate --force || true
-fi
-
-# Run migrations
-if [ -f artisan ]; then
-  php artisan migrate --force || true
-  php artisan config:cache || true
-  php artisan route:cache || true
-  php artisan view:cache || true
-fi
-
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
-
-
+# 4. Запуск Supervisor (Nginx + очередь)
+exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
