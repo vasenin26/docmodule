@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
+      target: dev
     volumes:
       - ./app:/app
       - ./repos:/var/repos
