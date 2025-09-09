@@ -11,6 +11,7 @@ use App\Models\Project;
 use App\Models\VersionDiffTask;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class PageController extends Controller
@@ -423,6 +424,7 @@ class PageController extends Controller
 
     private function createTaskForPage(Page $page): VersionDiffTask
     {
+
         // Получаем текущую версию страницы
         $currentVersion = $page->currentVersion;
         if (!$currentVersion) {
@@ -430,6 +432,7 @@ class PageController extends Controller
         }
 
         $versionDiffTask = VersionDiffTask::create([
+            'page_id' => $page->id,
             'page_version_id' => $currentVersion->id,
             'content' => '', // Будет заполнено job'ом
             'created_by' => $userId ?? Auth::id() ?? $page->created_by,
