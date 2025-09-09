@@ -19,17 +19,18 @@ services:
       - APP_ENV=local
       - APP_DEBUG=true
 
-  mysql:
-    image: mysql:8.0
-    ports:
-      - 3306:3306
+  db:
+    image: postgres:16
     environment:
-      - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=laravel
-      - MYSQL_USER=laravel
-      - MYSQL_PASSWORD=laravel
+      - POSTGRES_DB=${DB_DATABASE:-laravel}
+      - POSTGRES_USER=${DB_USERNAME:-laravel}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-laravel}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - default
 
 volumes:
-  mysql_data:
+  pg_data:

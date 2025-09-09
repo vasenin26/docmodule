@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+
+
 # 1. Настройка прав
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 bootstrap/cache

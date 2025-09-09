@@ -83,6 +83,7 @@ COPY app/package.json app/package-lock.json* ./
 RUN npm ci --no-audit --no-fund
 
 COPY app/ .
+ENV APP_ENV=production APP_DEBUG=false
 RUN npm run build
 
 # --------------------------------------------
@@ -114,7 +115,8 @@ RUN chmod +x /entrypoint.sh && \
     chown -R www-data:www-data storage bootstrap/cache && \
     find storage -type d -exec chmod 775 {} \; || true && \
     find storage -type f -exec chmod 664 {} \; || true && \
-    chmod -R 775 bootstrap/cache
+    chmod -R 775 bootstrap/cache && \
+    rm -f /var/www/html/public/hot
 
 EXPOSE 80
 CMD ["/entrypoint.sh"]
