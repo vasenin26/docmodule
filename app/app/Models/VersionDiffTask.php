@@ -20,6 +20,7 @@ class VersionDiffTask extends Model
     }
 
     protected $fillable = [
+        'page_id',
         'page_version_id',
         'content',
         'created_by',
