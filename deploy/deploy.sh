@@ -8,6 +8,19 @@ COMPOSE_FILE="docker-compose.yaml"
 BACKUP_DIR="/opt/backups"
 LOG_FILE="/var/log/deploy.log"
 
+# Утилита: логин в реестр контейнеров (опционально)
+registry_login_if_needed() {
+    local image_ref="$1"
+    local registry_host
+    registry_host=$(echo "$image_ref" | awk -F/ '{print $1}')
+
+    # Поддерживаем логин для GHCR при наличии переменных
+    if [ "$registry_host" = "ghcr.io" ] && [ -n "$GHCR_USERNAME" ] && [ -n "$GHCR_TOKEN" ]; then
+        log "Logging into ghcr.io as $GHCR_USERNAME"
+        echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin >/dev/null
+    fi
+}
+
 # Утилита: убедиться, что БД запущена и готова
 ensure_db_running() {
     log "Ensuring database service is running..."
@@ -112,6 +125,7 @@ update_app() {
     
     # Обновление образа
     log "Pulling new image: $image_tag"
+    registry_login_if_needed "$image_tag"
     docker pull "$image_tag"
     
     # Обновление тега образа в docker-compose
