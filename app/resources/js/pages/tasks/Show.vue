@@ -4,7 +4,8 @@
             <div class="flex items-center justify-between">
                 <div>
                     <Heading :title="`Задача для версии: ${task.pageVersion.title}`" />
-                    <p class="mt-1 text-sm text-muted-foreground">Создана {{ formatDate(task.created_at) }} пользователем {{ task.creator?.name }}</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Создана {{ formatDate(task.created_at) }}
+                        пользователем {{ task.creator?.name }}</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <!-- Кнопка редактирования -->
@@ -13,7 +14,8 @@
                     </Button>
 
                     <!-- Кнопка перезапуска генерации -->
-                    <Button v-if="canRestartGeneration" @click="restartGeneration" :disabled="isRestartingGeneration" variant="outline" size="sm">
+                    <Button v-if="canRestartGeneration" @click="restartGeneration" :disabled="isRestartingGeneration"
+                            variant="outline" size="sm">
                         <span v-if="isRestartingGeneration">Перезапуск...</span>
                         <span v-else>Перезапустить генерацию</span>
                     </Button>
@@ -68,11 +70,14 @@
                 <Card>
                     <CardHeader>
                         <CardTitle>Описание задачи</CardTitle>
-                        <CardDescription> Автоматически сгенерированное описание задачи на основе изменений в документации </CardDescription>
+                        <CardDescription> Автоматически сгенерированное описание задачи на основе изменений в
+                            документации
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div class="prose prose-sm max-w-none">
-                            <MarkdownRenderer v-if="taskContent && taskContent.trim().length > 0" :content="taskContent" />
+                            <MarkdownRenderer v-if="taskContent && taskContent.trim().length > 0"
+                                              :content="taskContent" />
                             <div v-else class="text-muted-foreground italic">
                                 <div class="flex items-center gap-2">
                                     <div
@@ -105,15 +110,21 @@
                             </div>
                             <div>
                                 <Label class="text-sm font-medium">Автор страницы</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.page.creator?.name }}</p>
+                                <p class="mt-1 text-sm text-muted-foreground">{{
+                                        task.pageVersion.page.creator?.name
+                                    }}</p>
                             </div>
                             <div>
                                 <Label class="text-sm font-medium">Дата создания версии</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ formatDate(task.pageVersion.created_at) }}</p>
+                                <p class="mt-1 text-sm text-muted-foreground">{{
+                                        formatDate(task.pageVersion.created_at)
+                                    }}</p>
                             </div>
                             <div v-if="task.pageVersion.previousVersion">
                                 <Label class="text-sm font-medium">Предыдущая версия</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.previousVersion.id }}</p>
+                                <p class="mt-1 text-sm text-muted-foreground">{{
+                                        task.pageVersion.previousVersion.id
+                                    }}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -144,7 +155,8 @@
                         <div>
                             <Label class="text-sm font-medium">Изменение содержимого</Label>
                             <div class="mt-2">
-                                <DiffViewer :old-content="task.pageVersion.previousVersion.content" :new-content="task.pageVersion.content" />
+                                <DiffViewer :old-content="task.pageVersion.previousVersion.content"
+                                            :new-content="task.pageVersion.content" />
                             </div>
                         </div>
                     </CardContent>
@@ -153,14 +165,10 @@
         </div>
 
         <!-- Модальное окно чата -->
-        <Dialog v-model:open="isChatModalOpen">
-            <DialogContent class="max-w-5xl">
-                <DialogHeader>
-                    <DialogTitle>Чат с LLM</DialogTitle>
-                </DialogHeader>
-                <AgentChat v-if="task.llm_chat" :messages="task.llm_chat.messages" :loading="isPolling && generationStatus === 'generating'" />
-            </DialogContent>
-        </Dialog>
+        <SidePanel v-model:open="isChatModalOpen">
+            <AgentChat v-if="task.llm_chat" :messages="task.llm_chat.messages"
+                       :loading="isPolling && generationStatus === 'generating'" />
+        </SidePanel>
     </AppLayout>
 </template>
 
@@ -173,12 +181,12 @@ import TaskExportButton from '@/components/TaskExportButton.vue';
 import TechplanCard from '@/components/TechplanCard.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { LLMChat } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 
 interface TechplaneData {
     id: number;
@@ -263,9 +271,9 @@ const checkGenerationStatus = async () => {
             headers: {
                 Accept: 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
             },
-            credentials: 'same-origin',
+            credentials: 'same-origin'
         });
 
         if (response.ok) {
@@ -317,9 +325,9 @@ const restartGeneration = async () => {
                 Accept: 'application/json',
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
             },
-            credentials: 'same-origin',
+            credentials: 'same-origin'
         });
 
         if (response.ok) {
@@ -358,7 +366,7 @@ const formatDate = (date: string) => {
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit',
+        minute: '2-digit'
     });
 };
 

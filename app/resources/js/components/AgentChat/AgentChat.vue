@@ -1,12 +1,12 @@
 <template>
-    <div class="flex h-full flex-col overflow-hidden rounded-lg border bg-white">
+    <div class="flex h-full flex-col flex-nowrap overflow-hidden rounded-lg border bg-white">
         <!-- Заголовок чата -->
         <div class="border-b bg-gray-100 px-4 py-3">
             <h3 class="text-sm font-medium text-gray-800">История LLM генерации</h3>
         </div>
 
         <!-- Содержимое чата -->
-        <div ref="messagesContainer" class="max-h-96 flex-1 space-y-4 overflow-y-auto p-4">
+        <div ref="messagesContainer" class="flex-1 space-y-4 overflow-y-auto p-4">
             <!-- Состояние загрузки -->
             <div v-if="loading" class="flex items-center justify-center py-8">
                 <div class="flex items-center space-x-2 text-gray-500">

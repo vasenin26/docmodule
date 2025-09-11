@@ -74,34 +74,27 @@
             </Card>
 
             <!-- Модальное окно чата -->
-            <Dialog v-model:open="showChatModal">
-                <DialogContent class="max-h-[80vh] max-w-5xl">
-                    <DialogHeader>
-                        <DialogTitle>Чат LLM</DialogTitle>
-                    </DialogHeader>
-                    <div class="overflow-hidden">
-                        <AgentChat
-                            v-if="techplane.llm_chat"
-                            :messages="techplane.llm_chat.messages"
-                            :loading="isPolling && generationStatus === 'generating'"
-                        />
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <SidePanel v-model:open="showChatModal">
+                <AgentChat
+                    v-if="techplane.llm_chat"
+                    :messages="techplane.llm_chat.messages"
+                    :loading="isPolling && generationStatus === 'generating'"
+                />
+            </SidePanel>
         </div>
     </AppLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import AgentChat from '@/components/AgentChat/AgentChat.vue';
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Link } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 
 const props = defineProps(['techplane']);
 
