@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { marked } from 'marked';
+import MarkdownIt from 'markdown-it';
 import { computed } from 'vue';
 
 interface Props {
@@ -12,9 +12,11 @@ interface Props {
 
 const props = defineProps<Props>();
 
+const md = new MarkdownIt('commonmark');
+
 const renderedContent = computed(() => {
     if (!props.content) return '';
-    return marked(props.content);
+    return md.render(props.content);
 });
 </script>
 
@@ -49,18 +51,137 @@ const renderedContent = computed(() => {
 
 .markdown-content :deep(ul) {
     list-style-type: disc;
-    list-style-position: inside;
+    list-style-position: outside;
     margin-bottom: 0.75rem;
+    padding-left: 1.5rem;
 }
 
 .markdown-content :deep(ol) {
     list-style-type: decimal;
-    list-style-position: inside;
+    list-style-position: outside;
     margin-bottom: 0.75rem;
+    padding-left: 1.5rem;
 }
 
 .markdown-content :deep(li) {
     margin-bottom: 0.25rem;
+    padding-left: 0.25rem;
+}
+
+/* Вложенные списки - общие стили */
+.markdown-content :deep(ul ul),
+.markdown-content :deep(ol ol),
+.markdown-content :deep(ul ol),
+.markdown-content :deep(ol ul) {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+/* Маркеры для вложенных неупорядоченных списков (ul) */
+.markdown-content :deep(ul) {
+    list-style-type: disc;
+}
+
+.markdown-content :deep(ul ul) {
+    list-style-type: circle;
+}
+
+.markdown-content :deep(ul ul ul) {
+    list-style-type: square;
+}
+
+.markdown-content :deep(ul ul ul ul) {
+    list-style-type: disc;
+}
+
+.markdown-content :deep(ul ul ul ul ul) {
+    list-style-type: circle;
+}
+
+.markdown-content :deep(ul ul ul ul ul ul) {
+    list-style-type: square;
+}
+
+.markdown-content :deep(ul ul ul ul ul ul ul) {
+    list-style-type: disc;
+}
+
+.markdown-content :deep(ul ul ul ul ul ul ul ul) {
+    list-style-type: circle;
+}
+
+.markdown-content :deep(ul ul ul ul ul ul ul ul ul) {
+    list-style-type: square;
+}
+
+.markdown-content :deep(ul ul ul ul ul ul ul ul ul ul) {
+    list-style-type: disc;
+}
+
+/* Маркеры для вложенных упорядоченных списков (ol) */
+.markdown-content :deep(ol) {
+    list-style-type: decimal;
+}
+
+.markdown-content :deep(ol ol) {
+    list-style-type: lower-alpha;
+}
+
+.markdown-content :deep(ol ol ol) {
+    list-style-type: lower-roman;
+}
+
+.markdown-content :deep(ol ol ol ol) {
+    list-style-type: decimal;
+}
+
+.markdown-content :deep(ol ol ol ol ol) {
+    list-style-type: lower-alpha;
+}
+
+.markdown-content :deep(ol ol ol ol ol ol) {
+    list-style-type: lower-roman;
+}
+
+.markdown-content :deep(ol ol ol ol ol ol ol) {
+    list-style-type: decimal;
+}
+
+.markdown-content :deep(ol ol ol ol ol ol ol ol) {
+    list-style-type: lower-alpha;
+}
+
+.markdown-content :deep(ol ol ol ol ol ol ol ol ol) {
+    list-style-type: lower-roman;
+}
+
+.markdown-content :deep(ol ol ol ol ol ol ol ol ol ol) {
+    list-style-type: decimal;
+}
+
+/* Смешанные списки (ul внутри ol и наоборот) */
+.markdown-content :deep(ol ul) {
+    list-style-type: disc;
+}
+
+.markdown-content :deep(ol ul ul) {
+    list-style-type: circle;
+}
+
+.markdown-content :deep(ol ul ul ul) {
+    list-style-type: square;
+}
+
+.markdown-content :deep(ul ol) {
+    list-style-type: decimal;
+}
+
+.markdown-content :deep(ul ol ol) {
+    list-style-type: lower-alpha;
+}
+
+.markdown-content :deep(ul ol ol ol) {
+    list-style-type: lower-roman;
 }
 
 .markdown-content :deep(blockquote) {
