@@ -8,6 +8,16 @@
         "framework"
     ],
     "license": "MIT",
+    "repositories": {
+        "vasenin26/conversation": {
+            "type": "git",
+            "url": "https://github.com/vasenin26/conversation.git"
+        },
+        "0": {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        }
+    },
     "require": {
         "php": "^8.2",
         "czproject/git-php": "^4.5",
@@ -18,7 +28,8 @@
         "mustache/mustache": "*",
         "openai-php/laravel": "^0.15.0",
         "sebastian/diff": "^6.0",
-        "tightenco/ziggy": "^2.4"
+        "tightenco/ziggy": "^2.4",
+        "vasenin26/conversation": "^0.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

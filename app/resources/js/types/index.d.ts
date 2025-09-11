@@ -42,16 +42,18 @@ export interface User {
 }
 
 export interface LLMMessage {
-    role: 'user' | 'assistant' | 'system';
-    content: string | null;
-    timestamp: string;
-    tool_call_id?: string;
-    tool_calls?: {
-        id: string;
-        function: {
-            name: string;
-        };
-    }[];
+    type: 'user' | 'assistant' | 'system';
+    message: {
+        content?: string | null;
+        timestamp: string;
+        tool_call_id?: string;
+        tool_calls?: {
+            id: string;
+            function: {
+                name: string;
+            };
+        }[];
+    };
 }
 
 export interface LLMChat {
@@ -166,7 +168,7 @@ export interface TokenStatistics {
 export interface Actualization {
     id: number;
     page_id: number;
-    page_version_id: number;  // Новое поле
+    page_version_id: number; // Новое поле
     status: 'pending' | 'processing' | 'completed' | 'failed';
     llm_chat_id?: number;
     created_by: number;
@@ -174,6 +176,6 @@ export interface Actualization {
     updated_at: string;
     created_by_user?: User;
     page?: Page;
-    page_version?: PageVersion;  // Новое поле
+    page_version?: PageVersion; // Новое поле
     llm_chat?: LLMChat;
 }

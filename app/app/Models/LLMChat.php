@@ -168,24 +168,4 @@ class LLMChat extends Model
                 ->orWhere('messages', '');
         });
     }
-
-    public function addSystemMessage(string $content): void
-    {
-        $this->addMessage(self::ROLE_SYSTEM, $content);
-    }
-
-    public function addUserMessage(string $content): void
-    {
-        $this->addMessage(self::ROLE_USER, $content);
-    }
-
-    public function addMessage(string $role, string $content): void
-    {
-        $messages = [...$this->messages, [
-            'role' => $role,
-            'content' => $content,
-        ]];
-
-        $this->attributes['messages'] = json_encode($messages);
-    }
 }
