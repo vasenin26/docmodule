@@ -4,9 +4,29 @@ set -e
 
 # Конфигурация
 APP_NAME="docmodule"
-COMPOSE_FILE="docker-compose.prod.yaml"
+COMPOSE_FILE="docker-compose.yaml"
 BACKUP_DIR="/opt/backups"
 LOG_FILE="/var/log/deploy.log"
+
+# Утилита: убедиться, что БД запущена и готова
+ensure_db_running() {
+    log "Ensuring database service is running..."
+    docker compose -f "$COMPOSE_FILE" up -d db
+
+    local max_attempts=30
+    local attempt=1
+    while [ $attempt -le $max_attempts ]; do
+        if docker compose -f "$COMPOSE_FILE" exec -T db pg_isready -U "${DB_USERNAME:-laravel}" -d "${DB_DATABASE:-laravel}" >/dev/null 2>&1; then
+            log "Database is ready"
+            return 0
+        fi
+        log "Waiting for database... attempt $attempt/$max_attempts"
+        sleep 3
+        ((attempt++))
+    done
+    log "Database did not become ready in time"
+    return 1
+}
 
 # Функция логирования
 log() {
@@ -20,11 +40,22 @@ create_backup() {
     BACKUP_NAME="backup_$(date +%Y%m%d_%H%M%S)"
     mkdir -p "$BACKUP_DIR/$BACKUP_NAME"
     
+    # Убедимся, что БД доступна
+    ensure_db_running
+
     # Бэкап базы данных
-    docker compose -f "$COMPOSE_FILE" exec -T db pg_dump -U "${DB_USERNAME:-docmodule_user}" "${DB_DATABASE:-docmodule_prod}" > "$BACKUP_DIR/$BACKUP_NAME/database.sql"
+    docker compose -f "$COMPOSE_FILE" exec -T db pg_dump -U "${DB_USERNAME:-laravel}" "${DB_DATABASE:-laravel}" > "$BACKUP_DIR/$BACKUP_NAME/database.sql" || {
+        log "Warning: database backup failed"
+    }
     
     # Бэкап volumes
-    docker run --rm -v docmodule_app_storage:/data -v "$BACKUP_DIR/$BACKUP_NAME":/backup alpine tar czf /backup/storage.tar.gz -C /data .
+    if docker volume inspect docmodule_app_storage >/dev/null 2>&1; then
+        docker run --rm -v docmodule_app_storage:/data -v "$BACKUP_DIR/$BACKUP_NAME":/backup alpine tar czf /backup/storage.tar.gz -C /data . || {
+            log "Warning: storage volume backup failed"
+        }
+    else
+        log "Storage volume 'docmodule_app_storage' not found, skipping storage backup"
+    fi
     
     log "Backup created: $BACKUP_NAME"
 }
@@ -84,7 +115,7 @@ update_app() {
     docker pull "$image_tag"
     
     # Обновление тега образа в docker-compose
-    sed -i "s|image: .*docmodule:.*|image: $image_tag|g" "$COMPOSE_FILE"
+    sed -i "s|image: ghcr.io/vasenin26/docmodule:.*|image: $image_tag|g" "$COMPOSE_FILE"
     
     # Остановка приложения
     log "Stopping current application..."
@@ -120,7 +151,10 @@ run_migrations() {
     log "Running database migrations..."
     
     # Ожидание доступности базы данных
-    docker compose -f "$COMPOSE_FILE" exec db pg_isready -U "${DB_USERNAME:-docmodule_user}" -d "${DB_DATABASE:-docmodule_prod}"
+    ensure_db_running
+    
+    # Убедимся, что приложение запущено (нужно для artisan)
+    docker compose -f "$COMPOSE_FILE" up -d app
     
     # Выполнение миграций
     docker compose -f "$COMPOSE_FILE" exec app php artisan migrate --force
@@ -184,17 +218,6 @@ main() {
             fi
             update_app "$2"
             run_migrations
-            
-            # Создание файла с информацией о текущей версии
-            echo "{
-                \"version\": \"$2\",
-                \"tag\": \"$(echo $2 | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' || echo 'unknown')\",
-                \"image\": \"$2\",
-                \"deployed_at\": \"$(date -Iseconds)\",
-                \"deployed_by\": \"manual\"
-            }" > /opt/current_version.json
-            
-            log "Version information saved to /opt/current_version.json"
             ;;
         "rollback")
             rollback

@@ -79,7 +79,7 @@ jobs:
           # Копирование docker-compose файла
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                -H "Accept: application/vnd.github.v3.raw" \
-               -o /opt/docmodule/docker-compose.prod.yaml \
+               -o /opt/docmodule/docker-compose.yaml \
                https://api.github.com/repos/${{ github.repository }}/contents/docker-compose.prod.yaml?ref=${{ github.ref_name }}
           
           # Переход в директорию и запуск деплоя
