@@ -4,10 +4,14 @@ use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\PageController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('health', function () {
+    return 'ok';
+});
+
 Route::prefix('agent')->name('agent.')->middleware(['agent.jwt'])->group(function () {
     Route::post('task', [TaskController::class, 'getTask'])->name('task.get');
     Route::put('task/{id}', [TaskController::class, 'updateTask'])->name('task.update');
-    
+
     // Page API routes
     Route::get('page/{id}', [PageController::class, 'getPage'])->name('page.get');
     Route::get('pages', [PageController::class, 'getPages'])->name('pages.list');
