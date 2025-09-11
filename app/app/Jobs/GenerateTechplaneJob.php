@@ -74,6 +74,6 @@ class GenerateTechplaneJob implements ShouldQueue
         
         $handler = $agentResultHandlerFactory->createTechplaneResultHandler($techplane);
         
-        $agentTaskManager->createTask($handler, $task->created_by, $page->project_id, $chat->id);
+        $agentTaskManager->createTask($handler, $task->created_by, $page->project_id, $chat->id, true);
     }
 }

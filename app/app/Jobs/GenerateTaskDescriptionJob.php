@@ -68,7 +68,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
 
         $handler = $agentResultHandlerFactory->createVersionDiffResultHandler($versionDiffTask);
 
-        $agentTaskManager->createTask($handler, $versionDiffTask->created_by, $page->project_id, $chat->id);
+        $agentTaskManager->createTask($handler, $versionDiffTask->created_by, $page->project_id, $chat->id, true);
     }
 
     /**

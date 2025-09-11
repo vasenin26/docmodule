@@ -72,6 +72,7 @@ class TaskController extends Controller
             'id' => $task->id,
             'agent_uuid' => $task->agent_uuid, // Возвращаем UUID для внешнего агента
             'project_id' => $task->project_id,
+            'result_required' => $task->result_required, // Возвращаем флаг требования результата
             'chat' => [
                 'messages' => $task->llmChat->messages ?? [],
             ]

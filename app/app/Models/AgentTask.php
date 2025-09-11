@@ -19,12 +19,14 @@ class AgentTask extends Model
         'status',
         'agent_uuid',  // переименовано из agent_id
         'agent_id',    // новая колонка для связи с Agent
+        'result_required', // требуется ли результат для задачи
     ];
 
     protected function casts(): array
     {
         return [
             'handler_options' => 'array',
+            'result_required' => 'boolean',
         ];
     }
 

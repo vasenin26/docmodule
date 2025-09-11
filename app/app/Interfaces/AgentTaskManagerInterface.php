@@ -12,8 +12,10 @@ interface AgentTaskManagerInterface
      * Создать новую задачу для агента
      *
      * @param AgentResultHandlerInterface $handler Обработчик результата
+     * @param int $creatorId ID создателя задачи
      * @param int $projectId ID проекта
      * @param int $chatId ID чата LLM
+     * @param bool $resultRequired Требуется ли результат для задачи
      * @return int ID созданной задачи
      * @throws \InvalidArgumentException Если переданы некорректные параметры
      */
@@ -21,7 +23,8 @@ interface AgentTaskManagerInterface
         AgentResultHandlerInterface $handler,
         int $creatorId,
         int $projectId,
-        int $chatId
+        int $chatId,
+        bool $resultRequired = true
     ): int;
 
     /**

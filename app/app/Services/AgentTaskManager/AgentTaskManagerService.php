@@ -22,7 +22,8 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
         AgentResultHandlerInterface $handler,
         int $creatorId,
         int $projectId,
-        int $chatId
+        int $chatId,
+        bool $resultRequired = true
     ): int {
         try {
             $task = AgentTask::create([
@@ -32,6 +33,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
                 'created_by' => $creatorId,
                 'chat_id' => $chatId,
                 'status' => AgentTask::STATUS_WAIT,
+                'result_required' => $resultRequired,
             ]);
 
             Log::info('Agent task created', [
@@ -40,6 +42,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
                 'project_id' => $projectId,
                 'chat_id' => $chatId,
                 'created_by' => $creatorId,
+                'result_required' => $resultRequired,
             ]);
 
             return $task->id;
@@ -48,6 +51,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
                 'handler' => $handler::class,
                 'project_id' => $projectId,
                 'chat_id' => $chatId,
+                'result_required' => $resultRequired,
                 'error' => $e->getMessage(),
             ]);
             throw $e;

@@ -260,7 +260,8 @@ class TaskController extends Controller implements HasMiddleware
                         $handler,
                         $dto->userId,
                         $task->pageVersion->page->project_id,
-                        $chat->id
+                        $chat->id,
+                        false // Задачи отправки сообщений не требуют результата
                     );
                 }
                 
