@@ -4,9 +4,50 @@ set -e
 
 # Конфигурация
 APP_NAME="docmodule"
-COMPOSE_FILE="docker-compose.prod.yaml"
+COMPOSE_FILE="docker-compose.yaml"
 BACKUP_DIR="/opt/backups"
 LOG_FILE="/var/log/deploy.log"
+
+# Утилита: логин в реестр контейнеров (опционально)
+registry_login_if_needed() {
+    local image_ref="$1"
+    local registry_host
+    registry_host=$(echo "$image_ref" | awk -F/ '{print $1}')
+
+    # Поддерживаем логин для GHCR при наличии переменных
+    if [ "$registry_host" = "ghcr.io" ] && [ -n "$GHCR_USERNAME" ] && [ -n "$GHCR_TOKEN" ]; then
+        log "Logging into ghcr.io as $GHCR_USERNAME"
+        if ! echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin >/dev/null; then
+            log "Error: GHCR login failed. Check GHCR_USERNAME/GHCR_TOKEN (token needs read:packages)."
+            return 1
+        fi
+    fi
+
+    # Если это ghcr.io и нет переменных — предупредим, что приватный образ потребует токен
+    if [ "$registry_host" = "ghcr.io" ] && { [ -z "$GHCR_USERNAME" ] || [ -z "$GHCR_TOKEN" ]; }; then
+        log "Notice: pulling from ghcr.io without auth. Private images will fail; set GHCR_USERNAME and GHCR_TOKEN."
+    fi
+}
+
+# Утилита: убедиться, что БД запущена и готова
+ensure_db_running() {
+    log "Ensuring database service is running..."
+    docker compose -f "$COMPOSE_FILE" up -d db
+
+    local max_attempts=30
+    local attempt=1
+    while [ $attempt -le $max_attempts ]; do
+        if docker compose -f "$COMPOSE_FILE" exec -T db pg_isready -U "${DB_USERNAME:-laravel}" -d "${DB_DATABASE:-laravel}" >/dev/null 2>&1; then
+            log "Database is ready"
+            return 0
+        fi
+        log "Waiting for database... attempt $attempt/$max_attempts"
+        sleep 3
+        ((attempt++))
+    done
+    log "Database did not become ready in time"
+    return 1
+}
 
 # Функция логирования
 log() {
@@ -20,11 +61,22 @@ create_backup() {
     BACKUP_NAME="backup_$(date +%Y%m%d_%H%M%S)"
     mkdir -p "$BACKUP_DIR/$BACKUP_NAME"
     
+    # Убедимся, что БД доступна
+    ensure_db_running
+
     # Бэкап базы данных
-    docker compose -f "$COMPOSE_FILE" exec -T db pg_dump -U "${DB_USERNAME:-docmodule_user}" "${DB_DATABASE:-docmodule_prod}" > "$BACKUP_DIR/$BACKUP_NAME/database.sql"
+    docker compose -f "$COMPOSE_FILE" exec -T db pg_dump -U "${DB_USERNAME:-laravel}" "${DB_DATABASE:-laravel}" > "$BACKUP_DIR/$BACKUP_NAME/database.sql" || {
+        log "Warning: database backup failed"
+    }
     
     # Бэкап volumes
-    docker run --rm -v docmodule_app_storage:/data -v "$BACKUP_DIR/$BACKUP_NAME":/backup alpine tar czf /backup/storage.tar.gz -C /data .
+    if docker volume inspect docmodule_app_storage >/dev/null 2>&1; then
+        docker run --rm -v docmodule_app_storage:/data -v "$BACKUP_DIR/$BACKUP_NAME":/backup alpine tar czf /backup/storage.tar.gz -C /data . || {
+            log "Warning: storage volume backup failed"
+        }
+    else
+        log "Storage volume 'docmodule_app_storage' not found, skipping storage backup"
+    fi
     
     log "Backup created: $BACKUP_NAME"
 }
@@ -53,7 +105,7 @@ health_check() {
     local attempt=1
     
     while [ $attempt -le $max_attempts ]; do
-        if curl -f http://localhost/health >/dev/null 2>&1; then
+        if curl -f http://localhost/api/health >/dev/null 2>&1; then
             log "Health check passed"
             return 0
         fi
@@ -81,7 +133,23 @@ update_app() {
     
     # Обновление образа
     log "Pulling new image: $image_tag"
-    docker pull "$image_tag"
+    registry_login_if_needed "$image_tag"
+    # Пулл с ретраями
+    pull_attempts=0
+    pull_max=5
+    while true; do
+        if docker pull "$image_tag"; then
+            break
+        fi
+        pull_attempts=$((pull_attempts+1))
+        if [ $pull_attempts -ge $pull_max ]; then
+            log "Error: failed to pull image after $pull_attempts attempts"
+            exit 1
+        fi
+        sleep_secs=$((2 ** pull_attempts))
+        log "Pull failed, retrying in ${sleep_secs}s... ($pull_attempts/$pull_max)"
+        sleep $sleep_secs
+    done
     
     # Обновление тега образа в docker-compose
     sed -i "s|image: ghcr.io/vasenin26/docmodule:.*|image: $image_tag|g" "$COMPOSE_FILE"
@@ -120,7 +188,10 @@ run_migrations() {
     log "Running database migrations..."
     
     # Ожидание доступности базы данных
-    docker compose -f "$COMPOSE_FILE" exec db pg_isready -U "${DB_USERNAME:-docmodule_user}" -d "${DB_DATABASE:-docmodule_prod}"
+    ensure_db_running
+    
+    # Убедимся, что приложение запущено (нужно для artisan)
+    docker compose -f "$COMPOSE_FILE" up -d app
     
     # Выполнение миграций
     docker compose -f "$COMPOSE_FILE" exec app php artisan migrate --force
