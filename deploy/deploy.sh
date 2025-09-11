@@ -17,7 +17,15 @@ registry_login_if_needed() {
     # Поддерживаем логин для GHCR при наличии переменных
     if [ "$registry_host" = "ghcr.io" ] && [ -n "$GHCR_USERNAME" ] && [ -n "$GHCR_TOKEN" ]; then
         log "Logging into ghcr.io as $GHCR_USERNAME"
-        echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin >/dev/null
+        if ! echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin >/dev/null; then
+            log "Error: GHCR login failed. Check GHCR_USERNAME/GHCR_TOKEN (token needs read:packages)."
+            return 1
+        fi
+    fi
+
+    # Если это ghcr.io и нет переменных — предупредим, что приватный образ потребует токен
+    if [ "$registry_host" = "ghcr.io" ] && { [ -z "$GHCR_USERNAME" ] || [ -z "$GHCR_TOKEN" ]; }; then
+        log "Notice: pulling from ghcr.io without auth. Private images will fail; set GHCR_USERNAME and GHCR_TOKEN."
     fi
 }
 
@@ -126,7 +134,22 @@ update_app() {
     # Обновление образа
     log "Pulling new image: $image_tag"
     registry_login_if_needed "$image_tag"
-    docker pull "$image_tag"
+    # Пулл с ретраями
+    pull_attempts=0
+    pull_max=5
+    while true; do
+        if docker pull "$image_tag"; then
+            break
+        fi
+        pull_attempts=$((pull_attempts+1))
+        if [ $pull_attempts -ge $pull_max ]; then
+            log "Error: failed to pull image after $pull_attempts attempts"
+            exit 1
+        fi
+        sleep_secs=$((2 ** pull_attempts))
+        log "Pull failed, retrying in ${sleep_secs}s... ($pull_attempts/$pull_max)"
+        sleep $sleep_secs
+    done
     
     # Обновление тега образа в docker-compose
     sed -i "s|image: ghcr.io/vasenin26/docmodule:.*|image: $image_tag|g" "$COMPOSE_FILE"
