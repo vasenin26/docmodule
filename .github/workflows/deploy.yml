@@ -12,6 +12,7 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    environment: Production
     permissions:
       contents: read
       packages: write
@@ -61,7 +62,7 @@ jobs:
         host: ${{ vars.SERVER_HOST }}
         username: ${{ vars.SERVER_USER }}
         key: ${{ secrets.SERVER_SSH_KEY }}
-        port: ${{ vars.SERVER_PORT || 22 }}
+        port: ${{ vars.SERVER_PORT }}
         script: |
           cd /opt/deploy
           ./deploy.sh deploy ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
