@@ -32,7 +32,7 @@ class ChatFactory implements LLMChatFactoryInterface
 
         $conversation = new Chat();
         $conversation->addMessage(new SystemMessage($role));
-        $conversation->addMessage(new UserMessage($role));
+        $conversation->addMessage(new UserMessage($prompt));
 
         return $this->createChat($conversation->serialize());
     }
@@ -44,7 +44,7 @@ class ChatFactory implements LLMChatFactoryInterface
 
         $conversation = new Chat();
         $conversation->addMessage(new SystemMessage($role));
-        $conversation->addMessage(new UserMessage($role));
+        $conversation->addMessage(new UserMessage($prompt));
 
         return $this->createChat($conversation->serialize());
     }
@@ -56,7 +56,7 @@ class ChatFactory implements LLMChatFactoryInterface
 
         $conversation = new Chat();
         $conversation->addMessage(new SystemMessage($role));
-        $conversation->addMessage(new UserMessage($role));
+        $conversation->addMessage(new UserMessage($prompt));
 
         return $this->createChat($conversation->serialize());
     }
