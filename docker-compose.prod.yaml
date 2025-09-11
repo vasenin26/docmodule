@@ -1,8 +1,16 @@
 services:
   app:
     image: ghcr.io/vasenin26/docmodule:latest
-    env_file:
-      - .env
+    env:
+APP_ENV=production
+      - APP_DEBUG=false
+      - APP_URL=http://docsmodule.ru
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=laravel
+      - DB_USERNAME=laravel
+      - DB_PASSWORD=laravel
     depends_on:
       - db
     ports:
