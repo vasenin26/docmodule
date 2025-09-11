@@ -84,7 +84,7 @@ update_app() {
     docker pull "$image_tag"
     
     # Обновление тега образа в docker-compose
-    sed -i "s|image: ghcr.io/vasenin26/docmodule:.*|image: $image_tag|g" "$COMPOSE_FILE"
+    sed -i "s|image: .*docmodule:.*|image: $image_tag|g" "$COMPOSE_FILE"
     
     # Остановка приложения
     log "Stopping current application..."
@@ -184,6 +184,17 @@ main() {
             fi
             update_app "$2"
             run_migrations
+            
+            # Создание файла с информацией о текущей версии
+            echo "{
+                \"version\": \"$2\",
+                \"tag\": \"$(echo $2 | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' || echo 'unknown')\",
+                \"image\": \"$2\",
+                \"deployed_at\": \"$(date -Iseconds)\",
+                \"deployed_by\": \"manual\"
+            }" > /opt/current_version.json
+            
+            log "Version information saved to /opt/current_version.json"
             ;;
         "rollback")
             rollback
