@@ -93,6 +93,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('tasks/{task}/status', [TaskController::class, 'checkGenerationStatus'])->name('tasks.status');
     Route::post('tasks/{task}/restart-generation', [TaskController::class, 'restartGeneration'])->name('tasks.restart-generation');
     Route::post('tasks/{task}/create-techplane', [TaskController::class, 'createTechplane'])->name('tasks.create-techplane');
+    Route::post('tasks/{task}/send-message', [TaskController::class, 'sendMessage'])->name('tasks.send-message');
 
     // Маршруты для техпланов
     Route::get('techplanes/{techplane}', [TechplaneController::class, 'show'])->name('techplanes.show');

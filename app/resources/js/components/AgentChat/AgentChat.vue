@@ -28,6 +28,19 @@
                 <Message v-for="(message, index) in messages" :key="index" :message="message" :index="index" />
             </div>
         </div>
+
+        <div class="flex flex-col gap-2 p-4 border-t">
+            <textarea
+                v-model="input"
+                :disabled="sending"
+                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                @keydown.enter="sendMessage"
+            ></textarea>
+            <Button @click="sendMessage" :disabled="sending || !input.trim()">
+                <span v-if="sending">Отправка...</span>
+                <span v-else>Отправить</span>
+            </Button>
+        </div>
     </div>
 </template>
 
@@ -35,16 +48,30 @@
 import Message from '@/components/AgentChat/Message.vue';
 import type { LLMMessage } from '@/types';
 import { nextTick, onMounted, ref, watch } from 'vue';
+import Button from '../ui/button/Button.vue';
 
 interface Props {
     messages?: LLMMessage[];
     loading?: boolean;
+    sending?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     messages: () => [],
     loading: false,
+    sending: false
 });
+
+const emit = defineEmits<{
+    (e: 'sendMessage', message: string): void;
+}>();
+
+const input = ref('');
+
+function sendMessage() {
+    emit('sendMessage', input.value);
+    input.value = '';
+}
 
 const messagesContainer = ref<HTMLElement>();
 
@@ -64,7 +91,7 @@ watch(
             scrollToBottom();
         }
     },
-    { deep: true },
+    { deep: true }
 );
 
 // Прокрутка при монтировании

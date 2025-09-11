@@ -6,11 +6,21 @@ use App\Jobs\GenerateTaskDescriptionJob;
 use App\Jobs\GenerateTechplaneJob;
 use App\Models\VersionDiffTask;
 use App\Models\Techplane;
+use App\Models\LLMChat;
 use App\Http\Requests\TaskUpdateRequest;
+use App\Http\Requests\SendTaskMessageRequest;
+use App\Common\DTO\SendMessageDTO;
+use Vasenin26\Conversation\Chat;
+use Vasenin26\Conversation\Messages\UserMessage;
+use Vasenin26\Conversation\Factory\ConversationFactory;
+use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
+use App\Interfaces\AgentTaskManagerInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -208,5 +218,85 @@ class TaskController extends Controller implements HasMiddleware
 
         return redirect()->route('techplanes.show', $techplane)
             ->with('success', 'Техплан создан, генерация запущена');
+    }
+
+    /**
+     * Отправить сообщение в чат задачи
+     */
+    public function sendMessage(
+        SendTaskMessageRequest $request, 
+        VersionDiffTask $task,
+        ConversationFactory $conversationFactory,
+        AgentResultHandlerFactoryInterface $handlerFactory,
+        AgentTaskManagerInterface $taskManager
+    ): JsonResponse
+    {
+        try {
+            $dto = SendMessageDTO::fromRequest($request, $task);
+            
+            $success = DB::transaction(function () use ($dto, $task, $conversationFactory, $handlerFactory, $taskManager) {
+                // Получаем или создаем чат
+                $chat = $task->llmChat;
+                if (!$chat) {
+                    $chat = LLMChat::create(['messages' => []]);
+                    $task->update(['llm_chat_id' => $chat->id]);
+                }
+                
+                // Используем фабрику для создания чата из существующих сообщений
+                $conversation = $conversationFactory->fromMessages($chat->messages ?? []);
+                
+                // Добавляем новое пользовательское сообщение
+                $userMessage = new UserMessage($dto->message);
+                $conversation->addMessage($userMessage);
+                
+                // Сохраняем обновленный чат
+                $chatUpdated = $chat->update(['messages' => $conversation->serialize()]);
+                
+                if ($chatUpdated) {
+                    // Создаем новую задачу для агента с обновленным чатом
+                    $handler = $handlerFactory->createVersionDiffResultHandler($task);
+                    
+                    $taskManager->createTask(
+                        $handler,
+                        $dto->userId,
+                        $task->pageVersion->page->project_id,
+                        $chat->id
+                    );
+                }
+                
+                return $chatUpdated;
+            });
+            
+            if ($success) {
+                // Обновляем задачу с актуальными данными чата
+                $task->load('llmChat');
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Сообщение отправлено и передано агенту на обработку',
+                    'chat' => [
+                        'id' => $task->llmChat->id,
+                        'messages' => $task->llmChat->messages
+                    ]
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при отправке сообщения'
+            ], 500);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to send task message', [
+                'task_id' => $task->id,
+                'user_id' => $request->user()->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Внутренняя ошибка сервера'
+            ], 500);
+        }
     }
 }

@@ -167,7 +167,9 @@
         <!-- Модальное окно чата -->
         <SidePanel v-model:open="isChatModalOpen">
             <AgentChat v-if="task.llm_chat" :messages="task.llm_chat.messages"
-                       :loading="isPolling && generationStatus === 'generating'" />
+                       :loading="isPolling && generationStatus === 'generating'"
+                       :sending="isSending"
+                    @sendMessage="sendMessageToChat" />
         </SidePanel>
     </AppLayout>
 </template>
@@ -187,6 +189,7 @@ import type { LLMChat } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
+import { useTaskChat } from '@/composables/useTaskChat';
 
 interface TechplaneData {
     id: number;
@@ -249,6 +252,9 @@ const isRestartingGeneration = ref<boolean>(false);
 
 // Управление модальным окном чата
 const isChatModalOpen = ref<boolean>(false);
+
+// Composable для работы с чатом задачи
+const { sendMessage, updateChatMessages, isSending, error, hasError } = useTaskChat(props.task.id);
 
 // Функции для управления модальным окном
 const openChatModal = () => {
@@ -381,6 +387,18 @@ const getStatusMessage = () => {
             return 'Ошибка при генерации описания задачи';
         default:
             return 'Описание задачи еще не сгенерировано';
+    }
+};
+
+const sendMessageToChat = async (message: string) => {
+    const result = await sendMessage(message);
+    
+    if (result?.success && result.chat) {
+        // Обновляем локальное состояние чата
+        updateChatMessages(props.task.llm_chat || null, result.chat.messages);
+        console.log('Сообщение отправлено успешно');
+    } else if (hasError.value) {
+        console.error('Ошибка при отправке:', error.value);
     }
 };
 </script>
