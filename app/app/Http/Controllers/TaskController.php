@@ -278,8 +278,7 @@ class TaskController extends Controller implements HasMiddleware
                     );
 
                     $task->update([
-                        'llm_chat_id' => $chat->id,
-                        'generation_status' => VersionDiffTask::STATUS_PENDING,
+                        'llm_chat_id' => $chat->id
                     ]);
                 }
 

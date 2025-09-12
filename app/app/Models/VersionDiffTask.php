@@ -95,7 +95,6 @@ class VersionDiffTask extends Model
             ->first();
 
         if( $activeAgentTask ) {
-            Log::info($activeAgentTask);
             return $activeAgentTask->status;
         }
 

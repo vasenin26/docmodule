@@ -51,7 +51,7 @@ interface Props {
     messages?: LLMMessage[];
     loading?: boolean;
     sending?: boolean;
-    status?: 'string';
+    status?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {

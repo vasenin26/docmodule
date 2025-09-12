@@ -101,6 +101,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('techplanes.restart-generation');
     Route::get('techplanes/{techplane}/check-generation-status', [TechplaneController::class, 'checkGenerationStatus'])
         ->name('techplanes.check-generation-status');
+    Route::post('techplanes/{techplane}/send-message', [TechplaneController::class, 'sendMessage'])
+        ->name('techplanes.send-message');
 
     // НОВЫЕ маршруты в рамках проекта
     Route::prefix('projects/{project}')->group(function () {

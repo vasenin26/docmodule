@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Log;
 
 class Techplane extends Model
 {
@@ -48,6 +49,23 @@ class Techplane extends Model
     public function isGenerating(): bool
     {
         return $this->generation_status === self::STATUS_GENERATING;
+    }
+
+    /**
+     * Получить актуальный статус генерации с учетом активных задач агента
+     */
+    public function generationStatus(): string
+    {
+        $activeAgentTask = AgentTask::where('chat_id', $this->chat_id)
+            ->whereIn('status', [AgentTask::STATUS_WAIT, AgentTask::STATUS_PROCESSING])
+            ->first();
+
+        if ($activeAgentTask) {
+            Log::info($activeAgentTask);
+            return $activeAgentTask->status;
+        }
+
+        return $this->generation_status;
     }
 
     /**

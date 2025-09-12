@@ -16,7 +16,7 @@
                     <!-- Кнопка экспорта (заглушка) -->
                     <Button variant="outline" disabled> Экспортировать </Button>
                     <!-- Кнопка чата (если есть) -->
-                    <Button v-if="techplane.llm_chat" @click="openChatModal" variant="default"> Чат </Button>
+                    <Button v-if="chat" @click="openChatModal" variant="default"> Чат </Button>
                     <!-- Кнопка возврата к задаче -->
                     <Button as-child variant="outline">
                         <Link :href="route('tasks.show', techplane.task.id)"> К задаче </Link>
@@ -75,10 +75,13 @@
 
             <!-- Модальное окно чата -->
             <SidePanel v-model:open="showChatModal">
-                <AgentChat
-                    v-if="techplane.llm_chat"
-                    :messages="techplane.llm_chat.messages"
-                    :loading="isPolling && generationStatus === 'generating'"
+                <AgentChat 
+                    v-if="chat" 
+                    :messages="chat.messages"
+                    :loading="isPolling"
+                    :status="generationStatus"
+                    :sending="chatSending"
+                    @sendMessage="sendMessageToChat" 
                 />
             </SidePanel>
         </div>
@@ -95,8 +98,39 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Link } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
+import { useTechplaneChat } from '@/composables/useTechplaneChat';
+import { createApi } from '@/service/api/Api';
+import { TechplaneStatusRequest } from '@/service/api/request/Techplane/TechplaneStatusRequest';
+import type { LLMChat } from '@/types';
 
-const props = defineProps(['techplane']);
+interface TechplaneData {
+    id: number;
+    content: string | null;
+    generation_status: string;
+    created_at: string;
+    updated_at: string;
+    creator: {
+        id: number;
+        name: string;
+        email: string;
+    };
+    llm_chat?: LLMChat | null;
+    task: {
+        id: number;
+        pageVersion: {
+            id: number;
+            title: string;
+            page: {
+                id: number;
+                title: string;
+            };
+        };
+    };
+}
+
+const props = defineProps<{
+    techplane: TechplaneData;
+}>();
 
 const showChatModal = ref(false);
 
@@ -107,6 +141,16 @@ const isPolling = ref(false);
 const pollInterval = ref(null);
 const isRestartingGeneration = ref(false);
 
+// Реактивные переменные для чата
+const chat = ref<LLMChat | null>(props.techplane.llm_chat || null);
+const isSending = ref<boolean>(false);
+
+// Единый экземпляр API клиента
+const api = createApi();
+
+// Composable для работы с чатом техплана
+const { sendMessage, updateChatMessages, isSending: chatSending, error, hasError } = useTechplaneChat(props.techplane.id);
+
 // Вычисляемые свойства
 const canRestartGeneration = computed(() => {
     return generationStatus.value !== 'generating';
@@ -115,24 +159,28 @@ const canRestartGeneration = computed(() => {
 // Функция для проверки статуса генерации
 const checkGenerationStatus = async () => {
     try {
-        const response = await fetch(route('techplanes.check-generation-status', props.techplane.id), {
-            method: 'GET',
-            headers: {
-                Accept: 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            credentials: 'same-origin',
-        });
+        const request = new TechplaneStatusRequest(props.techplane.id);
+        const data = await request.call(api);
+        generationStatus.value = data.status;
+        techplaneContent.value = data.content;
 
-        if (response.ok) {
-            const data = await response.json();
-            generationStatus.value = data.status;
-            techplaneContent.value = data.content;
-
-            // Остановить опрос если генерация завершена
-            if (data.status === 'completed' || data.status === 'failed') {
-                stopPolling();
+        // Обновляем сообщения чата, если пришли с сервера
+        if (data.chat && data.chat.messages) {
+            if (!chat.value) {
+                chat.value = {
+                    id: data.chat.id,
+                    messages: data.chat.messages,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                } as LLMChat;
+            } else {
+                chat.value.messages = data.chat.messages;
             }
+        }
+
+        // Остановить опрос если генерация завершена
+        if (data.status === 'completed' || data.status === 'failed') {
+            stopPolling();
         }
     } catch (error) {
         console.error('Ошибка при запросе статуса:', error);
@@ -218,6 +266,21 @@ const formatDate = (dateString) => {
 
 const openChatModal = () => {
     showChatModal.value = true;
+};
+
+// Функция отправки сообщения в чат
+const sendMessageToChat = async (message: string) => {
+    startPolling();
+
+    const result = await sendMessage(message);
+    generationStatus.value = 'send-message';
+
+    if (result?.success && result.chat) {
+        // Обновляем локальное состояние чата
+        updateChatMessages(props.techplane.llm_chat || null, result.chat.messages);
+    } else if (hasError.value) {
+        console.error('Ошибка при отправке:', error.value);
+    }
 };
 
 // Функция для получения сообщения о статусе
