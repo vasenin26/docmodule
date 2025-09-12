@@ -31,7 +31,7 @@ export function useTaskChat(taskId: number) {
 
         try {
             const api = createApi();
-            const req = new TaskSendMessageRequest(route('tasks.send-message', taskId), { message });
+            const req = new TaskSendMessageRequest(taskId, { message });
             const data = await req.call(api);
 
             if (data.success) {

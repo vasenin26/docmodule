@@ -9,9 +9,10 @@ export class TaskRestartGenerationRequest implements Request<TaskRestartResponse
     public readonly url: string;
     public readonly body: any;
 
-    constructor(url: string) {
+    constructor(taskId: number) {
         this.method = Method.CREATE;
-        this.url = url;
+        // @ts-ignore
+        this.url = typeof route === 'function' ? route('tasks.restart-generation', taskId) : `/tasks/${taskId}/restart-generation`;
         this.body = null;
     }
 

@@ -18,9 +18,10 @@ export class TaskSendMessageRequest implements Request<TaskSendMessageResponse> 
     public readonly url: string;
     public readonly body: any;
 
-    constructor(url: string, payload: TaskSendMessagePayload) {
+    constructor(taskId: number, payload: TaskSendMessagePayload) {
         this.method = Method.CREATE;
-        this.url = url;
+        // @ts-ignore
+        this.url = typeof route === 'function' ? route('tasks.send-message', taskId) : `/tasks/${taskId}/send-message`;
         this.body = payload;
     }
 

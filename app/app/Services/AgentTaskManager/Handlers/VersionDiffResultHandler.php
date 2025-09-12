@@ -23,10 +23,13 @@ class VersionDiffResultHandler implements AgentResultHandlerInterface
         ];
     }
 
-    public function handleResult(string $result): void
+    public function handleResult(?string $result): void
     {
-        $this->versionDiffTask->content = $result;
-        $this->versionDiffTask->generation_status = 'completed';
+        if($result !== null) {
+            $this->versionDiffTask->content = $result;
+        }
+
+        $this->versionDiffTask->generation_status = VersionDiffTask::STATUS_COMPLETED;
 
         $this->versionDiffTask->save();
     }

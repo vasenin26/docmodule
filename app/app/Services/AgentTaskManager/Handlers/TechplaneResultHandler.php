@@ -23,13 +23,13 @@ class TechplaneResultHandler implements AgentResultHandlerInterface
         ];
     }
 
-    public function handleResult(string $result): void
+    public function handleResult(?string $result): void
     {
         $this->techplane->content = $result;
         $this->techplane->generation_status = Techplane::STATUS_COMPLETED;
-        
+
         $this->techplane->save();
-        
+
         Log::info('Techplane generation completed', [
             'techplane_id' => $this->techplane->id,
             'task_id' => $this->techplane->task_id

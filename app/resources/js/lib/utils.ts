@@ -8,8 +8,6 @@ export function cn(...inputs: ClassValue[]) {
 const storages: {[key: string]: any} = {};
 
 export function getStupidStore(key: string) {
-    console.log('getStupidStore', key);
-
     if (!storages[key]) {
         storages[key] = {};
     }

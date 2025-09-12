@@ -22,7 +22,8 @@ class Api implements ApiInterface {
     constructor(private readonly baseUrl: string, private readonly csrfToken: string | null) {}
 
     public async execute<T>(request: Request<T>): Promise<T> {
-        const url = this.baseUrl + request.url;
+        const isAbsoluteUrl = /^https?:\/\//i.test(request.url);
+        const url = isAbsoluteUrl ? request.url : this.baseUrl + request.url;
 
         const method = request.method as string;
         const hasBodyMethod = method !== Method.GET && method !== Method.LIST && method !== Method.DELETE;

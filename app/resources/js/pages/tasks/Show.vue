@@ -166,8 +166,9 @@
 
         <!-- Модальное окно чата -->
         <SidePanel v-model:open="isChatModalOpen">
-            <AgentChat v-if="task.llm_chat" :messages="task.llm_chat.messages"
-                       :loading="isPolling && generationStatus === 'generating'"
+            <AgentChat v-if="chat" :messages="chat.messages"
+                       :loading="isPolling"
+                       :status="generationStatus"
                        :sending="isSending"
                     @sendMessage="sendMessageToChat" />
         </SidePanel>
@@ -247,6 +248,7 @@ const props = defineProps<{
 // Реактивные переменные для отслеживания статуса
 const generationStatus = ref<string>(props.task.generation_status || 'unknown');
 const taskContent = ref<string | null>(props.task.content || null);
+const chat = ref<LLMChat | null>(props.task.llm_chat || null);
 const isPolling = ref<boolean>(false);
 const pollInterval = ref<number | null>(null);
 
@@ -278,10 +280,25 @@ const canEditTask = computed(() => {
 // Функция проверки статуса генерации
 const checkGenerationStatus = async () => {
     try {
-        const request = new TaskStatusRequest(route('tasks.status', props.task.id));
+        const request = new TaskStatusRequest(props.task.id);
         const data = await request.call(api);
         generationStatus.value = data.status;
         taskContent.value = data.content || null;
+
+        // Обновляем сообщения чата, если пришли с сервера
+        if (data.chat && data.chat.messages) {
+            if (!chat.value) {
+                // Инициализируем чат, если его ещё нет локально
+                chat.value = {
+                    id: data.chat.id,
+                    messages: data.chat.messages,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                } as LLMChat;
+            } else {
+                chat.value.messages = data.chat.messages;
+            }
+        }
 
         // Останавливаем опрос если генерация завершена или завершилась с ошибкой
         if (generationStatus.value === 'completed' || generationStatus.value === 'failed') {
@@ -318,7 +335,7 @@ const restartGeneration = async () => {
     isRestartingGeneration.value = true;
 
     try {
-        const request = new TaskRestartGenerationRequest(route('tasks.restart-generation', props.task.id));
+        const request = new TaskRestartGenerationRequest(props.task.id);
         const data = await request.call(api);
         if (data.success) {
             // Сбросить состояние и начать опрос заново
@@ -370,12 +387,13 @@ const getStatusMessage = () => {
 };
 
 const sendMessageToChat = async (message: string) => {
+    startPolling();
+
     const result = await sendMessage(message);
 
     if (result?.success && result.chat) {
         // Обновляем локальное состояние чата
         updateChatMessages(props.task.llm_chat || null, result.chat.messages);
-        console.log('Сообщение отправлено успешно');
     } else if (hasError.value) {
         console.error('Ошибка при отправке:', error.value);
     }

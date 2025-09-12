@@ -7,36 +7,33 @@
 
         <!-- Содержимое чата -->
         <div ref="messagesContainer" class="flex-1 space-y-4 overflow-y-auto p-4">
-            <!-- Состояние загрузки -->
-            <div v-if="loading" class="flex items-center justify-center py-8">
-                <div class="flex items-center space-x-2 text-gray-500">
-                    <div class="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
-                    <span class="text-sm">Генерация...</span>
-                </div>
-            </div>
-
             <!-- Сообщения отсутствуют -->
-            <div v-else-if="!messages || messages.length === 0" class="flex items-center justify-center py-8">
+            <div v-if="!messages || messages.length === 0" class="flex items-center justify-center py-8">
                 <div class="text-center text-gray-500">
                     <div class="text-sm">История LLM пока пуста</div>
-                    <div class="mt-1 text-xs">Сообщения появятся после генерации</div>
                 </div>
             </div>
 
             <!-- Список сообщений -->
             <div v-else class="space-y-4">
                 <Message v-for="(message, index) in messages" :key="index" :message="message" :index="index" />
+
+                <div class="rounded-lg p-3 bg-gray-50 border border-gray-200" v-if="status != 'completed'">
+                    <span class="text-xs font-medium">
+                        Ответ генерируется....
+                    </span>
+                </div>
             </div>
         </div>
 
-        <div class="flex flex-col gap-2 p-4 border-t">
+        <div class="flex flex-col gap-2 border-t p-4">
             <textarea
                 v-model="input"
-                :disabled="sending"
+                :disabled="frozenInput"
                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 @keydown.enter="sendMessage"
             ></textarea>
-            <Button @click="sendMessage" :disabled="sending || !input.trim()">
+            <Button @click="sendMessage" :disabled="frozenInput || !input.trim()">
                 <span v-if="sending">Отправка...</span>
                 <span v-else>Отправить</span>
             </Button>
@@ -47,19 +44,20 @@
 <script setup lang="ts">
 import Message from '@/components/AgentChat/Message.vue';
 import type { LLMMessage } from '@/types';
-import { nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Button from '../ui/button/Button.vue';
 
 interface Props {
     messages?: LLMMessage[];
     loading?: boolean;
     sending?: boolean;
+    status?: 'string';
 }
 
 const props = withDefaults(defineProps<Props>(), {
     messages: () => [],
     loading: false,
-    sending: false
+    sending: false,
 });
 
 const emit = defineEmits<{
@@ -91,8 +89,10 @@ watch(
             scrollToBottom();
         }
     },
-    { deep: true }
+    { deep: true },
 );
+
+const frozenInput = computed(() => props.status !== 'completed');
 
 // Прокрутка при монтировании
 onMounted(() => {

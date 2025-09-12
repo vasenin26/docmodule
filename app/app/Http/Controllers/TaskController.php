@@ -166,10 +166,17 @@ class TaskController extends Controller implements HasMiddleware
      */
     public function checkGenerationStatus(VersionDiffTask $task): JsonResponse
     {
+        // Подгружаем чат, если он существует, чтобы обновлять сообщения на клиенте
+        $task->loadMissing('llmChat');
+
         return response()->json([
             'status' => $task->generation_status,
             'content' => $task->content,
             'updated_at' => $task->updated_at,
+            'chat' => $task->llmChat ? [
+                'id' => $task->llmChat->id,
+                'messages' => $task->llmChat->messages,
+            ] : null,
         ]);
     }
 
@@ -224,54 +231,65 @@ class TaskController extends Controller implements HasMiddleware
      * Отправить сообщение в чат задачи
      */
     public function sendMessage(
-        SendTaskMessageRequest $request, 
+        SendTaskMessageRequest $request,
         VersionDiffTask $task,
         ConversationFactory $conversationFactory,
         AgentResultHandlerFactoryInterface $handlerFactory,
-        AgentTaskManagerInterface $taskManager
+        AgentTaskManagerInterface $agentTaskManager
     ): JsonResponse
     {
+        if($task->generation_status !== VersionDiffTask::STATUS_COMPLETED) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Запущена генерация'
+            ], 403);
+        }
+
         try {
             $dto = SendMessageDTO::fromRequest($request, $task);
-            
-            $success = DB::transaction(function () use ($dto, $task, $conversationFactory, $handlerFactory, $taskManager) {
+
+            $success = DB::transaction(function () use ($dto, $task, $conversationFactory, $handlerFactory, $agentTaskManager) {
                 // Получаем или создаем чат
                 $chat = $task->llmChat;
                 if (!$chat) {
                     $chat = LLMChat::create(['messages' => []]);
-                    $task->update(['llm_chat_id' => $chat->id]);
                 }
-                
+
                 // Используем фабрику для создания чата из существующих сообщений
                 $conversation = $conversationFactory->fromMessages($chat->messages ?? []);
-                
+
                 // Добавляем новое пользовательское сообщение
                 $userMessage = new UserMessage($dto->message);
                 $conversation->addMessage($userMessage);
-                
+
                 // Сохраняем обновленный чат
                 $chatUpdated = $chat->update(['messages' => $conversation->serialize()]);
-                
+
                 if ($chatUpdated) {
                     // Создаем новую задачу для агента с обновленным чатом
                     $handler = $handlerFactory->createVersionDiffResultHandler($task);
-                    
-                    $taskManager->createTask(
+
+                    $agentTaskManager->createTask(
                         $handler,
                         $dto->userId,
                         $task->pageVersion->page->project_id,
                         $chat->id,
                         false // Задачи отправки сообщений не требуют результата
                     );
+
+                    $task->update([
+                        'llm_chat_id' => $chat->id,
+                        'generation_status' => VersionDiffTask::STATUS_PENDING,
+                    ]);
                 }
-                
+
                 return $chatUpdated;
             });
-            
+
             if ($success) {
                 // Обновляем задачу с актуальными данными чата
                 $task->load('llmChat');
-                
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Сообщение отправлено и передано агенту на обработку',
@@ -281,19 +299,19 @@ class TaskController extends Controller implements HasMiddleware
                     ]
                 ]);
             }
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Ошибка при отправке сообщения'
             ], 500);
-            
+
         } catch (\Exception $e) {
             Log::error('Failed to send task message', [
                 'task_id' => $task->id,
                 'user_id' => $request->user()->id,
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Внутренняя ошибка сервера'

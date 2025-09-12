@@ -113,7 +113,6 @@ function registrFunctionName(toolCall: {
 }
 
 function getFunctionName(id: string): string {
-    console.log(id, functions);
     return functions[id] || '';
 }
 

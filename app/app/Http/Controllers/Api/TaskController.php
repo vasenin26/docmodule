@@ -123,9 +123,7 @@ class TaskController extends Controller
 
             $task->update(['status' => AgentTask::STATUS_SUCCESS]);
 
-            if ($updateData->result) {
-                $handlerFactory->createTaskHandler($task)?->handleResult($updateData->result);
-            }
+            $handlerFactory->createTaskHandler($task)?->handleResult($updateData->result);
 
             return response()->json([
                 'status' => 'updated',
