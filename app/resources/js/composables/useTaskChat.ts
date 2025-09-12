@@ -11,7 +11,7 @@ export interface SendMessageResponse {
 }
 
 import { createApi } from '@/service/api/Api';
-import { TaskSendMessageRequest } from '@/service/api/request/TaskSendMessageRequest';
+import { TaskSendMessageRequest } from '@/service/api/request/Task/TaskSendMessageRequest';
 
 export function useTaskChat(taskId: number) {
     const isSending = ref(false);

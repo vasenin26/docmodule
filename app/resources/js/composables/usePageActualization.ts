@@ -1,7 +1,7 @@
 import { router } from '@inertiajs/vue3';
 import { computed, onUnmounted, ref } from 'vue';
 import { createApi } from '@/service/api/Api';
-import { CancelActualizationRequest, GetActualizationHistoryRequest, GetActualizationStatusRequest, StartActualizationRequest } from '@/service/api/request/PageActualizationRequests';
+import { CancelActualizationRequest, GetActualizationHistoryRequest, GetActualizationStatusRequest, StartActualizationRequest } from '@/service/api/request/Page/PageActualizationRequests';
 
 export interface ActualizationStatus {
     id: number;

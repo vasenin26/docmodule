@@ -191,8 +191,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import { useTaskChat } from '@/composables/useTaskChat';
 import { createApi } from '@/service/api/Api';
-import { TaskStatusRequest } from '@/service/api/request/TaskStatusRequest';
-import { TaskRestartGenerationRequest } from '@/service/api/request/TaskRestartGenerationRequest';
+import { TaskStatusRequest } from '@/service/api/request/Task/TaskStatusRequest';
+import { TaskRestartGenerationRequest } from '@/service/api/request/Task/TaskRestartGenerationRequest';
 
 interface TechplaneData {
     id: number;
@@ -371,7 +371,7 @@ const getStatusMessage = () => {
 
 const sendMessageToChat = async (message: string) => {
     const result = await sendMessage(message);
-    
+
     if (result?.success && result.chat) {
         // Обновляем локальное состояние чата
         updateChatMessages(props.task.llm_chat || null, result.chat.messages);

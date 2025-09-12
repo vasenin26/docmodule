@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import type { Project } from '@/types';
 import { createApi } from '@/service/api/Api';
-import { ProjectGetByIdRequest } from '@/service/api/request/ProjectGetByIdRequest';
+import { ProjectGetByIdRequest } from '@/service/api/request/Project/ProjectGetByIdRequest';
 
 export const useProjectStore = defineStore('project', () => {
     // Кеш проектов для оптимизации
