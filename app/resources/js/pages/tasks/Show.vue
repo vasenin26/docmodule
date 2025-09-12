@@ -390,6 +390,7 @@ const sendMessageToChat = async (message: string) => {
     startPolling();
 
     const result = await sendMessage(message);
+    generationStatus.value = 'send-message';
 
     if (result?.success && result.chat) {
         // Обновляем локальное состояние чата
