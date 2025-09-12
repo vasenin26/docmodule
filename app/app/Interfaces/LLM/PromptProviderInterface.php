@@ -57,4 +57,18 @@ interface PromptProviderInterface
      * @param ActualizationContextDTO $context Контекст актуализации (файлы, репозитории и т.д.)
      */
     public function getActualizationInstructions(string $currentContent, ActualizationContextDTO $context): string;
+
+    /**
+     * Системный промпт: определяет роль разработчика для реализации техпланов
+     */
+    public function getDeveloperRole(): string;
+
+    /**
+     * Пользовательский промпт: возвращает инструкции для реализации техплана
+     * с подстановкой переменных из содержимого техплана и контекста
+     *
+     * @param string $techplaneContent Содержимое техплана для реализации
+     * @param GeneratorContextDTO $context Контекст генерации (файлы, репозитории и т.д.)
+     */
+    public function getImplementationInstructions(string $techplaneContent, GeneratorContextDTO $context): string;
 }

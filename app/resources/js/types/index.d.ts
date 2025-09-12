@@ -101,6 +101,20 @@ export interface Techplane {
     updated_at: string;
 }
 
+export interface Implementation {
+    id: number;
+    content: string | null;
+    techplane_id: number;
+    chat_id?: number | null;
+    status: string;
+    created_by: number;
+    created_at: string;
+    updated_at: string;
+    techplane: Techplane;
+    creator: User;
+    llm_chat?: LLMChat | null;
+}
+
 export interface TaskUpdateFormData {
     content: string;
 }

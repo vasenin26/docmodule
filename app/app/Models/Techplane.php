@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Common\Enums\GenerationStatus;
+use App\Models\Implementation;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Log;
 
 class Techplane extends Model
@@ -38,6 +41,21 @@ class Techplane extends Model
     public function llmChat(): BelongsTo
     {
         return $this->belongsTo(LLMChat::class, 'chat_id');
+    }
+
+    // Связь с реализациями
+    public function implementations(): HasMany
+    {
+        return $this->hasMany(Implementation::class);
+    }
+
+    // Метод для создания реализации
+    public function createImplementation(int $userId): Implementation
+    {
+        return $this->implementations()->create([
+            'created_by' => $userId,
+            'status' => GenerationStatus::PENDING,
+        ]);
     }
 
     // Методы проверки статуса

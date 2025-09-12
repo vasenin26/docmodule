@@ -6,8 +6,10 @@ use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\AgentTask;
 use App\Models\Actualization;
+use App\Models\Implementation;
 use App\Models\Techplane;
 use App\Services\AgentTaskManager\Handlers\ActualizationResultHandler;
+use App\Services\AgentTaskManager\Handlers\ImplementationResultHandler;
 use App\Services\AgentTaskManager\Handlers\TechplaneResultHandler;
 use App\Services\AgentTaskManager\Handlers\VersionDiffResultHandler;
 use Illuminate\Support\Facades\Log;
@@ -46,5 +48,10 @@ class AgentResultHandlerFactory implements AgentResultHandlerFactoryInterface
     public function createActualizationResultHandler(Actualization $actualization): AgentResultHandlerInterface
     {
         return new ActualizationResultHandler($actualization);
+    }
+
+    public function createImplementationResultHandler(Implementation $implementation): AgentResultHandlerInterface
+    {
+        return new ImplementationResultHandler($implementation);
     }
 }

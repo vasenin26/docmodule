@@ -5,15 +5,19 @@ namespace App\Http\Controllers;
 use App\Common\DTO\SendTechplaneMessageDTO;
 use App\Common\Enums\AgentTaskType;
 use Vasenin26\Conversation\Factory\ConversationFactory;
+use App\Http\Requests\CreateImplementationRequest;
 use App\Http\Requests\SendTechplaneMessageRequest;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Jobs\GenerateTechplaneJob;
+use App\Jobs\ProcessImplementationJob;
 use App\Models\AgentTask;
 use App\Models\LLMChat;
 use App\Models\Techplane;
 use Vasenin26\Conversation\Messages\UserMessage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -192,5 +196,27 @@ class TechplaneController extends Controller
                 'message' => 'Внутренняя ошибка сервера'
             ], 500);
         }
+    }
+
+    public function execute(CreateImplementationRequest $request, Techplane $techplane): JsonResponse|RedirectResponse
+    {
+        // Создаем реализацию
+        $implementation = $techplane->createImplementation(Auth::id());
+        
+        // Запускаем обработку в фоне
+        ProcessImplementationJob::dispatch($implementation->id);
+        
+        // Если это AJAX запрос, возвращаем JSON
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Реализация создана, обработка запущена',
+                'redirect_url' => route('implementations.show', $implementation)
+            ]);
+        }
+        
+        // Иначе возвращаем редирект
+        return redirect()->route('implementations.show', $implementation)
+            ->with('success', 'Реализация создана, обработка запущена');
     }
 }

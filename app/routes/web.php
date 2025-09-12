@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActualizationController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ImplementationController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectPagesController;
@@ -103,6 +104,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('techplanes.check-generation-status');
     Route::post('techplanes/{techplane}/send-message', [TechplaneController::class, 'sendMessage'])
         ->name('techplanes.send-message');
+    Route::post('techplanes/{techplane}/execute', [TechplaneController::class, 'execute'])
+        ->name('techplanes.execute');
+
+    // Маршруты для реализаций
+    Route::get('implementations/{implementation}', [ImplementationController::class, 'show'])
+        ->name('implementations.show');
+    Route::get('implementations/{implementation}/check-status', [ImplementationController::class, 'checkStatus'])
+        ->name('implementations.check-status');
+    Route::post('implementations/{implementation}/send-message', [ImplementationController::class, 'sendMessage'])
+        ->name('implementations.send-message');
 
     // НОВЫЕ маршруты в рамках проекта
     Route::prefix('projects/{project}')->group(function () {

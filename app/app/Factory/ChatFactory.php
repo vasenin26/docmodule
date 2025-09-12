@@ -60,4 +60,16 @@ class ChatFactory implements LLMChatFactoryInterface
 
         return $this->createChat($conversation->serialize());
     }
+
+    public function createChatForImplementation(PromptProviderInterface $promptProvider, string $techplaneContent, GeneratorContextDTO $context): LLMChat
+    {
+        $prompt = $promptProvider->getImplementationInstructions($techplaneContent, $context);
+        $role = $promptProvider->getDeveloperRole();
+
+        $conversation = new Chat();
+        $conversation->addMessage(new SystemMessage($role));
+        $conversation->addMessage(new UserMessage($prompt));
+
+        return $this->createChat($conversation->serialize());
+    }
 }

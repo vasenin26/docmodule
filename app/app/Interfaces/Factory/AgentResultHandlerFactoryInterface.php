@@ -7,6 +7,7 @@ use App\Models\AgentTask;
 use App\Models\Techplane;
 use App\Models\VersionDiffTask;
 use App\Models\Actualization;
+use App\Models\Implementation;
 
 interface AgentResultHandlerFactoryInterface
 {
@@ -18,4 +19,6 @@ interface AgentResultHandlerFactoryInterface
     public function createTechplaneResultHandler(Techplane $techplane): AgentResultHandlerInterface;
 
     public function createActualizationResultHandler(Actualization $actualization): AgentResultHandlerInterface;
+
+    public function createImplementationResultHandler(Implementation $implementation): AgentResultHandlerInterface;
 }

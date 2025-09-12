@@ -78,6 +78,26 @@ readonly class PromptService implements PromptProviderInterface
         ]);
     }
 
+    public function getDeveloperRole(): string
+    {
+        $prompt = $this->promptSource->getPrompt(PromptType::DEVELOPER_ROLE);
+        return $prompt ?? 'Роль разработчика не определена';
+    }
+
+    public function getImplementationInstructions(string $techplaneContent, GeneratorContextDTO $context): string
+    {
+        $prompt = $this->promptSource->getPrompt(PromptType::IMPLEMENTATION_INSTRUCTIONS);
+
+        if (!$prompt) {
+            return 'Инструкции для реализации не найдены';
+        }
+
+        return $this->templateRenderer->render($prompt, [
+            'techplane_content' => $techplaneContent,
+            ...$context->toArray(),
+        ]);
+    }
+
     public function getPrompt(PromptType $type): ?string
     {
         return $this->promptSource->getPrompt($type);

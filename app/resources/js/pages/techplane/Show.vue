@@ -15,6 +15,17 @@
                     </Button>
                     <!-- Кнопка экспорта (заглушка) -->
                     <Button variant="outline" disabled> Экспортировать </Button>
+                    <!-- Кнопка выполнения техплана -->
+                    <Button 
+                        v-if="canExecuteTechplane" 
+                        @click="executeTechplane" 
+                        :disabled="isExecutingTechplane" 
+                        variant="default" 
+                        size="sm"
+                    >
+                        <span v-if="isExecutingTechplane">Создание реализации...</span>
+                        <span v-else>Выполнить</span>
+                    </Button>
                     <!-- Кнопка чата (если есть) -->
                     <Button v-if="chat" @click="openChatModal" variant="default"> Чат </Button>
                     <!-- Кнопка возврата к задаче -->
@@ -101,6 +112,7 @@ import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import { useTechplaneChat } from '@/composables/useTechplaneChat';
 import { createApi } from '@/service/api/Api';
 import { TechplaneStatusRequest } from '@/service/api/request/Techplane/TechplaneStatusRequest';
+import { TechplaneExecuteRequest } from '@/service/api/request/Techplane/TechplaneExecuteRequest';
 import type { LLMChat } from '@/types';
 
 interface TechplaneData {
@@ -138,8 +150,9 @@ const showChatModal = ref(false);
 const generationStatus = ref(props.techplane.generation_status);
 const techplaneContent = ref(props.techplane.content);
 const isPolling = ref(false);
-const pollInterval = ref(null);
+const pollInterval = ref<number | null>(null);
 const isRestartingGeneration = ref(false);
+const isExecutingTechplane = ref(false);
 
 // Реактивные переменные для чата
 const chat = ref<LLMChat | null>(props.techplane.llm_chat || null);
@@ -154,6 +167,11 @@ const { sendMessage, updateChatMessages, isSending: chatSending, error, hasError
 // Вычисляемые свойства
 const canRestartGeneration = computed(() => {
     return generationStatus.value !== 'generating';
+});
+
+// Вычисляемое свойство для доступности кнопки выполнения
+const canExecuteTechplane = computed(() => {
+    return generationStatus.value === 'completed';
 });
 
 // Функция для проверки статуса генерации
@@ -242,6 +260,40 @@ const restartGeneration = async () => {
     }
 };
 
+// Функция выполнения техплана
+const executeTechplane = async () => {
+    if (!canExecuteTechplane.value || isExecutingTechplane.value) {
+        return;
+    }
+
+    isExecutingTechplane.value = true;
+
+    try {
+        const api = createApi();
+        const request = new TechplaneExecuteRequest(props.techplane.id);
+        
+        console.log('Отправляем запрос на выполнение техплана:', props.techplane.id);
+        const data = await request.call(api);
+        console.log('Получен ответ от сервера:', data);
+
+        if (data && data.success) {
+            console.log('Реализация создана успешно, перенаправляем на:', data.redirect_url);
+            // Перенаправление на страницу реализации произойдет автоматически
+            window.location.href = data.redirect_url;
+        } else {
+            const errorMessage = data?.message || 'Неизвестная ошибка при создании реализации';
+            console.error('Ошибка при создании реализации:', errorMessage, 'Данные:', data);
+            alert(errorMessage);
+        }
+    } catch (error) {
+        console.error('Ошибка при создании реализации:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Ошибка сети при создании реализации';
+        alert(errorMessage);
+    } finally {
+        isExecutingTechplane.value = false;
+    }
+};
+
 // Lifecycle hooks
 onMounted(() => {
     // Начинаем опрос если содержимое пустое или статус не завершен
@@ -254,7 +306,7 @@ onUnmounted(() => {
     stopPolling();
 });
 
-const formatDate = (dateString) => {
+const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('ru-RU', {
         year: 'numeric',
         month: 'long',
