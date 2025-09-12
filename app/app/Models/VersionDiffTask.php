@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Log;
 
 class VersionDiffTask extends Model
 {
@@ -79,7 +80,26 @@ class VersionDiffTask extends Model
      */
     public function isGenerating(): bool
     {
-        return $this->generation_status === self::STATUS_GENERATING;
+        $activeAgentTask = AgentTask::where([
+            'chat_id' => $this->llm_chat_id,
+            'status' => [AgentTask::STATUS_WAIT, AgentTask::STATUS_PROCESSING],
+        ])->count();
+
+        return $activeAgentTask !== 0;
+    }
+
+    public function generationStatus(): string
+    {
+        $activeAgentTask = AgentTask::where('chat_id', $this->llm_chat_id)
+            ->whereIn('status', [AgentTask::STATUS_WAIT, AgentTask::STATUS_PROCESSING])
+            ->first();
+
+        if( $activeAgentTask ) {
+            Log::info($activeAgentTask);
+            return $activeAgentTask->status;
+        }
+
+        return $this->generation_status;
     }
 
     /**

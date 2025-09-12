@@ -48,7 +48,7 @@ class TaskController extends Controller implements HasMiddleware
             'task' => [
                 'id' => $task->id,
                 'content' => $task->content,
-                'generation_status' => $task->generation_status,
+                'generation_status' => $task->generationStatus(),
                 'created_at' => $task->created_at,
                 'updated_at' => $task->updated_at,
                 'edited_at' => $task->edited_at,
@@ -91,7 +91,7 @@ class TaskController extends Controller implements HasMiddleware
             'task' => [
                 'id' => $task->id,
                 'content' => $task->content,
-                'generation_status' => $task->generation_status,
+                'generation_status' => $task->generationStatus(),
                 'created_at' => $task->created_at,
                 'updated_at' => $task->updated_at,
                 'edited_at' => $task->edited_at,
@@ -170,7 +170,7 @@ class TaskController extends Controller implements HasMiddleware
         $task->loadMissing('llmChat');
 
         return response()->json([
-            'status' => $task->generation_status,
+            'status' => $task->generationStatus(),
             'content' => $task->content,
             'updated_at' => $task->updated_at,
             'chat' => $task->llmChat ? [

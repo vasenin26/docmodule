@@ -88,13 +88,13 @@ class TaskController extends Controller
         $agent = $request->get('agent'); // Получаем агента из middleware
 
         try {
-            $task = AgentTask::where('id', $id)
+            $agentTask = AgentTask::where('id', $id)
                 ->where('agent_uuid', $request->getAgentUuid()) // Проверяем по UUID от клиента
                 ->where('agent_id', $agent->id) // Дополнительная проверка принадлежности агенту
                 ->where('status', AgentTask::STATUS_PROCESSING)
                 ->first();
 
-            if (!$task) {
+            if (!$agentTask) {
                 $this->logSuspiciousActivity($request, 'task_update_denied', [
                     'requested_task_id' => $id,
                     'agent_id' => $agent->id,
@@ -113,17 +113,20 @@ class TaskController extends Controller
                 'result' => $request->getResult(),
             ]);
 
-            $chat = $task->llmChat;
+            $chat = $agentTask->llmChat;
+            $messages = count($chat->messages ?? []) < count($updateData->chat) ? $updateData->chat : $chat->messages;
             $chat->update([
-                'messages' => $updateData->chat,
+                'messages' => $messages,
                 'prompt_tokens' => ($chat->prompt_tokens ?? 0) + ($updateData->stats->prompt_tokens ?? 0),
                 'completion_tokens' => ($chat->completion_tokens ?? 0) + ($updateData->stats->completion_tokens ?? 0),
                 'total_tokens' => ($chat->total_tokens ?? 0) + ($updateData->stats->total_tokens ?? 0),
             ]);
 
-            $task->update(['status' => AgentTask::STATUS_SUCCESS]);
+            if ($request->isCompleted()) {
+                $agentTask->update(['status' => AgentTask::STATUS_SUCCESS]);
+            }
 
-            $handlerFactory->createTaskHandler($task)?->handleResult($updateData->result);
+            $handlerFactory->createTaskHandler($agentTask)?->handleResult($updateData->result);
 
             return response()->json([
                 'status' => 'updated',

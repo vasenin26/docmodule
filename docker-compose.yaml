@@ -18,6 +18,7 @@ services:
     environment:
       - APP_ENV=local
       - APP_DEBUG=true
+      - VITE_API_BASE_URL=http://localhost:8000/api
 
   db:
     image: postgres:16

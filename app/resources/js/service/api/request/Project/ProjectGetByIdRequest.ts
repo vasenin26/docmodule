@@ -8,7 +8,7 @@ export class ProjectGetByIdRequest implements Request<Project> {
 
     constructor(projectId: number) {
         this.method = Method.GET;
-        this.url = `/api/projects/${projectId}`;
+        this.url = `/projects/${projectId}`;
         this.body = null;
     }
 

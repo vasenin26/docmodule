@@ -21,6 +21,10 @@ class UpdateTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'completed' => [
+                'required',
+                'boolean',
+            ],
             'agent_uuid' => [
                 'required',
                 'string',
@@ -164,8 +168,8 @@ class UpdateTaskRequest extends FormRequest
         return $this->validated('result');
     }
 
-    public function isFinalUpdate(): bool
+    public function isCompleted(): bool
     {
-        return $this->getResult() !== null;
+        return $this->validated('completed');
     }
 }
