@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Common\Enums\AgentTaskType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,15 +12,16 @@ class AgentTask extends Model
     use HasFactory;
 
     protected $fillable = [
+        'type',
         'handler',
         'handler_options',
         'project_id',
         'created_by',
         'chat_id',
         'status',
-        'agent_uuid',  // переименовано из agent_id
-        'agent_id',    // новая колонка для связи с Agent
-        'result_required', // требуется ли результат для задачи
+        'agent_uuid',
+        'agent_id',
+        'result_required',
     ];
 
     protected function casts(): array
@@ -27,6 +29,7 @@ class AgentTask extends Model
         return [
             'handler_options' => 'array',
             'result_required' => 'boolean',
+            'type' => AgentTaskType::class,
         ];
     }
 

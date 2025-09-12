@@ -2,6 +2,7 @@
 
 namespace App\Services\AgentTaskManager;
 
+use App\Common\Enums\AgentTaskType;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
@@ -23,10 +24,12 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
         int $creatorId,
         int $projectId,
         int $chatId,
-        bool $resultRequired = true
+        bool $resultRequired = true,
+        AgentTaskType $type = AgentTaskType::TEXT
     ): int {
         try {
             $task = AgentTask::create([
+                'type' => $type,
                 'handler' => $handler::class,
                 'handler_options' => $handler->getOptions(),
                 'project_id' => $projectId,
@@ -38,6 +41,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
 
             Log::info('Agent task created', [
                 'task_id' => $task->id,
+                'type' => $type->value,
                 'handler' => $handler::class,
                 'project_id' => $projectId,
                 'chat_id' => $chatId,
@@ -49,6 +53,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
         } catch (\Exception $e) {
             Log::error('Failed to create agent task', [
                 'handler' => $handler::class,
+                'type' => $type->value,
                 'project_id' => $projectId,
                 'chat_id' => $chatId,
                 'result_required' => $resultRequired,

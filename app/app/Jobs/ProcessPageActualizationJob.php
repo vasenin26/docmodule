@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Common\DTO\ActualizationContextDTO;
+use App\Common\Enums\AgentTaskType;
 use App\Factory\PromptProviderFactory;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
@@ -80,7 +81,7 @@ class ProcessPageActualizationJob implements ShouldQueue
         
         $handler = $agentResultHandlerFactory->createActualizationResultHandler($actualization);
         
-        $agentTaskManager->createTask($handler, $actualization->created_by, $page->project_id, $chat->id, true);
+        $agentTaskManager->createTask($handler, $actualization->created_by, $page->project_id, $chat->id, true, AgentTaskType::TEXT);
         
         Log::info('Processing page actualization job completed - agent task created', [
             'actualization_id' => $this->actualizationId,

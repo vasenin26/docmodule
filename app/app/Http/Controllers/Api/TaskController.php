@@ -70,9 +70,10 @@ class TaskController extends Controller
 
         return response()->json([
             'id' => $task->id,
-            'agent_uuid' => $task->agent_uuid, // Возвращаем UUID для внешнего агента
+            'type' => $task->type->value,
+            'agent_uuid' => $task->agent_uuid,
             'project_id' => $task->project_id,
-            'result_required' => $task->result_required, // Возвращаем флаг требования результата
+            'result_required' => $task->result_required,
             'chat' => [
                 'messages' => $task->llmChat->messages ?? [],
             ]

@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Common\DTO\GeneratorContextDTO;
+use App\Common\Enums\AgentTaskType;
 use App\Factory\PromptProviderFactory;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
@@ -74,6 +75,6 @@ class GenerateTechplaneJob implements ShouldQueue
         
         $handler = $agentResultHandlerFactory->createTechplaneResultHandler($techplane);
         
-        $agentTaskManager->createTask($handler, $task->created_by, $page->project_id, $chat->id, true);
+        $agentTaskManager->createTask($handler, $task->created_by, $page->project_id, $chat->id, true, AgentTaskType::TEXT);
     }
 }

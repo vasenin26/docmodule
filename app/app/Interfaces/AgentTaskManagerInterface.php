@@ -2,6 +2,7 @@
 
 namespace App\Interfaces;
 
+use App\Common\Enums\AgentTaskType;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\Agent;
 use App\Models\AgentTask;
@@ -16,6 +17,7 @@ interface AgentTaskManagerInterface
      * @param int $projectId ID проекта
      * @param int $chatId ID чата LLM
      * @param bool $resultRequired Требуется ли результат для задачи
+     * @param AgentTaskType $type Тип задачи агента
      * @return int ID созданной задачи
      * @throws \InvalidArgumentException Если переданы некорректные параметры
      */
@@ -24,7 +26,8 @@ interface AgentTaskManagerInterface
         int $creatorId,
         int $projectId,
         int $chatId,
-        bool $resultRequired = true
+        bool $resultRequired = true,
+        AgentTaskType $type = AgentTaskType::TEXT
     ): int;
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Common\Enums\AgentTaskType;
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Jobs\GenerateTechplaneJob;
 use App\Models\VersionDiffTask;
@@ -10,7 +11,6 @@ use App\Models\LLMChat;
 use App\Http\Requests\TaskUpdateRequest;
 use App\Http\Requests\SendTaskMessageRequest;
 use App\Common\DTO\SendMessageDTO;
-use Vasenin26\Conversation\Chat;
 use Vasenin26\Conversation\Messages\UserMessage;
 use Vasenin26\Conversation\Factory\ConversationFactory;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
@@ -274,7 +274,8 @@ class TaskController extends Controller implements HasMiddleware
                         $dto->userId,
                         $task->pageVersion->page->project_id,
                         $chat->id,
-                        false // Задачи отправки сообщений не требуют результата
+                        false,
+                        AgentTaskType::TEXT
                     );
 
                     $task->update([

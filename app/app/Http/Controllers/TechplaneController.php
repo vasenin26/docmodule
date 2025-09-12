@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Common\DTO\SendTechplaneMessageDTO;
+use App\Common\Enums\AgentTaskType;
 use Vasenin26\Conversation\Factory\ConversationFactory;
 use App\Http\Requests\SendTechplaneMessageRequest;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
@@ -148,7 +149,8 @@ class TechplaneController extends Controller
                         $dto->userId,
                         $techplane->task->pageVersion->page->project_id,
                         $chat->id,
-                        false // Задачи отправки сообщений не требуют результата
+                        false,
+                        AgentTaskType::TEXT
                     );
 
                     $techplane->update([

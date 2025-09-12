@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Common\Enums\AgentTaskType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,6 +18,7 @@ class AgentTaskFactory extends Factory
     public function definition(): array
     {
         return [
+            'type' => AgentTaskType::TEXT,
             'handler' => 'App\\Services\\AgentTaskManager\\Handlers\\TestHandler',
             'handler_options' => ['test' => true],
             'project_id' => \App\Models\Project::factory(),
