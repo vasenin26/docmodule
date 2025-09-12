@@ -10,6 +10,9 @@ export interface SendMessageResponse {
     };
 }
 
+import { createApi } from '@/service/api/Api';
+import { TaskSendMessageRequest } from '@/service/api/request/TaskSendMessageRequest';
+
 export function useTaskChat(taskId: number) {
     const isSending = ref(false);
     const error = ref<string | null>(null);
@@ -27,18 +30,9 @@ export function useTaskChat(taskId: number) {
         error.value = null;
 
         try {
-            const response = await fetch(route('tasks.send-message', taskId), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({ message })
-            });
-
-            const data = await response.json();
+            const api = createApi();
+            const req = new TaskSendMessageRequest(route('tasks.send-message', taskId), { message });
+            const data = await req.call(api);
 
             if (data.success) {
                 return data;

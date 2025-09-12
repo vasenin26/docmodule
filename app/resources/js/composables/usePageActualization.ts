@@ -1,20 +1,7 @@
 import { router } from '@inertiajs/vue3';
 import { computed, onUnmounted, ref } from 'vue';
-
-// Получаем CSRF токен
-const getCsrfToken = (): string => {
-    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-};
-
-// Базовые заголовки для запросов
-const getHeaders = (): HeadersInit => {
-    return {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-CSRF-TOKEN': getCsrfToken(),
-    };
-};
+import { createApi } from '@/service/api/Api';
+import { CancelActualizationRequest, GetActualizationHistoryRequest, GetActualizationStatusRequest, StartActualizationRequest } from '@/service/api/request/PageActualizationRequests';
 
 export interface ActualizationStatus {
     id: number;
@@ -28,7 +15,8 @@ export interface ActualizationStatus {
 export function usePageActualization(pageId: number) {
     const isActualizing = ref(false);
     const actualizationStatus = ref<ActualizationStatus | null>(null);
-    const statusCheckInterval = ref<NodeJS.Timeout | null>(null);
+    const statusCheckInterval = ref<number | null>(null);
+    const api = createApi();
 
     /**
      * Запустить процесс актуализации
@@ -41,16 +29,7 @@ export function usePageActualization(pageId: number) {
         isActualizing.value = true;
 
         try {
-            const response = await fetch(`/pages/${pageId}/actualize`, {
-                method: 'POST',
-                headers: getHeaders(),
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const result = await response.json();
+            const result = await new StartActualizationRequest(pageId).call(api);
 
             if (result.success) {
                 // Сразу начинаем проверку статуса
@@ -78,15 +57,9 @@ export function usePageActualization(pageId: number) {
      */
     const checkStatus = async (): Promise<void> => {
         try {
-            const response = await fetch(`/pages/${pageId}/actualization/status`, {
-                headers: getHeaders(),
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                if (result.success) {
-                    actualizationStatus.value = result.data;
-                }
+            const result = await new GetActualizationStatusRequest(pageId).call(api);
+            if (result.success) {
+                actualizationStatus.value = result.data;
             }
         } catch (error) {
             console.error('Error checking actualization status:', error);
@@ -135,17 +108,7 @@ export function usePageActualization(pageId: number) {
         }
 
         try {
-            const response = await fetch(`/actualizations/${actualizationStatus.value.id}`, {
-                method: 'DELETE',
-                headers: getHeaders(),
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const result = await response.json();
-
+            const result = await new CancelActualizationRequest(actualizationStatus.value.id).call(api);
             if (result.success) {
                 await checkStatus();
                 stopStatusChecking();
@@ -169,16 +132,7 @@ export function usePageActualization(pageId: number) {
      */
     const getActualizationHistory = async (): Promise<ActualizationStatus[]> => {
         try {
-            const response = await fetch(`/pages/${pageId}/actualizations`, {
-                headers: getHeaders(),
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const result = await response.json();
-
+            const result = await new GetActualizationHistoryRequest(pageId).call(api);
             if (result.success) {
                 return result.data;
             } else {

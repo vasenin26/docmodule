@@ -2,6 +2,8 @@ import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import type { Project } from '@/types';
+import { createApi } from '@/service/api/Api';
+import { ProjectGetByIdRequest } from '@/service/api/request/ProjectGetByIdRequest';
 
 export const useProjectStore = defineStore('project', () => {
     // Кеш проектов для оптимизации
@@ -49,15 +51,12 @@ export const useProjectStore = defineStore('project', () => {
 
         // Загружаем из API
         try {
-            const response = await fetch(`/api/projects/${projectId}`);
-
-            if (response.ok) {
-                const project = await response.json();
-                projectsCache.value.set(projectId, project);
-                currentProject.value = project; // Обновляем текущий проект
-                return project;
-            } else {
-            }
+            const api = createApi();
+            const req = new ProjectGetByIdRequest(projectId);
+            const project = await req.call(api);
+            projectsCache.value.set(projectId, project);
+            currentProject.value = project; // Обновляем текущий проект
+            return project;
         } catch (e) {
             console.error('🔍 Store: fetch error:', e);
         }

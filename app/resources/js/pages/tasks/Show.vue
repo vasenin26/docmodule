@@ -190,6 +190,9 @@ import { Link } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import { useTaskChat } from '@/composables/useTaskChat';
+import { createApi } from '@/service/api/Api';
+import { TaskStatusRequest } from '@/service/api/request/TaskStatusRequest';
+import { TaskRestartGenerationRequest } from '@/service/api/request/TaskRestartGenerationRequest';
 
 interface TechplaneData {
     id: number;
@@ -256,6 +259,9 @@ const isChatModalOpen = ref<boolean>(false);
 // Composable для работы с чатом задачи
 const { sendMessage, updateChatMessages, isSending, error, hasError } = useTaskChat(props.task.id);
 
+// Единый экземпляр API клиента
+const api = createApi();
+
 // Функции для управления модальным окном
 const openChatModal = () => {
     isChatModalOpen.value = true;
@@ -272,27 +278,14 @@ const canEditTask = computed(() => {
 // Функция проверки статуса генерации
 const checkGenerationStatus = async () => {
     try {
-        const response = await fetch(route('tasks.status', props.task.id), {
-            method: 'GET',
-            headers: {
-                Accept: 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            },
-            credentials: 'same-origin'
-        });
+        const request = new TaskStatusRequest(route('tasks.status', props.task.id));
+        const data = await request.call(api);
+        generationStatus.value = data.status;
+        taskContent.value = data.content || null;
 
-        if (response.ok) {
-            const data = await response.json();
-            generationStatus.value = data.status;
-            taskContent.value = data.content || null;
-
-            // Останавливаем опрос если генерация завершена или завершилась с ошибкой
-            if (generationStatus.value === 'completed' || generationStatus.value === 'failed') {
-                stopPolling();
-            }
-        } else {
-            console.error('Ошибка HTTP:', response.status, response.statusText);
+        // Останавливаем опрос если генерация завершена или завершилась с ошибкой
+        if (generationStatus.value === 'completed' || generationStatus.value === 'failed') {
+            stopPolling();
         }
     } catch (error) {
         console.error('Ошибка при запросе статуса:', error);
@@ -325,27 +318,13 @@ const restartGeneration = async () => {
     isRestartingGeneration.value = true;
 
     try {
-        const response = await fetch(route('tasks.restart-generation', props.task.id), {
-            method: 'POST',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            },
-            credentials: 'same-origin'
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                // Сбросить состояние и начать опрос заново
-                generationStatus.value = 'pending';
-                taskContent.value = null;
-                startPolling();
-            }
-        } else {
-            console.error('Ошибка при перезапуске генерации:', response.status, response.statusText);
+        const request = new TaskRestartGenerationRequest(route('tasks.restart-generation', props.task.id));
+        const data = await request.call(api);
+        if (data.success) {
+            // Сбросить состояние и начать опрос заново
+            generationStatus.value = 'pending';
+            taskContent.value = null;
+            startPolling();
         }
     } catch (error) {
         console.error('Ошибка при перезапуске генерации:', error);
