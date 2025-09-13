@@ -94,6 +94,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import { useImplementationChat } from '@/composables/useImplementationChat';
 import type { LLMChat } from '@/types';
+import { createApi } from '@/service/api/Api';
+import { ImplementationStatusRequest } from '@/service/api/request/Implementation/ImplementationStatusRequest';
 
 interface ImplementationData {
     id: number;
@@ -127,6 +129,9 @@ const props = defineProps<{
     implementation: ImplementationData;
 }>();
 
+// Единый экземпляр API клиента
+const api = createApi();
+
 const showChatModal = ref(false);
 
 // Реактивные данные для отслеживания состояния
@@ -144,25 +149,30 @@ const { sendMessage, updateChatMessages, isSending: chatSending, error, hasError
 // Функция для проверки статуса
 const checkImplementationStatus = async () => {
     try {
-        const response = await fetch(route('implementations.check-status', props.implementation.id), {
-            method: 'GET',
-            headers: {
-                Accept: 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-            },
-            credentials: 'same-origin',
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            implementationStatus.value = data.status;
-            implementationContent.value = data.content;
-            
-            // Останавливаем опрос если реализация завершена
-            if (data.status === 'completed' || data.status === 'failed') {
-                stopPolling();
+        const request = new ImplementationStatusRequest(props.implementation.id);
+        const data = await request.call(api);
+        
+        implementationStatus.value = data.status;
+        implementationContent.value = data.content;
+        
+        // Обновляем сообщения чата, если пришли с сервера
+        if (data.chat && data.chat.messages) {
+            if (!chat.value) {
+                // Инициализируем чат, если его ещё нет локально
+                chat.value = {
+                    id: data.chat.id,
+                    messages: data.chat.messages,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                } as LLMChat;
+            } else {
+                chat.value.messages = data.chat.messages;
             }
+        }
+        
+        // Останавливаем опрос если реализация завершена
+        if (data.status === 'completed' || data.status === 'failed') {
+            stopPolling();
         }
     } catch (error) {
         console.error('Ошибка при проверке статуса:', error);
@@ -190,7 +200,7 @@ const startPolling = () => {
     if (pollInterval.value) return;
     
     isPolling.value = true;
-    pollInterval.value = setInterval(checkImplementationStatus, 2000);
+    pollInterval.value = setInterval(checkImplementationStatus, 3000);
 };
 
 const stopPolling = () => {

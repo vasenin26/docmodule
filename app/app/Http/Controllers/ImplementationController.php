@@ -53,13 +53,16 @@ class ImplementationController extends Controller
     public function checkStatus(Implementation $implementation): JsonResponse
     {
         $implementation->load('llmChat');
-
-        // Получаем актуальный статус с учетом активных задач агента
         $actualStatus = $implementation->actualStatus();
 
         return response()->json([
             'status' => $actualStatus->value,
             'content' => $implementation->content,
+            'updated_at' => $implementation->updated_at,
+            'chat' => $implementation->llmChat ? [
+                'id' => $implementation->llmChat->id,
+                'messages' => $implementation->llmChat->messages,
+            ] : null,
         ]);
     }
 
