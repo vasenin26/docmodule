@@ -91,7 +91,12 @@ export function createApi(): Api {
     if (cachedApi) {
         return cachedApi;
     }
-    const apiUrl = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost/api';
+    
+    // Get API URL from meta tag
+    const apiUrl = typeof document !== 'undefined'
+        ? (document.querySelector('meta[name="api-base-url"]')?.getAttribute('content') || 'http://localhost/api')
+        : 'http://localhost/api';
+    
     const csrfToken = typeof document !== 'undefined'
         ? (document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || null)
         : null;
