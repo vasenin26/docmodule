@@ -19,7 +19,12 @@ export interface Request<T> {
 }
 
 class Api implements ApiInterface {
-    constructor(private readonly baseUrl: string, private readonly csrfToken: string | null) {}
+
+    private baseUrl:string;
+
+    constructor(baseUrl: string, private readonly csrfToken: string | null) {
+        this.baseUrl = baseUrl.replace(/\/+$/, '');
+    }
 
     public async execute<T>(request: Request<T>): Promise<T> {
         const isAbsoluteUrl = /^https?:\/\//i.test(request.url);
@@ -91,12 +96,12 @@ export function createApi(): Api {
     if (cachedApi) {
         return cachedApi;
     }
-    
+
     // Get API URL from meta tag
     const apiUrl = typeof document !== 'undefined'
         ? (document.querySelector('meta[name="api-base-url"]')?.getAttribute('content') || 'http://localhost/api')
         : 'http://localhost/api';
-    
+
     const csrfToken = typeof document !== 'undefined'
         ? (document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || null)
         : null;
