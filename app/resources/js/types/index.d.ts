@@ -42,7 +42,7 @@ export interface User {
 }
 
 export interface LLMMessage {
-    type: 'user' | 'assistant' | 'system';
+    type: 'user' | 'assistant' | 'system' | 'tool' | 'git-file' | 'page-version';
     message: {
         content?: string | null;
         timestamp: string;
@@ -51,8 +51,24 @@ export interface LLMMessage {
             id: string;
             function: {
                 name: string;
+                arguments?: string;    // Аргументы функции (JSON строка)
             };
         }[];
+        // Новые поля для tool-сообщений:
+        tool_name?: string;        // Название инструмента
+        tool_args?: string;        // Аргументы инструмента (JSON строка)
+        tool_result?: string;      // Результат выполнения
+        tool_success?: boolean;    // Успешность выполнения
+        // Альтернативные поля для tool-сообщений (новый формат):
+        name?: string;             // Название инструмента (новый формат)
+        args?: string;             // Аргументы инструмента (новый формат)
+        result?: string;           // Результат выполнения (новый формат)
+        success?: boolean;         // Успешность выполнения (новый формат)
+        id?: string;               // ID вызова инструмента (новый формат)
+        // Поля для git-file сообщений:
+        url?: string;              // URL файла в Git репозитории
+        // Поля для page-version сообщений:
+        versionId?: string;        // ID версии страницы
     };
 }
 

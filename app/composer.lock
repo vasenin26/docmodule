@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0b15d988c2b6479b8036c70ba75da9fb",
+    "content-hash": "1b694f876a6befc9f465464e98887fcf",
     "packages": [
         {
             "name": "brick/math",
@@ -6505,11 +6505,11 @@
         },
         {
             "name": "vasenin26/conversation",
-            "version": "v0.2.0",
+            "version": "v0.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vasenin26/conversation.git",
-                "reference": "0956ae00d9c5bbeee00768fb6e498704fe2ee21e"
+                "reference": "6269fee4c9f3b2eeb4dd256710f3699335b709a4"
             },
             "require": {
                 "php": ">=8.2"
@@ -6527,7 +6527,7 @@
                 }
             ],
             "description": "Conversation package",
-            "time": "2025-09-15T14:42:10+00:00"
+            "time": "2025-09-15T16:49:10+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
