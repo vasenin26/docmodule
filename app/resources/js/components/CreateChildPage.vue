@@ -55,6 +55,7 @@ import { ref } from 'vue';
 
 interface Props {
     parentId: number;
+    projectId?: number | null;
     errors?: Record<string, string>;
 }
 
@@ -69,6 +70,7 @@ const form = useForm({
     title: '',
     content: '',
     parent_id: props.parentId,
+    project_id: props.projectId ?? null,
 });
 
 const submit = () => {

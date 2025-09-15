@@ -29,7 +29,7 @@
             </div>
 
             <!-- Форма создания дочерней страницы -->
-            <CreateChildPage :parent-id="parentId" />
+            <CreateChildPage :parent-id="parentId" :project-id="projectId" />
         </CardContent>
     </Card>
 </template>
@@ -62,6 +62,7 @@ export interface ChildPage {
 interface Props {
     children?: ChildPage[];
     parentId: number;
+    projectId?: number | null;
 }
 
 withDefaults(defineProps<Props>(), {

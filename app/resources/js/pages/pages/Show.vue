@@ -131,7 +131,7 @@
                 </Card>
 
                 <!-- Дочерние страницы -->
-                <ChildPages :children="page.children" :parent-id="page.id" />
+                <ChildPages :children="page.children" :parent-id="page.id" :project-id="page.project?.id || null" />
 
                 <!-- Информация о версиях -->
                 <Card>

@@ -123,6 +123,14 @@ class PageController extends Controller
             }
         }
 
+        // Если указан parent_id, наследуем project_id от родителя (если проект ещё не определён)
+        if (!$projectId && !empty($validated['parent_id'])) {
+            $parent = Page::find($validated['parent_id']);
+            if ($parent) {
+                $projectId = $parent->project_id;
+            }
+        }
+
         // Создаем страницу
         $page = Page::create([
             'parent_id' => $validated['parent_id'] ?? null,
