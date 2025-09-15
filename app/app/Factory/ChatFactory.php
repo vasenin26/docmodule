@@ -9,6 +9,7 @@ use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Interfaces\LLM\PromptProviderInterface;
 use App\Models\LLMChat;
 use Vasenin26\Conversation\Chat;
+use Vasenin26\Conversation\Messages\GitFileMessage;
 use Vasenin26\Conversation\Messages\SystemMessage;
 use Vasenin26\Conversation\Messages\UserMessage;
 
@@ -31,8 +32,13 @@ class ChatFactory implements LLMChatFactoryInterface
         $role = $promptProvider->getDescriptionGeneratorRole();
 
         $conversation = new Chat();
+
         $conversation->addMessage(new SystemMessage($role));
         $conversation->addMessage(new UserMessage($prompt));
+
+        foreach ($attachedFiles as $file) {
+            $conversation->addMessage(new GitFileMessage($file));
+        }
 
         return $this->createChat($conversation->serialize());
     }

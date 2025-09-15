@@ -29,7 +29,7 @@
         "openai-php/laravel": "^0.15.0",
         "sebastian/diff": "^6.0",
         "tightenco/ziggy": "^2.4",
-        "vasenin26/conversation": "^0.1"
+        "vasenin26/conversation": "^0.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
