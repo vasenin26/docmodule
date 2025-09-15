@@ -25,7 +25,9 @@ use App\Services\RepositoryService\RepositoryProvider;
 use App\Services\TaskTracker\Integration\FakeIntegration;
 use App\Services\TaskTracker\TaskTrackerService;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use App\Models\VersionDiffTask;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -74,5 +76,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Project::class, ProjectPolicy::class);
+        
+        // Явное связывание для параметра projectTask
+        Route::model('projectTask', VersionDiffTask::class);
     }
 }

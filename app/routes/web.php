@@ -18,8 +18,6 @@ use Inertia\Inertia;
 use App\Models\Page;
 use App\Models\VersionDiffTask;
 
-// Route Model Binding для новой модели
-Route::model('task', VersionDiffTask::class);
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
@@ -88,9 +86,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('drafts.actualize');
 
     // Маршруты для задач
+    Route::get('tasks', [TaskController::class, 'index'])->name('tasks.index');
     Route::get('tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
     Route::get('tasks/{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit');
     Route::put('tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
+    Route::delete('tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
     Route::get('tasks/{task}/status', [TaskController::class, 'checkGenerationStatus'])->name('tasks.status');
     Route::post('tasks/{task}/restart-generation', [TaskController::class, 'restartGeneration'])->name('tasks.restart-generation');
     Route::post('tasks/{task}/create-techplane', [TaskController::class, 'createTechplane'])->name('tasks.create-techplane');
@@ -118,6 +118,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // НОВЫЕ маршруты в рамках проекта
     Route::prefix('projects/{project}')->group(function () {
         Route::get('/pages', [ProjectPagesController::class, 'index'])->name('projects.pages.index');
+        Route::get('/tasks', [TaskController::class, 'index'])->name('projects.tasks.index');
+        Route::delete('/tasks/{projectTask}', [TaskController::class, 'destroy'])->name('projects.tasks.destroy');
     });
 
     // Маршруты для промптов проекта

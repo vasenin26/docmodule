@@ -5,7 +5,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Bot, FileText, Folder, FolderOpen, LayoutGrid, MessageSquare, Settings } from 'lucide-vue-next';
+import { BookOpen, Bot, FileText, Folder, FolderOpen, LayoutGrid, MessageSquare, Settings, List } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useProjectStore } from '@/stores/project';
 import AppLogo from './AppLogo.vue';
@@ -33,6 +33,12 @@ const allNavItems = computed((): NavItem[] => {
             title: 'Страницы',
             href: currentProject ? `/projects/${currentProject.id}/pages` : '/pages',
             icon: FileText,
+            projectRequired: true
+        },
+        {
+            title: 'Задачи',
+            href: `/projects/${currentProject?.id}/tasks`,
+            icon: List,
             projectRequired: true
         },
         {

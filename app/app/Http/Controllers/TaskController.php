@@ -8,6 +8,7 @@ use App\Jobs\GenerateTechplaneJob;
 use App\Models\VersionDiffTask;
 use App\Models\Techplane;
 use App\Models\LLMChat;
+use App\Models\Project;
 use App\Http\Requests\TaskUpdateRequest;
 use App\Http\Requests\SendTaskMessageRequest;
 use App\Common\DTO\SendMessageDTO;
@@ -17,6 +18,7 @@ use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\AgentTaskManagerInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +37,41 @@ class TaskController extends Controller implements HasMiddleware
             'auth',
             'verified',
         ];
+    }
+
+    /**
+     * Display a listing of tasks.
+     */
+    public function index(Request $request, ?Project $project = null): Response
+    {
+        $query = VersionDiffTask::with(['creator', 'pageVersion.page'])
+            ->orderBy('created_at', 'desc');
+
+        // Фильтрация по проекту если указан
+        if ($project) {
+            $query->whereHas('pageVersion.page', function ($q) use ($project) {
+                $q->where('project_id', $project->id);
+            });
+        }
+
+        // Применение фильтров
+        if ($request->filled('status')) {
+            $query->where('generation_status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $query->whereHas('pageVersion.page', function ($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $tasks = $query->paginate(15);
+
+        return Inertia::render('tasks/Index', [
+            'tasks' => $tasks,
+            'project' => $project,
+            'filters' => $request->only(['search', 'status']),
+        ]);
     }
 
     /**
@@ -317,5 +354,22 @@ class TaskController extends Controller implements HasMiddleware
                 'message' => 'Внутренняя ошибка сервера'
             ], 500);
         }
+    }
+
+    /**
+     * Remove the specified task from storage.
+     */
+    public function destroy(Project $project, ?VersionDiffTask $projectTask = null): RedirectResponse
+    {
+
+        // Проверяем права доступа
+        if ($projectTask->created_by !== Auth::id()) {
+            abort(403, 'У вас нет прав для удаления этой задачи');
+        }
+
+        $projectTask->delete();
+
+        return redirect()->back()
+            ->with('success', 'Задача успешно удалена');
     }
 }
