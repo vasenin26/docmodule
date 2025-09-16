@@ -42,10 +42,10 @@ export interface User {
 }
 
 export interface LLMMessage {
-    type: 'user' | 'assistant' | 'system' | 'tool' | 'git-file' | 'page-version';
+    type: 'user' | 'assistant' | 'system' | 'tool' | 'git-file' | 'page-version' | 'info';
     message: {
         content?: string | null;
-        timestamp: string;
+        timestamp?: string;
         tool_call_id?: string;
         tool_calls?: {
             id: string;

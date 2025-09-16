@@ -6,6 +6,7 @@ import SystemMessage from './messages/SystemMessage.vue';
 import ToolMessage from './messages/ToolMessage.vue';
 import GitFileMessage from './messages/GitFileMessage.vue';
 import PageVersionMessage from './messages/PageVersionMessage.vue';
+import InfoMessage from './messages/InfoMessage.vue';
 import UnknownMessage from './messages/UnknownMessage.vue';
 
 const props = defineProps<{
@@ -43,6 +44,11 @@ const props = defineProps<{
     />
     <PageVersionMessage 
         v-else-if="message.type === 'page-version'" 
+        :message="message" 
+        :index="index" 
+    />
+    <InfoMessage 
+        v-else-if="message.type === 'info'" 
         :message="message" 
         :index="index" 
     />
