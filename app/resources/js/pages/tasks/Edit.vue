@@ -1,9 +1,9 @@
 <template>
-    <AppLayout :title="`Редактирование задачи: ${task.pageVersion.page.title}`">
+    <AppLayout :title="task.pageVersion?.page ? `Редактирование задачи: ${task.pageVersion.page.title}` : 'Редактирование задачи'">
         <template #header>
             <div class="flex items-center justify-between">
                 <div>
-                    <Heading :title="`Редактирование задачи для страницы: ${task.pageVersion.page.title}`" />
+                    <Heading :title="task.pageVersion?.page ? `Редактирование задачи для страницы: ${task.pageVersion.page.title}` : 'Редактирование задачи'" />
                     <p class="mt-1 text-sm text-muted-foreground">Создана {{ formatDate(task.created_at) }} пользователем {{ task.creator?.name }}</p>
                 </div>
                 <div class="flex items-center gap-2">
@@ -57,7 +57,7 @@
 
                 <div class="space-y-6 lg:col-span-1">
                     <!-- Информация о странице -->
-                    <Card>
+                    <Card v-if="task.pageVersion && task.pageVersion.page">
                         <CardHeader>
                             <CardTitle>Информация о странице</CardTitle>
                             <CardDescription>Детали страницы, для которой создана задача</CardDescription>
@@ -66,17 +66,17 @@
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div>
                                     <Label class="text-sm font-medium">Заголовок</Label>
-                                    <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.page.title }}</p>
+                                    <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion?.page?.title || '' }}</p>
                                 </div>
                                 <div>
                                     <Label class="text-sm font-medium">Автор</Label>
-                                    <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.page.creator.name }}</p>
+                                    <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion?.page?.creator?.name }}</p>
                                 </div>
                                 <div>
                                     <Label class="text-sm font-medium">Дата создания</Label>
-                                    <p class="mt-1 text-sm text-muted-foreground">{{ formatDate(task.pageVersion.page.created_at) }}</p>
+                                    <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion?.page?.created_at ? formatDate(task.pageVersion.page.created_at) : '' }}</p>
                                 </div>
-                                <div v-if="task.pageVersion.previousVersion">
+                                <div v-if="task.pageVersion && task.pageVersion.previousVersion">
                                     <Label class="text-sm font-medium">Предыдущая версия</Label>
                                     <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.previousVersion.title }}</p>
                                 </div>
@@ -85,19 +85,19 @@
                     </Card>
 
                     <!-- Сравнение версий -->
-                    <Card v-if="task.pageVersion.previousVersion">
+                    <Card v-if="task.pageVersion && task.pageVersion.previousVersion">
                         <CardHeader>
                             <CardTitle>Сравнение версий</CardTitle>
                             <CardDescription>Изменения между предыдущей и текущей версией страницы</CardDescription>
                         </CardHeader>
                         <CardContent class="space-y-4">
                             <!-- Сравнение заголовков -->
-                            <div v-if="task.pageVersion.page.title !== (task.pageVersion.previousVersion.title || '')">
+                            <div v-if="task.pageVersion && task.pageVersion.page && (task.pageVersion.page.title !== (task.pageVersion.previousVersion?.title || ''))">
                                 <Label class="text-sm font-medium">Изменение заголовка</Label>
                                 <div class="mt-2 space-y-2">
                                     <div class="rounded border border-red-200 bg-red-50 p-2">
                                         <span class="text-xs font-medium text-red-600">Было:</span>
-                                        <p class="text-sm">{{ task.pageVersion.previousVersion.title || '' }}</p>
+                                        <p class="text-sm">{{ task.pageVersion.previousVersion?.title || '' }}</p>
                                     </div>
                                     <div class="rounded border border-green-200 bg-green-50 p-2">
                                         <span class="text-xs font-medium text-green-600">Стало:</span>
@@ -107,10 +107,10 @@
                             </div>
 
                             <!-- Сравнение содержимого -->
-                            <div v-if="task.pageVersion.page.content !== (task.pageVersion.previousVersion.content || '')">
+                            <div v-if="task.pageVersion && task.pageVersion.page && (task.pageVersion.page.content !== (task.pageVersion.previousVersion?.content || ''))">
                                 <Label class="text-sm font-medium">Изменение содержимого</Label>
                                 <div class="mt-2">
-                                    <DiffViewer :old-content="task.pageVersion.previousVersion.content" :new-content="task.pageVersion.page.content" />
+                                    <DiffViewer :old-content="task.pageVersion.previousVersion?.content || ''" :new-content="task.pageVersion.page.content" />
                                 </div>
                             </div>
                         </CardContent>

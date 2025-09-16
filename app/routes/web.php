@@ -119,6 +119,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('projects/{project}')->group(function () {
         Route::get('/pages', [ProjectPagesController::class, 'index'])->name('projects.pages.index');
         Route::get('/tasks', [TaskController::class, 'index'])->name('projects.tasks.index');
+        Route::post('/tasks', [TaskController::class, 'store'])->name('projects.tasks.store');
         Route::delete('/tasks/{projectTask}', [TaskController::class, 'destroy'])->name('projects.tasks.destroy');
     });
 

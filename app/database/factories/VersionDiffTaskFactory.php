@@ -17,6 +17,7 @@ class VersionDiffTaskFactory extends Factory
     public function definition(): array
     {
         return [
+            'project_id' => \App\Models\Project::factory(),
             'page_version_id' => \App\Models\PageVersion::factory(),
             'content' => $this->faker->paragraphs(3, true),
             'created_by' => \App\Models\User::factory(),

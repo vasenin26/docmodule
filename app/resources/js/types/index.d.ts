@@ -85,13 +85,14 @@ export interface LLMChat {
 
 export interface VersionDiffTask {
     id: number;
-    page_version_id: number;
+    project_id: number;
+    page_version_id: number | null;
     content: string | null;
     created_by: number;
     generation_status: string;
     llm_chat_id?: number | null;
     llm_chat?: LLMChat | null;
-    pageVersion: PageVersion;
+    pageVersion?: PageVersion | null;
     creator: User;
     techplane?: Techplane | null;
     created_at: string;

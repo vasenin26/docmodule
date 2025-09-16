@@ -9,6 +9,7 @@ use App\Models\Page;
 use App\Models\PageVersion;
 use App\Models\Project;
 use App\Models\VersionDiffTask;
+use App\Models\LLMChat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -440,12 +441,16 @@ class PageController extends Controller
             throw new \Exception('У страницы нет текущей версии');
         }
 
+        $chat = LLMChat::create(['messages' => []]);
+
         $versionDiffTask = VersionDiffTask::create([
+            'project_id' => $page->project_id,
             'page_id' => $page->id,
             'page_version_id' => $currentVersion->id,
             'content' => '', // Будет заполнено job'ом
             'created_by' => $userId ?? Auth::id() ?? $page->created_by,
             'generation_status' => VersionDiffTask::STATUS_PENDING,
+            'llm_chat_id' => $chat->id,
         ]);
 
         GenerateTaskDescriptionJob::dispatch($versionDiffTask->id);

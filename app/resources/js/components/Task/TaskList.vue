@@ -3,6 +3,10 @@
         <!-- Поиск и фильтры -->
         <Card>
             <CardContent class="p-4">
+                <div class="flex justify-between mb-2" v-if="props.project">
+                    <div></div>
+                    <Button type="button" @click="createTask">Создать</Button>
+                </div>
                 <form @submit.prevent="search" class="flex gap-4">
                     <div class="flex-1">
                         <Input v-model="searchQuery" placeholder="Поиск по названию страницы..." @keyup.enter="search" />
@@ -42,7 +46,7 @@
                                 </td>
                                 <td class="p-4">
                                     <div class="flex flex-col">
-                                        <span class="font-medium">{{ task.pageVersion?.page?.title }}</span>
+                                        <span class="font-medium">{{ task.pageVersion?.page?.title ?? 'Без страницы' }}</span>
                                         <span class="text-sm text-muted-foreground">
                                             {{ truncateContent(task.pageVersion?.page?.content) }}
                                         </span>
@@ -206,5 +210,10 @@ const canDelete = (task: TaskListItem) => {
     // Проверка прав доступа - только создатель может удалить задачу
     // Это должно быть реализовано через проверку текущего пользователя
     return true; // Заглушка, нужно реализовать проверку
+};
+
+const createTask = () => {
+    if (!props.project) return;
+    router.post(route('projects.tasks.store', props.project.id));
 };
 </script>

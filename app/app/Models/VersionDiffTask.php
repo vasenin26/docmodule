@@ -22,6 +22,7 @@ class VersionDiffTask extends Model
     }
 
     protected $fillable = [
+        'project_id',
         'page_id',
         'page_version_id',
         'content',
@@ -57,7 +58,12 @@ class VersionDiffTask extends Model
      */
     public function getPageAttribute()
     {
-        return $this->pageVersion->page;
+        return $this->pageVersion?->page;
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     /**

@@ -49,9 +49,7 @@ class TaskController extends Controller implements HasMiddleware
 
         // Фильтрация по проекту если указан
         if ($project) {
-            $query->whereHas('pageVersion.page', function ($q) use ($project) {
-                $q->where('project_id', $project->id);
-            });
+            $query->where('project_id', $project->id);
         }
 
         // Применение фильтров
@@ -81,6 +79,9 @@ class TaskController extends Controller implements HasMiddleware
     {
         $task->load(['pageVersion.page', 'techplane', 'llmChat', 'creator']);
 
+        $pageVersion = $task->pageVersion;
+        $page = $pageVersion?->page;
+
         return Inertia::render('tasks/Show', [
             'task' => [
                 'id' => $task->id,
@@ -89,11 +90,24 @@ class TaskController extends Controller implements HasMiddleware
                 'created_at' => $task->created_at,
                 'updated_at' => $task->updated_at,
                 'edited_at' => $task->edited_at,
-                'pageVersion' => [
-                    ...$task->pageVersion->toArray(),
-                    'page' => $task->pageVersion->page,
-                    'previousVersion' => $task->pageVersion->previousVersion,
-                ],
+                'pageVersion' => $pageVersion ? [
+                    'id' => $pageVersion->id,
+                    'title' => $pageVersion->title,
+                    'content' => $pageVersion->content,
+                    'created_at' => $pageVersion->created_at,
+                    'page' => $page ? [
+                        'id' => $page->id,
+                        'title' => $page->title,
+                        'content' => $page->content,
+                        'created_at' => $page->created_at,
+                    ] : null,
+                    'previousVersion' => $pageVersion->previousVersion ? [
+                        'id' => $pageVersion->previousVersion->id,
+                        'title' => $pageVersion->previousVersion->title,
+                        'content' => $pageVersion->previousVersion->content,
+                        'created_at' => $pageVersion->previousVersion->created_at,
+                    ] : null,
+                ] : null,
                 'creator' => $task->creator ? [
                     'id' => $task->creator->id,
                     'name' => $task->creator->name,
@@ -124,6 +138,9 @@ class TaskController extends Controller implements HasMiddleware
             'llmChat'
         ]);
 
+        $pageVersion = $task->pageVersion;
+        $page = $pageVersion?->page;
+
         return Inertia::render('tasks/Edit', [
             'task' => [
                 'id' => $task->id,
@@ -132,29 +149,29 @@ class TaskController extends Controller implements HasMiddleware
                 'created_at' => $task->created_at,
                 'updated_at' => $task->updated_at,
                 'edited_at' => $task->edited_at,
-                'pageVersion' => [
-                    'id' => $task->pageVersion->id,
-                    'title' => $task->pageVersion->title,
-                    'content' => $task->pageVersion->content,
-                    'created_at' => $task->pageVersion->created_at,
-                    'page' => [
-                        'id' => $task->pageVersion->page->id,
-                        'title' => $task->pageVersion->page->title,
-                        'content' => $task->pageVersion->page->content,
-                        'created_at' => $task->pageVersion->page->created_at,
-                        'creator' => [
-                            'id' => $task->pageVersion->page->creator->id,
-                            'name' => $task->pageVersion->page->creator->name,
-                            'email' => $task->pageVersion->page->creator->email,
-                        ],
-                    ],
-                    'previousVersion' => $task->pageVersion->previousVersion ? [
-                        'id' => $task->pageVersion->previousVersion->id,
-                        'title' => $task->pageVersion->previousVersion->title,
-                        'content' => $task->pageVersion->previousVersion->content,
-                        'created_at' => $task->pageVersion->previousVersion->created_at,
+                'pageVersion' => $pageVersion ? [
+                    'id' => $pageVersion->id,
+                    'title' => $pageVersion->title,
+                    'content' => $pageVersion->content,
+                    'created_at' => $pageVersion->created_at,
+                    'page' => $page ? [
+                        'id' => $page->id,
+                        'title' => $page->title,
+                        'content' => $page->content,
+                        'created_at' => $page->created_at,
+                        'creator' => $page->creator ? [
+                            'id' => $page->creator->id,
+                            'name' => $page->creator->name,
+                            'email' => $page->creator->email,
+                        ] : null,
                     ] : null,
-                ],
+                    'previousVersion' => $pageVersion->previousVersion ? [
+                        'id' => $pageVersion->previousVersion->id,
+                        'title' => $pageVersion->previousVersion->title,
+                        'content' => $pageVersion->previousVersion->content,
+                        'created_at' => $pageVersion->previousVersion->created_at,
+                    ] : null,
+                ] : null,
                 'creator' => [
                     'id' => $task->creator->id,
                     'name' => $task->creator->name,
@@ -193,6 +210,18 @@ class TaskController extends Controller implements HasMiddleware
 
         // Очищаем связанный техплан
         $task->clearTechplane();
+
+        // Гарантируем наличие чата и добавляем сообщение с новым контентом
+        $chat = $task->llmChat;
+        if (!$chat) {
+            $chat = LLMChat::create(['messages' => []]);
+            $task->update(['llm_chat_id' => $chat->id]);
+        }
+
+        // Обновляем историю сообщений, добавляя новый контент как пользовательское сообщение
+        $conversation = (new ConversationFactory())->fromMessages($chat->messages ?? []);
+        $conversation->addMessage(new UserMessage($validated['content']));
+        $chat->update(['messages' => $conversation->serialize()]);
 
         return redirect()->route('tasks.show', $task)
             ->with('success', 'Задача успешно обновлена');
@@ -306,10 +335,13 @@ class TaskController extends Controller implements HasMiddleware
                     // Создаем новую задачу для агента с обновленным чатом
                     $handler = $handlerFactory->createVersionDiffResultHandler($task);
 
+                    $projectId = $task->project_id ?? $task->pageVersion?->page?->project_id;
+                    abort_if(!$projectId, 400, 'Project is required for agent task');
+
                     $agentTaskManager->createTask(
                         $handler,
                         $dto->userId,
-                        $task->pageVersion->page->project_id,
+                        $projectId,
                         $chat->id,
                         false,
                         AgentTaskType::TEXT
@@ -367,9 +399,34 @@ class TaskController extends Controller implements HasMiddleware
             abort(403, 'У вас нет прав для удаления этой задачи');
         }
 
+        if ($projectTask->project_id !== $project->id) {
+            abort(404);
+        }
+
         $projectTask->delete();
 
         return redirect()->back()
             ->with('success', 'Задача успешно удалена');
+    }
+
+    public function store(Project $project, Request $request): RedirectResponse
+    {
+        if (!$project->canAccess(Auth::user())) {
+            abort(403);
+        }
+
+        $chat = LLMChat::create(['messages' => []]);
+
+        $task = VersionDiffTask::create([
+            'project_id' => $project->id,
+            'created_by' => Auth::id(),
+            'content' => '',
+            'generation_status' => VersionDiffTask::STATUS_PENDING,
+            'page_version_id' => null,
+            'llm_chat_id' => $chat->id,
+            'edited_at' => null,
+        ]);
+
+        return redirect()->route('tasks.edit', $task);
     }
 }

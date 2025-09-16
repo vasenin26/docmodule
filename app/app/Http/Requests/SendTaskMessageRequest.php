@@ -15,8 +15,13 @@ class SendTaskMessageRequest extends FormRequest
             return false;
         }
         
-        // Проверяем доступ через проект страницы
-        return $task->pageVersion->page->project->canAccess($user);
+        if ($task->project_id) {
+            return \App\Models\Project::query()
+                ->whereKey($task->project_id)
+                ->first()?->canAccess($user) ?? false;
+        }
+        
+        return $task->pageVersion?->page?->project?->canAccess($user) ?? false;
     }
 
     public function rules(): array

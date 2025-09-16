@@ -1,15 +1,15 @@
 <template>
-    <AppLayout :title="`Задача: ${task.pageVersion.title}`">
+    <AppLayout :title="task.pageVersion?.page ? `Задача: ${task.pageVersion.page.title}` : 'Задача'">
         <template #header>
             <div class="flex items-center justify-between">
                 <div>
-                    <Heading :title="`Задача для версии: ${task.pageVersion.title}`" />
+                    <Heading :title="task.pageVersion?.page ? `Задача для версии: ${task.pageVersion.title}` : 'Задача'" />
                     <p class="mt-1 text-sm text-muted-foreground">Создана {{ formatDate(task.created_at) }}
                         пользователем {{ task.creator?.name }}</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <!-- Кнопка редактирования -->
-                    <Button v-if="canEditTask" as-child variant="outline" size="sm">
+                    <Button as-child variant="outline" size="sm">
                         <Link :href="route('tasks.edit', task.id)">Редактировать задачу</Link>
                     </Button>
 
@@ -24,7 +24,7 @@
                     <Button v-if="task.llm_chat" @click="openChatModal" variant="outline" size="sm"> Чат</Button>
 
                     <TaskExportButton />
-                    <Button as-child variant="outline">
+                    <Button v-if="task.pageVersion?.page" as-child variant="outline">
                         <Link :href="route('pages.show', task.pageVersion.page.id)"> К странице</Link>
                     </Button>
                 </div>
@@ -48,11 +48,11 @@
                             </div>
                             <div>
                                 <Label class="text-sm font-medium">ID версии страницы</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.id }}</p>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion?.id ?? '' }}</p>
                             </div>
                             <div>
                                 <Label class="text-sm font-medium">ID страницы</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.page.id }}</p>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion?.page?.id ?? '' }}</p>
                             </div>
                             <div>
                                 <Label class="text-sm font-medium">Создатель задачи</Label>
@@ -97,7 +97,7 @@
             <div class="space-y-6 lg:col-span-1">
 
                 <!-- Информация о странице -->
-                <Card>
+                <Card v-if="task.pageVersion && task.pageVersion.page">
                     <CardHeader>
                         <CardTitle>Информация о странице</CardTitle>
                         <CardDescription> Детали страницы, для которой создана задача</CardDescription>
@@ -130,14 +130,14 @@
                     </CardContent>
                 </Card>
                 <!-- Сравнение версий -->
-                <Card v-if="task.pageVersion.previousVersion">
+                <Card v-if="task.pageVersion && task.pageVersion.previousVersion">
                     <CardHeader>
                         <CardTitle>Сравнение версий</CardTitle>
                         <CardDescription> Изменения между предыдущей и текущей версией страницы</CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-4">
                         <!-- Сравнение заголовков -->
-                        <div v-if="task.pageVersion.title !== (task.pageVersion.previousVersion.title || '')">
+                        <div v-if="task.pageVersion && (task.pageVersion.title !== (task.pageVersion.previousVersion?.title || ''))">
                             <Label class="text-sm font-medium">Изменение заголовка</Label>
                             <div class="mt-2 space-y-2">
                                 <div class="rounded border border-red-200 bg-red-50 p-2">
@@ -152,10 +152,10 @@
                         </div>
 
                         <!-- Сравнение содержимого -->
-                        <div>
+                        <div v-if="task.pageVersion && task.pageVersion.page">
                             <Label class="text-sm font-medium">Изменение содержимого</Label>
                             <div class="mt-2">
-                                <DiffViewer :old-content="task.pageVersion.previousVersion.content"
+                                <DiffViewer :old-content="task.pageVersion.previousVersion?.content || ''"
                                             :new-content="task.pageVersion.content" />
                             </div>
                         </div>
@@ -273,9 +273,7 @@ const canRestartGeneration = computed(() => {
     return generationStatus.value !== 'generating';
 });
 
-const canEditTask = computed(() => {
-    return generationStatus.value === 'completed';
-});
+// Кнопка редактирования доступна всегда
 
 // Функция проверки статуса генерации
 const checkGenerationStatus = async () => {
