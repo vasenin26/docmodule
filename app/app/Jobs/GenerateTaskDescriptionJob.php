@@ -45,7 +45,6 @@ class GenerateTaskDescriptionJob implements ShouldQueue
      */
     public function handle(
         PromptProviderFactory              $promptProviderFactory,
-        DiffGeneratorService               $diffGenerator,
         AgentResultHandlerFactoryInterface $agentResultHandlerFactory,
         AgentTaskManagerInterface          $agentTaskManager,
         LLMChatFactoryInterface            $chatFactory,
@@ -65,6 +64,6 @@ class GenerateTaskDescriptionJob implements ShouldQueue
 
         $handler = $agentResultHandlerFactory->createVersionDiffResultHandler($versionDiffTask);
 
-        $agentTaskManager->createTask($handler, $versionDiffTask->created_by, $page->project_id, $chat->id, true, AgentTaskType::TEXT);
+        $agentTaskManager->createTask($handler, $versionDiffTask->created_by, $versionDiffTask->project_id, $chat->id, true, AgentTaskType::TEXT);
     }
 }
