@@ -10,7 +10,9 @@
                     <Button v-if="project" as-child variant="outline">
                         <Link :href="route('projects.show', project.id)"> К проекту </Link>
                     </Button>
-                    <Button type="button" @click="createTask">Создать</Button>
+                    <Button v-if="project" as-child>
+                        <Link :href="route('projects.tasks.create', project.id)">Создать</Link>
+                    </Button>
                 </div>
             </div>
         </template>
@@ -29,11 +31,19 @@ import Heading from '@/components/Heading.vue';
 import TaskList from '@/components/Task/TaskList.vue';
 import { computed } from 'vue';
 import Button from '../../components/ui/button/Button.vue';
-import { Link, router } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 
 interface Props {
+    // Локальное описание элемента списка задач для типизации
+    // Минимально необходимое для этой страницы
+    // Полное описание находится внутри компонента TaskList
+    // и не экспортируется, поэтому дублируем здесь кратко
+    // чтобы избежать ошибки типизации
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     tasks: {
-        data: TaskListItem[];
+        data: Array<{
+            id: number;
+        }>;
         links: Array<{
             url: string | null;
             label: string;
@@ -56,8 +66,5 @@ const pageTitle = computed(() =>
     props.project ? `Задачи проекта: ${props.project.title}` : 'Все задачи'
 );
 
-const createTask = () => {
-    if (!props.project) return;
-    router.post(route('projects.tasks.store', props.project.id));
-};
+// Переход на форму создания через Link выше
 </script>

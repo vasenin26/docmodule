@@ -119,6 +119,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('projects/{project}')->group(function () {
         Route::get('/pages', [ProjectPagesController::class, 'index'])->name('projects.pages.index');
         Route::get('/tasks', [TaskController::class, 'index'])->name('projects.tasks.index');
+        // Новый маршрут формы создания задачи в проекте
+        Route::get('/tasks/create', [TaskController::class, 'create'])->name('projects.tasks.create');
         Route::post('/tasks', [TaskController::class, 'store'])->name('projects.tasks.store');
         Route::delete('/tasks/{projectTask}', [TaskController::class, 'destroy'])->name('projects.tasks.destroy');
     });

@@ -76,6 +76,23 @@ class TaskController extends Controller implements HasMiddleware
     }
 
     /**
+     * Show create form for task within project.
+     */
+    public function create(Project $project): Response
+    {
+        if (!$project->canAccess(Auth::user())) {
+            abort(403);
+        }
+
+        return Inertia::render('tasks/Create', [
+            'project' => [
+                'id' => $project->id,
+                'title' => $project->title,
+            ],
+        ]);
+    }
+
+    /**
      * Display the specified task.
      */
     public function show(VersionDiffTask $task): Response
@@ -413,27 +430,32 @@ class TaskController extends Controller implements HasMiddleware
     }
 
     public function store(
+        \App\Http\Requests\TaskStoreRequest $request,
         Project $project,
         PromptProviderFactory $promptProviderFactory,
-    ): RedirectResponse
-    {
+    ): RedirectResponse {
         if (!$project->canAccess(Auth::user())) {
             abort(403);
         }
+
+        $validated = $request->validated();
+        $description = $validated['description'] ?? null;
 
         $promptProvider = $promptProviderFactory->createProjectPromptService($project->id);
 
         $chat = new Chat();
         $chat->addMessage(new SystemMessage($promptProvider->getDescriptionGeneratorRole()));
-
-        //need feel project info
+        if ($description) {
+            $chat->addMessage(new UserMessage("[TASK_DESCRIPTION]\n" . trim($description)));
+        }
         $chat = LLMChat::create(['messages' => $chat->serialize()]);
 
         $task = VersionDiffTask::create([
             'project_id' => $project->id,
             'created_by' => Auth::id(),
-            'content' => '',
-            'generation_status' => VersionDiffTask::STATUS_PENDING,
+            'content' => $description ?? '',
+            // Задача создается вручную, генерация не требуется
+            'generation_status' => VersionDiffTask::STATUS_COMPLETED,
             'page_version_id' => null,
             'llm_chat_id' => $chat->id,
             'edited_at' => null,

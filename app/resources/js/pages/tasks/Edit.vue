@@ -18,41 +18,12 @@
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <!-- Основное содержимое -->
                 <div class="space-y-6 lg:col-span-1">
-                    <!-- Форма редактирования -->
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Редактирование описания задачи</CardTitle>
-                            <CardDescription>Измените описание задачи. При сохранении техплан будет очищен.</CardDescription>
-                        </CardHeader>
-                        <CardContent class="space-y-4">
-                            <div>
-                                <Label for="content" class="text-sm font-medium">Описание задачи</Label>
-                                <textarea
-                                    id="content"
-                                    v-model="form.content"
-                                    placeholder="Введите описание задачи..."
-                                    class="mt-2 min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    :class="{ 'border-red-500': errors.content }"
-                                />
-                                <p v-if="errors.content" class="mt-1 text-sm text-red-600">{{ errors.content }}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <!-- Кнопки действий -->
-                    <Card>
-                        <CardContent class="pt-6">
-                            <div class="flex items-center justify-between">
-                                <Button type="button" variant="outline" as-child>
-                                    <Link :href="route('tasks.show', task.id)">Отмена</Link>
-                                </Button>
-                                <Button type="submit" :disabled="isSubmitting">
-                                    <span v-if="isSubmitting">Сохранение...</span>
-                                    <span v-else>Сохранить изменения</span>
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <TaskEditor
+                        v-model:content="form.content"
+                        :errors="errors"
+                        :submitting="isSubmitting"
+                        :cancel-href="route('tasks.show', task.id)"
+                    />
                 </div>
 
                 <div class="space-y-6 lg:col-span-1">
@@ -127,6 +98,7 @@ import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import TaskEditor from '@/components/Task/TaskEditor.vue';
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { LLMChat } from '@/types';
