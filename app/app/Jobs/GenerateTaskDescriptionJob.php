@@ -55,7 +55,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
         $page = $versionDiffTask->pageVersion->page;
         $pageVersion = $versionDiffTask->pageVersion;
 
-        $promptProvider = $promptProviderFactory->createProjectPromptService($page->project_id);
+        $promptProvider = $promptProviderFactory->createProjectPromptService($versionDiffTask->project_id);
 
         $chat = $chatFactory->createChatForGenerateDescription(
             $promptProvider,

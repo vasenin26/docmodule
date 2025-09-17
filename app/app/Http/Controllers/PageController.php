@@ -426,7 +426,6 @@ class PageController extends Controller
                 ->with('success', 'Задача создана и обрабатывается.');
 
         } catch (\Exception $e) {
-           throw $e;
             return redirect()->route('pages.show', $page->id)
                 ->with('error', 'Не удалось создать задачу: ' . $e->getMessage());
         }

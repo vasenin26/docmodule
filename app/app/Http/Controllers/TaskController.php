@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Common\Enums\AgentTaskType;
+use App\Factory\PromptProviderFactory;
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Jobs\GenerateTechplaneJob;
 use App\Models\VersionDiffTask;
@@ -12,6 +13,8 @@ use App\Models\Project;
 use App\Http\Requests\TaskUpdateRequest;
 use App\Http\Requests\SendTaskMessageRequest;
 use App\Common\DTO\SendMessageDTO;
+use Vasenin26\Conversation\Chat;
+use Vasenin26\Conversation\Messages\SystemMessage;
 use Vasenin26\Conversation\Messages\UserMessage;
 use Vasenin26\Conversation\Factory\ConversationFactory;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
@@ -409,13 +412,22 @@ class TaskController extends Controller implements HasMiddleware
             ->with('success', 'Задача успешно удалена');
     }
 
-    public function store(Project $project, Request $request): RedirectResponse
+    public function store(
+        Project $project,
+        PromptProviderFactory $promptProviderFactory,
+    ): RedirectResponse
     {
         if (!$project->canAccess(Auth::user())) {
             abort(403);
         }
 
-        $chat = LLMChat::create(['messages' => []]);
+        $promptProvider = $promptProviderFactory->createProjectPromptService($project->id);
+
+        $chat = new Chat();
+        $chat->addMessage(new SystemMessage($promptProvider->getDescriptionGeneratorRole()));
+
+        //need feel project info
+        $chat = LLMChat::create(['messages' => $chat->serialize()]);
 
         $task = VersionDiffTask::create([
             'project_id' => $project->id,
