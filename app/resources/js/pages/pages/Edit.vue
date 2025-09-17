@@ -18,6 +18,14 @@
                         <Link :href="route('pages.show', pageVersion?.page_id)"> Просмотр</Link>
                     </Button>
                     <PageListButton :page="page" />
+                    <Button
+                        v-if="actualization"
+                        @click="openChatModal"
+                        variant="default"
+                        size="sm"
+                    >
+                        Чат
+                    </Button>
                 </div>
             </div>
         </template>
@@ -122,6 +130,19 @@
     </AppLayout>
 </template>
 
+<!-- Chat modal placed after main template to avoid slot constraints -->
+<SidePanel v-model:open="isChatModalOpen">
+    <AgentChat 
+        v-if="chat" 
+        :messages="chat.messages"
+        :loading="isPolling"
+        :status="actualizationStatus"
+        :sending="isSending"
+        @sendMessage="sendMessageToChat" 
+    />
+    
+</SidePanel>
+
 <script setup lang="ts">
 import FileLinksList from '@/components/FileLinksList.vue';
 import Heading from '@/components/Heading.vue';
@@ -141,9 +162,15 @@ import Label from '@/components/ui/label/Label.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Actualization, Page } from '@/types/index.ts';
 import { Link, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import ActualizationStatus from '@/components/PageInfo/ActualizationStatus.vue';
 import ActualizationButton from '@/components/PageInfo/ActualizationButton.vue';
+import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
+import AgentChat from '@/components/AgentChat/AgentChat.vue';
+import type { LLMChat } from '@/types';
+import { useActualizationChat } from '@/composables/useActualizationChat';
+import { createApi } from '@/service/api/Api';
+import { ActualizationStatusRequest } from '@/service/api/request/Actualization/ActualizationStatusRequest';
 
 type PageVersion = {
     id: number;
@@ -182,6 +209,17 @@ const processing = ref(false);
 // Состояние диалога подтверждения
 const showActualizeConfirm = ref(false);
 const actualizationLoading = ref(false);
+
+// Управление модальным окном чата и состояние чата
+const isChatModalOpen = ref<boolean>(false);
+const chat = ref<LLMChat | null>(props.actualization?.llm_chat || null);
+const actualizationStatus = ref<string>(props.actualization?.status || 'unknown');
+const isPolling = ref<boolean>(false);
+const pollInterval = ref<number | null>(null);
+
+// API и composable для чата
+const api = createApi();
+const { sendMessage, updateChatMessages, isSending, error, hasError } = useActualizationChat(props.actualization?.id || 0);
 
 // Метод для создания черновика
 const createDraft = () => {
@@ -263,4 +301,83 @@ const confirmActualizeDraft = () => {
 const cancelActualization = () => {
     showActualizeConfirm.value = false;
 };
+
+// Открыть модальное окно чата
+const openChatModal = () => {
+    isChatModalOpen.value = true;
+    if (props.actualization) {
+        startPolling();
+    }
+};
+
+// Отправить сообщение в чат актуализации
+const sendMessageToChat = async (message: string) => {
+    if (!props.actualization) return;
+    const response = await sendMessage(message);
+    if (response && response.chat) {
+        updateChatMessages(chat.value, response.chat.messages);
+    }
+};
+
+// Получить статус актуализации с чатом
+const fetchActualizationStatus = async () => {
+    if (!props.actualization) return;
+    try {
+        const req = new ActualizationStatusRequest(props.actualization.id);
+        const data = await req.call(api);
+        if (data.success) {
+            actualizationStatus.value = data.data.status;
+            if (data.data.chat) {
+                chat.value = {
+                    id: data.data.chat.id,
+                    messages: data.data.chat.messages,
+                    created_at: '',
+                    updated_at: ''
+                } as LLMChat;
+            }
+        }
+    } catch (err) {
+        console.error('Ошибка при получении статуса актуализации:', err);
+    }
+};
+
+// Запустить polling для обновления статуса
+const startPolling = () => {
+    if (pollInterval.value) return;
+    isPolling.value = true;
+    fetchActualizationStatus();
+    pollInterval.value = window.setInterval(() => {
+        fetchActualizationStatus();
+    }, 3000);
+};
+
+// Остановить polling
+const stopPolling = () => {
+    if (pollInterval.value) {
+        clearInterval(pollInterval.value);
+        pollInterval.value = null;
+    }
+    isPolling.value = false;
+};
+
+// Проверить, можно ли перезапустить актуализацию
+const canRestartActualization = computed(() => {
+    return actualizationStatus.value && !['pending', 'processing'].includes(actualizationStatus.value);
+});
+
+// Обновить состояние кнопки актуализации
+const actualizationButtonDisabled = computed(() => {
+    return !!props.actualization && ['pending', 'processing'].includes(actualizationStatus.value);
+});
+
+// Lifecycle hooks
+onMounted(() => {
+    if (props.actualization) {
+        fetchActualizationStatus();
+    }
+});
+
+onUnmounted(() => {
+    stopPolling();
+});
 </script>
