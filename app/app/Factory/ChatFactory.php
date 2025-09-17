@@ -3,14 +3,12 @@
 namespace App\Factory;
 
 use App\Common\DTO\ActualizationContextDTO;
-use App\Common\DTO\DifferenceDataDTO;
 use App\Common\DTO\GeneratorContextDTO;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Interfaces\LLM\PromptProviderInterface;
 use App\Models\LLMChat;
 use App\Models\VersionDiffTask;
-use App\Services\DiffGenerator\DiffGeneratorService;
 use Vasenin26\Conversation\Chat;
 use Vasenin26\Conversation\Messages\GitFileMessage;
 use Vasenin26\Conversation\Messages\PageVersionMessage;
@@ -36,17 +34,33 @@ class ChatFactory implements LLMChatFactoryInterface
         ]);
     }
 
-    public function createChatForGenerateDescription(PromptProviderInterface $promptProvider, DifferenceDataDTO $differenceData, array $repositories = [], array $attachedFiles = []): LLMChat
+    public function createChatForGenerateDescription(PromptProviderInterface $promptProvider, VersionDiffTask $task): LLMChat
     {
-        $prompt = $promptProvider->getDescriptionGeneratorInstructions($differenceData, $repositories, $attachedFiles);
-        $role = $promptProvider->getDescriptionGeneratorRole();
-
         $conversation = new Chat();
 
+        $role = $promptProvider->getDescriptionGeneratorRole();
         $conversation->addMessage(new SystemMessage($role));
+
+        $pageVersions = $task->pageVersions;
+
+        $attached = [];
+        $pageDiffs = [];
+        foreach ($pageVersions as $pageVersion) {
+            $pageDiffs[] = $this->diffGenerator->createDifferenceDataDTO($pageVersion);
+
+            foreach ($pageVersion->files as $file) {
+                if (in_array($file, $attached)) {
+                    continue;
+                }
+                $attached[] = $file;
+            }
+        }
+
+        $prompt = $promptProvider->getDescriptionGeneratorInstructions($pageDiffs);
+
         $conversation->addMessage(new UserMessage($prompt));
 
-        foreach ($attachedFiles as $file) {
+        foreach ($attached as $file) {
             $conversation->addMessage(new GitFileMessage($file));
         }
 

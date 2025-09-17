@@ -23,7 +23,7 @@ readonly class PromptService implements PromptProviderInterface
         return $prompt ?? 'Роль не определена';
     }
 
-    public function getDescriptionGeneratorInstructions(DifferenceDataDTO $differenceData, array $repositories = [], array $attachedFiles = []): string
+    public function getDescriptionGeneratorInstructions(array $differenceData, array $repositories = [], array $attachedFiles = []): string
     {
         $prompt = $this->promptSource->getPrompt(PromptType::TASK_DESCRIPTION);
 
@@ -32,7 +32,7 @@ readonly class PromptService implements PromptProviderInterface
         }
 
         return $this->templateRenderer->render($prompt, [
-            ...$differenceData->toArray(),
+            'diffs' => array_map(fn($i) => $i->toArray(), $differenceData),
             'attached_files' => $attachedFiles,
             'repositories' => $repositories,
         ]);

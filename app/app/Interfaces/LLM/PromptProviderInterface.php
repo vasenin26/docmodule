@@ -24,11 +24,11 @@ interface PromptProviderInterface
      * Пользовательский промпт: возвращает инструкции для генерации описания задачи
      * с подстановкой переменных из DifferenceDataDTO, репозиториев и прикрепленных файлов
      *
-     * @param DifferenceDataDTO $differenceData
+     * @param DifferenceDataDTO[] $differenceData
      * @param Repository[] $repositories
      * @param string[] $attachedFiles
      */
-    public function getDescriptionGeneratorInstructions(DifferenceDataDTO $differenceData, array $repositories = [], array $attachedFiles = []): string;
+    public function getDescriptionGeneratorInstructions(array $differenceData, array $repositories = [], array $attachedFiles = []): string;
 
     /**
      * Системный промпт: определяет роль TechLead для генерации техпланов

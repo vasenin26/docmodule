@@ -52,16 +52,12 @@ class GenerateTaskDescriptionJob implements ShouldQueue
     ): void
     {
         $versionDiffTask = VersionDiffTask::with(['pageVersion.page', 'pageVersion.previousVersion', 'pageVersions.page'])->findOrFail($this->versionDiffTaskId);
-        $pageVersion = $this->resolveWorkingPageVersion($versionDiffTask);
-        $page = $pageVersion->page;
 
         $promptProvider = $promptProviderFactory->createProjectPromptService($versionDiffTask->project_id);
 
         $chat = $chatFactory->createChatForGenerateDescription(
             $promptProvider,
-            $diffGenerator->createDifferenceDataDTO($pageVersion),
-            $page->project->repositories->pluck('url')->toArray(),
-            $pageVersion->files
+            $versionDiffTask,
         );
 
         $versionDiffTask->llm_chat_id = $chat->id;
@@ -71,25 +67,4 @@ class GenerateTaskDescriptionJob implements ShouldQueue
 
         $agentTaskManager->createTask($handler, $versionDiffTask->created_by, $page->project_id, $chat->id, true, AgentTaskType::TEXT);
     }
-
-    private function resolveWorkingPageVersion(VersionDiffTask $task)
-    {
-        if ($task->pageVersion) {
-            return $task->pageVersion;
-        }
-
-        $attached = $task->pageVersions()->with('page')->get();
-        if ($attached->isEmpty()) {
-            throw new Exception('Task has no page versions attached');
-        }
-
-        $current = $attached->filter(fn($pv) => $pv->page && (int)$pv->page->version_id === (int)$pv->id);
-        if ($current->isNotEmpty()) {
-            return $current->sortByDesc('created_at')->first();
-        }
-
-        return $attached->sortByDesc('created_at')->first();
-    }
-
-
 }
