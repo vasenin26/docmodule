@@ -13,6 +13,7 @@ Route::prefix('agent')->name('agent.')->middleware(['agent.jwt'])->group(functio
     Route::put('task/{id}', [TaskController::class, 'updateTask'])->name('task.update');
 
     // Page API routes
+    Route::get('page/version/{id}', [PageController::class, 'getPageVersion'])->name('page.version');
     Route::get('page/{id}', [PageController::class, 'getPage'])->name('page.get');
     Route::get('pages', [PageController::class, 'getPages'])->name('pages.list');
     Route::get('pages/hierarchy', [PageController::class, 'getPageHierarchy'])->name('pages.hierarchy');

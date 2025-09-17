@@ -7,6 +7,7 @@ use App\Common\DTO\PageListDTO;
 use App\Common\DTO\PageHierarchyDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Agent\GetPageRequest;
+use App\Http\Requests\Agent\GetPageVersionRequest;
 use App\Http\Requests\Agent\GetPageHierarchyRequest;
 use App\Http\Requests\Agent\GetPageChildrenRequest;
 use App\Http\Requests\Agent\GetPageParentRequest;
@@ -17,12 +18,61 @@ use App\Http\Requests\Agent\GetPageTasksRequest;
 use App\Interfaces\PageContextServiceFactoryInterface;
 use App\Interfaces\PageContextServiceInterface;
 use App\Models\Agent;
+use App\Models\PageVersion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class PageController extends Controller
 {
+    /**
+     * Get page version by version ID
+     */
+    public function getPageVersion(
+        GetPageVersionRequest $request,
+        int $id
+    ): JsonResponse {
+        /** @var Agent $agent */
+        $agent = $request->get('agent');
+
+        Log::info('Page version API request', [
+            'agent_id' => $agent->id,
+            'project_id' => $agent->project_id,
+            'version_id' => $id,
+            'endpoint' => $request->path(),
+            'ip' => $request->ip()
+        ]);
+
+        $version = PageVersion::with(['page'])
+            ->where('id', $id)
+            ->first();
+
+        if (!$version) {
+            Log::warning('Page version not found', [
+                'version_id' => $id,
+                'agent_id' => $agent->id,
+            ]);
+            return response()->json(['error' => 'Page version not found'], 404);
+        }
+
+        // Validate that the version belongs to agent's project
+        if (!$version->page || $version->page->project_id !== $agent->project_id) {
+            Log::warning('Access denied to page version', [
+                'version_id' => $id,
+                'project_id' => $agent->project_id,
+                'agent_id' => $agent->id
+            ]);
+            return response()->json(['error' => 'Access denied to page version'], 403);
+        }
+
+        return response()->json([
+            'title' => $version->title ?? '',
+            'content' => $version->content ?? '',
+            'pageId' => (int) $version->page_id,
+            'versionId' => (int) $version->id,
+            'previousVersionId' => $version->previous_version_id ? (int) $version->previous_version_id : null,
+        ]);
+    }
     /**
      * Get page by ID
      */
