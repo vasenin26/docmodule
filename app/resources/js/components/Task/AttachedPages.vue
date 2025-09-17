@@ -25,18 +25,15 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AttachPageModal from './AttachPageModal.vue';
-import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 const props = defineProps<{ taskId: number; items: { id:number; title:string; version:number|null }[] }>();
-const emit = defineEmits<{ (e:'update:items', items:any[]):void }>();
+const emit = defineEmits<{ (e:'update:items', items:any[]):void; (e:'request-detach', id:number):void; (e:'request-attach', item:any):void }>();
 const show = ref(false);
 const openModal = () => show.value = true;
-const onAttached = (item:any) => { emit('update:items', [...props.items, item]); show.value=false; };
+const onAttached = (item:any) => { emit('request-attach', item); show.value=false; };
 const onDetach = (id:number) => {
-  router.delete(route('tasks.attachments.destroy', { task: props.taskId, pageVersion: id }), {
-    onSuccess: () => emit('update:items', props.items.filter(i => i.id !== id))
-  });
+  emit('request-detach', id);
 };
 </script>
 

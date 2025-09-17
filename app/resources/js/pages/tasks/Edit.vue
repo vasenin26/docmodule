@@ -56,7 +56,12 @@
                     </Card>
 
                     <!-- Привязанные страницы -->
-                    <AttachedPages v-model:items="attachedItems" :task-id="task.id" />
+                    <AttachedPages
+                        v-model:items="attachedItems"
+                        :task-id="task.id"
+                        @request-attach="queueAttach"
+                        @request-detach="queueDetach"
+                    />
 
                     <!-- Сравнение версий -->
                     <Card v-if="task.pageVersion && task.pageVersion.previousVersion">
@@ -145,6 +150,8 @@ const props = defineProps<{ task: TaskData & { attachedPageVersions?: { id:numbe
 // Форма для редактирования
 const form = useForm({
     content: props.task.content || '',
+    attachments_add: [] as number[],
+    attachments_remove: [] as number[],
 });
 
 // Состояние отправки формы
@@ -155,6 +162,30 @@ const errors = ref<Record<string, string>>({});
 
 const attachedItems = ref(props.task.attachedPageVersions || []);
 
+const queueAttach = (item: { id:number; title:string; version:number|null }) => {
+    // Если уже есть в remove — убираем оттуда
+    form.attachments_remove = form.attachments_remove.filter(id => id !== item.id);
+    // Если уже прикреплен визуально — не дублируем
+    if (!attachedItems.value.find(x => x.id === item.id)) {
+        attachedItems.value = [...attachedItems.value, item];
+    }
+    // Добавляем в pending add, если не было
+    if (!form.attachments_add.includes(item.id)) {
+        form.attachments_add.push(item.id);
+    }
+};
+
+const queueDetach = (id: number) => {
+    // Убираем из визуального списка
+    attachedItems.value = attachedItems.value.filter(i => i.id !== id);
+    // Если был запланирован на добавление — отменяем
+    form.attachments_add = form.attachments_add.filter(x => x !== id);
+    // Иначе планируем удаление
+    if (!form.attachments_remove.includes(id)) {
+        form.attachments_remove.push(id);
+    }
+};
+
 // Функция отправки формы
 const submitForm = async () => {
     isSubmitting.value = true;
@@ -163,10 +194,12 @@ const submitForm = async () => {
     try {
         await form.put(route('tasks.update', props.task.id), {
             onSuccess: () => {
-                // Успешное сохранение - редирект произойдет автоматически
+                // reset pending arrays after success
+                form.attachments_add = [];
+                form.attachments_remove = [];
             },
             onError: (validationErrors) => {
-                errors.value = validationErrors;
+                errors.value = validationErrors as any;
             },
             onFinish: () => {
                 isSubmitting.value = false;

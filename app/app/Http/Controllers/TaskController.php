@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\PageVersion;
 
 class TaskController extends Controller implements HasMiddleware
 {
@@ -140,11 +141,13 @@ class TaskController extends Controller implements HasMiddleware
                     'updated_at' => $task->llmChat->updated_at,
                 ] : null,
                 'techplane' => $task->techplane,
-                'attachedPageVersions' => $task->pageVersions->map(fn ($pv) => [
-                    'id' => $pv->id,
-                    'title' => $pv->title,
-                    'version' => null,
-                ]),
+                'attachedPageVersions' => $task->pageVersions->map(function ($pv) {
+                    return [
+                        'id' => $pv->id,
+                        'title' => $pv->title,
+                        'version' => $this->computeVersionNumber($pv),
+                    ];
+                }),
             ]
         ]);
     }
@@ -209,13 +212,27 @@ class TaskController extends Controller implements HasMiddleware
                     'created_at' => $task->llmChat->created_at,
                     'updated_at' => $task->llmChat->updated_at,
                 ] : null,
-                'attachedPageVersions' => $task->pageVersions->map(fn ($pv) => [
-                    'id' => $pv->id,
-                    'title' => $pv->title,
-                    'version' => null,
-                ]),
+                'attachedPageVersions' => $task->pageVersions->map(function ($pv) {
+                    return [
+                        'id' => $pv->id,
+                        'title' => $pv->title,
+                        'version' => $this->computeVersionNumber($pv),
+                    ];
+                }),
             ]
         ]);
+
+    }
+
+    private function computeVersionNumber(PageVersion $pageVersion): int
+    {
+        $num = 1;
+        $current = $pageVersion;
+        while ($current->previous_version_id) {
+            $current = $current->previousVersion;
+            $num++;
+        }
+        return $num;
     }
 
     /**
@@ -231,10 +248,21 @@ class TaskController extends Controller implements HasMiddleware
         // Валидация входящих данных
         $validated = $request->validated();
 
-        // Обновляем содержимое задачи
+        // Обновляем содержимое задачи и отложенные привязки
         $task->update([
             'content' => $validated['content'],
         ]);
+
+        // Применяем изменения привязок, если переданы
+        $attachmentsAdd = collect($request->input('attachments_add', []))->map(fn($v) => (int) $v)->all();
+        $attachmentsRemove = collect($request->input('attachments_remove', []))->map(fn($v) => (int) $v)->all();
+
+        if (!empty($attachmentsAdd)) {
+            $task->pageVersions()->syncWithoutDetaching($attachmentsAdd);
+        }
+        if (!empty($attachmentsRemove)) {
+            $task->pageVersions()->detach($attachmentsRemove);
+        }
 
         // Отмечаем задачу как отредактированную
         $task->markAsEdited();

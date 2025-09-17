@@ -129,6 +129,27 @@
                         </div>
                     </CardContent>
                 </Card>
+                <!-- Привязанные страницы -->
+                <Card v-if="task.attachedPageVersions && task.attachedPageVersions.length">
+                    <CardHeader>
+                        <CardTitle>Привязанные страницы</CardTitle>
+                        <CardDescription>Список страниц, связанные с задачей</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ul class="space-y-2">
+                            <li v-for="item in task.attachedPageVersions" :key="item.id" class="flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium">{{ item.title }}</div>
+                                    <div class="text-xs text-muted-foreground">Версия: {{ item.version ?? '—' }}</div>
+                                </div>
+                                <Button as-child size="sm" variant="outline" v-if="task.pageVersion?.page">
+                                    <Link :href="route('pages.show', task.pageVersion.page.id)">К странице</Link>
+                                </Button>
+                            </li>
+                        </ul>
+                    </CardContent>
+                </Card>
+
                 <!-- Сравнение версий -->
                 <Card v-if="task.pageVersion && task.pageVersion.previousVersion">
                     <CardHeader>
@@ -242,7 +263,7 @@ interface TaskData {
 }
 
 const props = defineProps<{
-    task: TaskData;
+    task: TaskData & { attachedPageVersions?: { id:number; title:string; version:number|null }[] };
 }>();
 
 // Реактивные переменные для отслеживания статуса

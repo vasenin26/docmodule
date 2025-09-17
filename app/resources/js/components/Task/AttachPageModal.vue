@@ -19,7 +19,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 const props = defineProps<{ taskId:number }>();
@@ -36,12 +35,8 @@ const search = async () => {
 };
 const debouncedSearch = () => { clearTimeout(timer); timer = setTimeout(search, 400); };
 const attach = (pageVersionId:number) => {
-  router.post(route('tasks.attachments.store', { task: props.taskId }), { page_version_id: pageVersionId }, {
-    onSuccess: () => {
-      const item = results.value.find(r => r.id === pageVersionId);
-      if (item) emit('attached', item);
-    }
-  });
+  const item = results.value.find(r => r.id === pageVersionId);
+  if (item) emit('attached', item);
 };
 </script>
 
