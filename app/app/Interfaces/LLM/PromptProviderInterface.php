@@ -71,4 +71,6 @@ interface PromptProviderInterface
      * @param GeneratorContextDTO $context Контекст генерации (файлы, репозитории и т.д.)
      */
     public function getImplementationInstructions(string $techplaneContent, GeneratorContextDTO $context): string;
+
+    public function getPageUpdateDescription(DifferenceDataDTO $diffInfo): string;
 }

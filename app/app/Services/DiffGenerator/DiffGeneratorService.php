@@ -2,12 +2,56 @@
 
 namespace App\Services\DiffGenerator;
 
+use App\Common\DTO\DifferenceDataDTO;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
-use SebastianBergmann\Diff\Differ;
-use SebastianBergmann\Diff\Output\UnifiedDiffOutputBuilder;
 
 class DiffGeneratorService implements DiffGeneratorInterface
 {
+    public function createDifferenceDataDTO($currentVersion): DifferenceDataDTO
+    {
+        $previousVersion = $currentVersion->previousVersion;
+
+        if (!$previousVersion) {
+            // Новая страница
+            return new DifferenceDataDTO(
+                diffOutput: null,
+                newVersionTitle: $currentVersion->title,
+                isNewPage: true,
+                titleChanged: false,
+                contentChanged: false,
+                newVersionId: $currentVersion->id,
+                newVersionContent: $currentVersion->content,
+                previousVersionId: null,
+                previousVersionTitle: null,
+                previousVersionContent: null
+            );
+        }
+
+        // Обновленная страница
+        $titleChanged = $currentVersion->title !== $previousVersion->title;
+        $contentChanged = $currentVersion->content !== $previousVersion->content;
+
+        // Генерируем diff если есть изменения
+        $diffOutput = null;
+        if ($titleChanged || $contentChanged) {
+            $diffOutput = $this->generateDiff($previousVersion->content, $currentVersion->content);
+        }
+
+        return new DifferenceDataDTO(
+            diffOutput: $diffOutput,
+            newVersionTitle: $currentVersion->title,
+            isNewPage: false,
+            titleChanged: $titleChanged,
+            contentChanged: $contentChanged,
+            newVersionId: $currentVersion->id,
+            newVersionContent: $currentVersion->content,
+            previousVersionId: $previousVersion->id,
+            previousVersionTitle: $previousVersion->title,
+            previousVersionContent: $previousVersion->content
+        );
+    }
+
+
     /**
      * Generate diff output in git diff format
      *

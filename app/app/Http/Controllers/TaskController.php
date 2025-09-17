@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Common\Enums\AgentTaskType;
+use App\Common\Enums\GenerationStatus;
 use App\Factory\PromptProviderFactory;
+use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Jobs\GenerateTechplaneJob;
 use App\Models\VersionDiffTask;
@@ -238,7 +240,12 @@ class TaskController extends Controller implements HasMiddleware
     /**
      * Update the specified task.
      */
-    public function update(TaskUpdateRequest $request, VersionDiffTask $task): RedirectResponse
+    public function update(
+        TaskUpdateRequest       $request,
+        VersionDiffTask         $task,
+        LLMChatFactoryInterface $chatFactory,
+        PromptProviderFactory   $promptProviderFactory,
+    ): RedirectResponse
     {
         // Проверяем права доступа
         if ($task->created_by !== Auth::id()) {
@@ -248,14 +255,14 @@ class TaskController extends Controller implements HasMiddleware
         // Валидация входящих данных
         $validated = $request->validated();
 
-        // Обновляем содержимое задачи и отложенные привязки
-        $task->update([
+        $updates = [
             'content' => $validated['content'],
-        ]);
+            'generation_status' => GenerationStatus::COMPLETED->value,
+        ];
 
         // Применяем изменения привязок, если переданы
-        $attachmentsAdd = collect($request->input('attachments_add', []))->map(fn($v) => (int) $v)->all();
-        $attachmentsRemove = collect($request->input('attachments_remove', []))->map(fn($v) => (int) $v)->all();
+        $attachmentsAdd = collect($request->input('attachments_add', []))->map(fn($v) => (int)$v)->all();
+        $attachmentsRemove = collect($request->input('attachments_remove', []))->map(fn($v) => (int)$v)->all();
 
         if (!empty($attachmentsAdd)) {
             $task->pageVersions()->syncWithoutDetaching($attachmentsAdd);
@@ -264,23 +271,17 @@ class TaskController extends Controller implements HasMiddleware
             $task->pageVersions()->detach($attachmentsRemove);
         }
 
-        // Отмечаем задачу как отредактированную
-        $task->markAsEdited();
-
-        // Очищаем связанный техплан
-        $task->clearTechplane();
-
-        // Гарантируем наличие чата и добавляем сообщение с новым контентом
-        $chat = $task->llmChat;
-        if (!$chat) {
-            $chat = LLMChat::create(['messages' => []]);
-            $task->update(['llm_chat_id' => $chat->id]);
+        if ($request->isResetChat()) {
+            $promptProvider = $promptProviderFactory->createProjectPromptService($task->project_id);
+            $updates['llm_chat_id'] = $chatFactory->createChatForUpdatedTask($promptProvider, $task)->id;
+        } else {
+            //restore conversation from llm_chat and append updated content
         }
 
-        // Обновляем историю сообщений, добавляя новый контент как пользовательское сообщение
-        $conversation = (new ConversationFactory())->fromMessages($chat->messages ?? []);
-        $conversation->addMessage(new UserMessage($validated['content']));
-        $chat->update(['messages' => $conversation->serialize()]);
+        $task->update($updates);
+
+        $task->markAsEdited();
+        $task->clearTechplane();
 
         return redirect()->route('tasks.show', $task)
             ->with('success', 'Задача успешно обновлена');
@@ -356,14 +357,14 @@ class TaskController extends Controller implements HasMiddleware
      * Отправить сообщение в чат задачи
      */
     public function sendMessage(
-        SendTaskMessageRequest $request,
-        VersionDiffTask $task,
-        ConversationFactory $conversationFactory,
+        SendTaskMessageRequest             $request,
+        VersionDiffTask                    $task,
+        ConversationFactory                $conversationFactory,
         AgentResultHandlerFactoryInterface $handlerFactory,
-        AgentTaskManagerInterface $agentTaskManager
+        AgentTaskManagerInterface          $agentTaskManager
     ): JsonResponse
     {
-        if($task->generation_status !== VersionDiffTask::STATUS_COMPLETED) {
+        if ($task->generation_status !== VersionDiffTask::STATUS_COMPLETED) {
             return response()->json([
                 'success' => false,
                 'message' => 'Запущена генерация'
@@ -470,9 +471,10 @@ class TaskController extends Controller implements HasMiddleware
 
     public function store(
         \App\Http\Requests\TaskStoreRequest $request,
-        Project $project,
-        PromptProviderFactory $promptProviderFactory,
-    ): RedirectResponse {
+        Project                             $project,
+        PromptProviderFactory               $promptProviderFactory,
+    ): RedirectResponse
+    {
         if (!$project->canAccess(Auth::user())) {
             abort(403);
         }

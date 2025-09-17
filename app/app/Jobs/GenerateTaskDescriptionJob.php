@@ -48,7 +48,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
         DiffGeneratorService               $diffGenerator,
         AgentResultHandlerFactoryInterface $agentResultHandlerFactory,
         AgentTaskManagerInterface          $agentTaskManager,
-        LLMChatFactoryInterface           $chatFactory,
+        LLMChatFactoryInterface            $chatFactory,
     ): void
     {
         $versionDiffTask = VersionDiffTask::with(['pageVersion.page', 'pageVersion.previousVersion', 'pageVersions.page'])->findOrFail($this->versionDiffTaskId);
@@ -59,7 +59,7 @@ class GenerateTaskDescriptionJob implements ShouldQueue
 
         $chat = $chatFactory->createChatForGenerateDescription(
             $promptProvider,
-            $this->createDifferenceDataDTO($pageVersion, $diffGenerator),
+            $diffGenerator->createDifferenceDataDTO($pageVersion),
             $page->project->repositories->pluck('url')->toArray(),
             $pageVersion->files
         );
@@ -83,59 +83,12 @@ class GenerateTaskDescriptionJob implements ShouldQueue
             throw new Exception('Task has no page versions attached');
         }
 
-        $current = $attached->filter(fn ($pv) => $pv->page && (int)$pv->page->version_id === (int)$pv->id);
+        $current = $attached->filter(fn($pv) => $pv->page && (int)$pv->page->version_id === (int)$pv->id);
         if ($current->isNotEmpty()) {
             return $current->sortByDesc('created_at')->first();
         }
 
         return $attached->sortByDesc('created_at')->first();
-    }
-
-    /**
-     * Создание DifferenceDataDTO на основе информации о версии страницы
-     */
-    private function createDifferenceDataDTO($currentVersion, DiffGeneratorService $diffGenerator): DifferenceDataDTO
-    {
-        $previousVersion = $currentVersion->previousVersion;
-
-        if (!$previousVersion) {
-            // Новая страница
-            return new DifferenceDataDTO(
-                diffOutput: null,
-                newVersionTitle: $currentVersion->title,
-                isNewPage: true,
-                titleChanged: false,
-                contentChanged: false,
-                newVersionId: $currentVersion->id,
-                newVersionContent: $currentVersion->content,
-                previousVersionId: null,
-                previousVersionTitle: null,
-                previousVersionContent: null
-            );
-        }
-
-        // Обновленная страница
-        $titleChanged = $currentVersion->title !== $previousVersion->title;
-        $contentChanged = $currentVersion->content !== $previousVersion->content;
-
-        // Генерируем diff если есть изменения
-        $diffOutput = null;
-        if ($titleChanged || $contentChanged) {
-            $diffOutput = $diffGenerator->generateDiff($previousVersion->content, $currentVersion->content);
-        }
-
-        return new DifferenceDataDTO(
-            diffOutput: $diffOutput,
-            newVersionTitle: $currentVersion->title,
-            isNewPage: false,
-            titleChanged: $titleChanged,
-            contentChanged: $contentChanged,
-            newVersionId: $currentVersion->id,
-            newVersionContent: $currentVersion->content,
-            previousVersionId: $previousVersion->id,
-            previousVersionTitle: $previousVersion->title,
-            previousVersionContent: $previousVersion->content
-        );
     }
 
 

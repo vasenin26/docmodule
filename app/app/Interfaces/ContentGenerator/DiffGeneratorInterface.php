@@ -2,8 +2,11 @@
 
 namespace App\Interfaces\ContentGenerator;
 
+use App\Common\DTO\DifferenceDataDTO;
+
 interface DiffGeneratorInterface
 {
+    public function createDifferenceDataDTO($currentVersion): DifferenceDataDTO;
     /**
      * Generate diff output in git diff format
      *

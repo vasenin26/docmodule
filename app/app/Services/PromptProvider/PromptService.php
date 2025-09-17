@@ -98,6 +98,34 @@ readonly class PromptService implements PromptProviderInterface
         ]);
     }
 
+    public function getPageUpdateDescription(DifferenceDataDTO $diffInfo): string
+    {
+        if ($diffInfo->isNewPage) {
+            $title = $diffInfo->newVersionTitle ?? 'Без названия';
+            return "Создана новая страница: {$title}.";
+        }
+
+        $parts = [];
+
+        if ($diffInfo->titleChanged) {
+            $oldTitle = $diffInfo->previousVersionTitle ?? 'Без названия';
+            $newTitle = $diffInfo->newVersionTitle ?? 'Без названия';
+            $parts[] = "Изменён заголовок: ‘{$oldTitle}’ → ‘{$newTitle}’.";
+        }
+
+        if ($diffInfo->contentChanged) {
+            $addedCount = count($diffInfo->addedLines);
+            $removedCount = count($diffInfo->removedLines);
+            $parts[] = "Обновлено содержимое (добавлено строк: {$addedCount}, удалено строк: {$removedCount}).";
+        }
+
+        if (empty($parts)) {
+            $parts[] = 'Изменений не обнаружено.';
+        }
+
+        return implode(' ', $parts);
+    }
+
     public function getPrompt(PromptType $type): ?string
     {
         return $this->promptSource->getPrompt($type);

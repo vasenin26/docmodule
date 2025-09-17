@@ -49,4 +49,9 @@ class TaskUpdateRequest extends FormRequest
             'attachments_remove.*.exists' => 'Некоторые версии страниц не найдены',
         ];
     }
+
+    public function isResetChat(): bool
+    {
+        return (bool)($this->input('reset_chat') ?? true);
+    }
 }
