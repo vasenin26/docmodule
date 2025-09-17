@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
@@ -148,6 +149,15 @@ class VersionDiffTask extends Model
         if ($this->techplane) {
             $this->techplane->clear();
         }
+    }
+
+    /**
+     * Many-to-many relation with PageVersion via task_page_versions
+     */
+    public function pageVersions(): BelongsToMany
+    {
+        return $this->belongsToMany(PageVersion::class, 'task_page_versions', 'task_id', 'page_version_id')
+            ->withTimestamps();
     }
 
 }

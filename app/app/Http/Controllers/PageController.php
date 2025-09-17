@@ -452,6 +452,9 @@ class PageController extends Controller
             'llm_chat_id' => $chat->id,
         ]);
 
+        // Добавляем привязку текущей версии в pivot для новых связей
+        $versionDiffTask->pageVersions()->syncWithoutDetaching([$currentVersion->id]);
+
         GenerateTaskDescriptionJob::dispatch($versionDiffTask->id);
 
         return $versionDiffTask;

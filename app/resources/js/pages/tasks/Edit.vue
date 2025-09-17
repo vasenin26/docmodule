@@ -55,6 +55,9 @@
                         </CardContent>
                     </Card>
 
+                    <!-- Привязанные страницы -->
+                    <AttachedPages v-model:items="attachedItems" :task-id="task.id" />
+
                     <!-- Сравнение версий -->
                     <Card v-if="task.pageVersion && task.pageVersion.previousVersion">
                         <CardHeader>
@@ -99,6 +102,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import TaskEditor from '@/components/Task/TaskEditor.vue';
+import AttachedPages from '@/components/Task/AttachedPages.vue';
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { LLMChat } from '@/types';
@@ -136,9 +140,7 @@ interface TaskData {
     llm_chat?: LLMChat | null;
 }
 
-const props = defineProps<{
-    task: TaskData;
-}>();
+const props = defineProps<{ task: TaskData & { attachedPageVersions?: { id:number; title:string; version:number|null }[] } }>();
 
 // Форма для редактирования
 const form = useForm({
@@ -150,6 +152,8 @@ const isSubmitting = ref(false);
 
 // Ошибки валидации
 const errors = ref<Record<string, string>>({});
+
+const attachedItems = ref(props.task.attachedPageVersions || []);
 
 // Функция отправки формы
 const submitForm = async () => {

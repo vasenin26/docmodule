@@ -97,7 +97,7 @@ class TaskController extends Controller implements HasMiddleware
      */
     public function show(VersionDiffTask $task): Response
     {
-        $task->load(['pageVersion.page', 'techplane', 'llmChat', 'creator']);
+        $task->load(['pageVersion.page', 'techplane', 'llmChat', 'creator', 'pageVersions.page']);
 
         $pageVersion = $task->pageVersion;
         $page = $pageVersion?->page;
@@ -140,6 +140,11 @@ class TaskController extends Controller implements HasMiddleware
                     'updated_at' => $task->llmChat->updated_at,
                 ] : null,
                 'techplane' => $task->techplane,
+                'attachedPageVersions' => $task->pageVersions->map(fn ($pv) => [
+                    'id' => $pv->id,
+                    'title' => $pv->title,
+                    'version' => null,
+                ]),
             ]
         ]);
     }
@@ -155,7 +160,8 @@ class TaskController extends Controller implements HasMiddleware
             'pageVersion.page.creator',
             'pageVersion.previousVersion',
             'creator',
-            'llmChat'
+            'llmChat',
+            'pageVersions.page'
         ]);
 
         $pageVersion = $task->pageVersion;
@@ -203,6 +209,11 @@ class TaskController extends Controller implements HasMiddleware
                     'created_at' => $task->llmChat->created_at,
                     'updated_at' => $task->llmChat->updated_at,
                 ] : null,
+                'attachedPageVersions' => $task->pageVersions->map(fn ($pv) => [
+                    'id' => $pv->id,
+                    'title' => $pv->title,
+                    'version' => null,
+                ]),
             ]
         ]);
     }

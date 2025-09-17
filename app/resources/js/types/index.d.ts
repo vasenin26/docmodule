@@ -98,6 +98,7 @@ export interface VersionDiffTask {
     created_at: string;
     updated_at: string;
     edited_at?: string;
+    attachedPageVersions?: { id: number; title: string; version: number | null }[];
 }
 
 // Для обратной совместимости
