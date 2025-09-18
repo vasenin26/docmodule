@@ -6,6 +6,7 @@ use App\Common\Enums\GenerationStatus;
 use App\Models\Implementation;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Log;
 
@@ -17,15 +18,20 @@ class Techplane extends Model
         'created_by',
         'chat_id',
         'generation_status',
+        'status',
     ];
 
 
 
-    // Константы статусов
+    // Константы статусов генерации
     public const STATUS_PENDING = 'pending';
     public const STATUS_GENERATING = 'generating'; 
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_FAILED = 'failed';
+
+    // Константы статусов исполнения
+    public const EXECUTION_PLANNED = 'planned';
+    public const EXECUTION_EXECUTED = 'executed';
 
     // Связи
     public function task(): BelongsTo
@@ -49,6 +55,12 @@ class Techplane extends Model
         return $this->hasMany(Implementation::class);
     }
 
+    // Связь с решениями (solutions) через pivot techplane_solution
+    public function solutions(): BelongsToMany
+    {
+        return $this->belongsToMany(Solution::class, 'techplane_solution', 'techplane_id', 'solution_id');
+    }
+
     // Метод для создания реализации
     public function createImplementation(int $userId): Implementation
     {
@@ -67,6 +79,19 @@ class Techplane extends Model
     public function isGenerating(): bool
     {
         return $this->generation_status === self::STATUS_GENERATING;
+    }
+
+    // Статус исполнения
+    public function isExecuted(): bool
+    {
+        return $this->status === self::EXECUTION_EXECUTED;
+    }
+
+    public function markExecuted(): void
+    {
+        if ($this->status !== self::EXECUTION_EXECUTED) {
+            $this->update(['status' => self::EXECUTION_EXECUTED]);
+        }
     }
 
     /**
