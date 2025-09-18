@@ -144,4 +144,25 @@ class ActualizationService
             'page_id' => $actualization->page_id,
         ]);
     }
+
+    /**
+     * Получить статус актуализации с данными чата
+     */
+    public function getStatusWithChat(Actualization $actualization): array
+    {
+        $actualization->load(['llmChat', 'createdBy', 'pageVersion']);
+
+        return [
+            'id' => $actualization->id,
+            'status' => $actualization->status,
+            'content' => $actualization->pageVersion->content ?? '',
+            'chat' => $actualization->llmChat ? [
+                'id' => $actualization->llmChat->id,
+                'messages' => $actualization->llmChat->messages
+            ] : null,
+            'created_at' => $actualization->created_at,
+            'updated_at' => $actualization->updated_at,
+            'created_by' => $actualization->createdBy->name ?? 'Unknown',
+        ];
+    }
 }

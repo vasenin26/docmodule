@@ -3,17 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreActualizationRequest;
+use App\Http\Requests\SendActualizationMessageRequest;
 use App\Models\Actualization;
+use App\Models\LLMChat;
 use App\Models\Page;
 use App\Models\PageVersion;
 use App\Services\ActualizationService;
 use App\Common\DTO\ActualizationDTO;
 use App\Common\DTO\PageDataDTO;
+use App\Common\DTO\SendActualizationMessageDTO;
+use App\Common\Enums\AgentTaskType;
+use App\Interfaces\AgentTaskManagerInterface;
+use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
+use Vasenin26\Conversation\Factory\ConversationFactory;
+use Vasenin26\Conversation\Messages\UserMessage;
 
 class ActualizationController extends Controller
 {
@@ -193,5 +202,108 @@ class ActualizationController extends Controller
             'success' => true,
             'data' => $actualizations
         ]);
+    }
+
+    /**
+     * Получить статус актуализации с данными чата
+     */
+    public function getStatusWithChat(Request $request, Actualization $actualization): JsonResponse
+    {
+        $this->authorize('view', $actualization->page);
+
+        $data = $this->actualizationService->getStatusWithChat($actualization);
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * Отправить сообщение в чат актуализации
+     */
+    public function sendMessage(
+        SendActualizationMessageRequest $request,
+        Actualization $actualization,
+        ConversationFactory $conversationFactory,
+        AgentResultHandlerFactoryInterface $handlerFactory,
+        AgentTaskManagerInterface $agentTaskManager
+    ): JsonResponse {
+        $this->authorize('update', $actualization->page);
+
+        if (!in_array($actualization->status, [Actualization::STATUS_PENDING, Actualization::STATUS_PROCESSING])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Актуализация завершена, отправка сообщений недоступна'
+            ], 403);
+        }
+
+        try {
+            $dto = SendActualizationMessageDTO::fromRequest($request, $actualization);
+
+            $success = DB::transaction(function () use ($dto, $actualization, $conversationFactory, $handlerFactory, $agentTaskManager) {
+                // Получаем или создаем чат
+                $chat = $actualization->llmChat;
+                if (!$chat) {
+                    $chat = LLMChat::create(['messages' => []]);
+                    $actualization->update(['llm_chat_id' => $chat->id]);
+                }
+
+                // Используем фабрику для создания чата из существующих сообщений
+                $conversation = $conversationFactory->fromMessages($chat->messages ?? []);
+
+                // Добавляем новое пользовательское сообщение
+                $userMessage = new UserMessage($dto->message);
+                $conversation->addMessage($userMessage);
+
+                // Сохраняем обновленный чат
+                $chatUpdated = $chat->update(['messages' => $conversation->serialize()]);
+
+                if ($chatUpdated) {
+                    $handler = $handlerFactory->createActualizationResultHandler($actualization);
+
+                    $agentTaskManager->createTask(
+                        $handler,
+                        $dto->userId,
+                        $actualization->page->project_id,
+                        $chat->id,
+                        false,
+                        AgentTaskType::TEXT
+                    );
+                }
+
+                return $chatUpdated;
+            });
+
+            if ($success) {
+                $actualization->load('llmChat');
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Сообщение отправлено и передано агенту на обработку',
+                    'chat' => [
+                        'id' => $actualization->llmChat->id,
+                        'messages' => $actualization->llmChat->messages
+                    ]
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при отправке сообщения'
+            ], 500);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send actualization message', [
+                'actualization_id' => $actualization->id,
+                'user_id' => $request->user()->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Внутренняя ошибка сервера'
+            ], 500);
+        }
     }
 }

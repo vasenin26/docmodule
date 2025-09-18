@@ -86,6 +86,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('actualizations/{actualization}', [ActualizationController::class, 'cancel'])
         ->name('actualizations.cancel');
 
+    // Статус актуализации с чатом и отправка сообщений
+    Route::get('actualizations/{actualization}/status-with-chat', [ActualizationController::class, 'getStatusWithChat'])
+        ->name('actualizations.status-with-chat');
+    Route::post('actualizations/{actualization}/send-message', [ActualizationController::class, 'sendMessage'])
+        ->name('actualizations.send-message');
+
     // Новый маршрут для актуализации конкретного черновика
     Route::post('/drafts/{draft}/actualize', [ActualizationController::class, 'storeForDraft'])
         ->name('drafts.actualize');
