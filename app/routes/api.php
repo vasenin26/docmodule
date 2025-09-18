@@ -47,3 +47,7 @@ Route::prefix('admin/agent')->middleware(['auth', 'admin'])->group(function () {
     })->name('admin.agent.reset-stuck');
 
 });
+
+// Public API for techplanes
+Route::post('techplanes/{techplane}/done', [\App\Http\Controllers\Api\TechplaneController::class, 'markDone'])
+    ->name('api.techplanes.done');

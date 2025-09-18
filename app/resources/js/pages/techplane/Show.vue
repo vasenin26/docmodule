@@ -16,15 +16,26 @@
                     <!-- Кнопка экспорта (заглушка) -->
                     <Button variant="outline" disabled> Экспортировать </Button>
                     <!-- Кнопка выполнения техплана -->
-                    <Button 
-                        v-if="canExecuteTechplane" 
-                        @click="executeTechplane" 
-                        :disabled="isExecutingTechplane" 
+                    <Button
+                        v-if="canExecuteTechplane"
+                        @click="executeTechplane"
+                        :disabled="isExecutingTechplane"
                         variant="default" 
-                        size="sm"
                     >
                         <span v-if="isExecutingTechplane">Создание реализации...</span>
                         <span v-else>Выполнить</span>
+                    </Button>
+
+                    <!-- Кнопка Готово -->
+                    <Button
+                        v-if="canMarkDone"
+                        @click="openDoneModal"
+                        :disabled="isMarkingDone"
+                        variant="outline"
+                        size="sm"
+                    >
+                        <span v-if="isMarkingDone">Сохранение...</span>
+                        <span v-else>Готово</span>
                     </Button>
                     <!-- Кнопка чата (если есть) -->
                     <Button v-if="chat" @click="openChatModal" variant="default"> Чат </Button>
@@ -86,15 +97,22 @@
 
             <!-- Модальное окно чата -->
             <SidePanel v-model:open="showChatModal">
-                <AgentChat 
-                    v-if="chat" 
+                <AgentChat
+                    v-if="chat"
                     :messages="chat.messages"
                     :loading="isPolling"
                     :status="generationStatus"
                     :sending="chatSending"
-                    @sendMessage="sendMessageToChat" 
+                    @sendMessage="sendMessageToChat"
                 />
             </SidePanel>
+
+            <!-- Модалка Готово -->
+            <TechplaneDoneModal
+                v-model="showDoneModal"
+                :techplane-id="props.techplane.id"
+                @applied="onDoneApplied"
+            />
         </div>
     </AppLayout>
 </template>
@@ -113,6 +131,8 @@ import { useTechplaneChat } from '@/composables/useTechplaneChat';
 import { createApi } from '@/service/api/Api';
 import { TechplaneStatusRequest } from '@/service/api/request/Techplane/TechplaneStatusRequest';
 import { TechplaneExecuteRequest } from '@/service/api/request/Techplane/TechplaneExecuteRequest';
+import TechplaneDoneModal from '@/components/techplane/TechplaneDoneModal.vue';
+import { TechplaneMarkDoneRequest, type TechplaneMarkDoneResponse } from '@/service/api/request/Techplane/TechplaneMarkDoneRequest';
 import type { LLMChat } from '@/types';
 
 interface TechplaneData {
@@ -153,6 +173,8 @@ const isPolling = ref(false);
 const pollInterval = ref<number | null>(null);
 const isRestartingGeneration = ref(false);
 const isExecutingTechplane = ref(false);
+const isMarkingDone = ref(false);
+const showDoneModal = ref(false);
 
 // Реактивные переменные для чата
 const chat = ref<LLMChat | null>(props.techplane.llm_chat || null);
@@ -171,7 +193,11 @@ const canRestartGeneration = computed(() => {
 
 // Вычисляемое свойство для доступности кнопки выполнения
 const canExecuteTechplane = computed(() => {
-    return generationStatus.value === 'completed';
+    return generationStatus.value === 'completed' && techplaneStatus.value !== 'executed';
+});
+
+const canMarkDone = computed(() => {
+    return generationStatus.value === 'completed' && techplaneStatus.value !== 'executed';
 });
 
 // Функция для проверки статуса генерации
@@ -204,6 +230,15 @@ const checkGenerationStatus = async () => {
         console.error('Ошибка при запросе статуса:', error);
     }
 };
+const techplaneStatus = ref<string>((props.techplane as any).status || 'planned');
+
+function openDoneModal() {
+    showDoneModal.value = true;
+}
+
+async function onDoneApplied(payload: TechplaneMarkDoneResponse) {
+    techplaneStatus.value = payload.status;
+}
 
 // Функция для запуска автоматического опроса
 const startPolling = () => {
@@ -271,7 +306,7 @@ const executeTechplane = async () => {
     try {
         const api = createApi();
         const request = new TechplaneExecuteRequest(props.techplane.id);
-        
+
         console.log('Отправляем запрос на выполнение техплана:', props.techplane.id);
         const data = await request.call(api);
         console.log('Получен ответ от сервера:', data);
