@@ -81,6 +81,7 @@
                         <div class="space-y-2">
                             <FileLinksList v-model="form.files" />
                             <InputError v-if="errors?.files" :message="errors.files" />
+                            <InputError v-else-if="errors?.project_files" :message="errors.project_files" />
                         </div>
 
                         <!-- Скрытое поле для parent_id -->
@@ -161,13 +162,16 @@ const submit = () => {
     // Определяем URL для отправки формы
     const submitUrl = props.project ? route('projects.pages.store', props.project.id) : route('pages.store');
 
-    form.post(submitUrl, {
-        onSuccess: () => {
-            processing.value = false;
-        },
-        onError: () => {
-            processing.value = false;
-        },
+    const transformed = form.transform((data: any) => ({
+        ...data,
+        project_files: Array.isArray(data.files)
+            ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
+            : [],
+    }));
+
+    transformed.post(submitUrl, {
+        onSuccess: () => { processing.value = false; },
+        onError: () => { processing.value = false; },
     });
 };
 

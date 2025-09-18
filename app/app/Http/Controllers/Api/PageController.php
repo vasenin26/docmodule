@@ -330,7 +330,7 @@ class PageController extends Controller
     }
 
     /**
-     * Get page files
+     * Get page project files
      */
     public function getPageFiles(
         GetPageFilesRequest $request,
@@ -360,7 +360,7 @@ class PageController extends Controller
             return response()->json(['error' => 'Access denied to page'], 403);
         }
         
-        $files = $service->getPageFiles($id);
+        $files = $service->getPageProjectFiles($id);
         
         return response()->json($files);
     }

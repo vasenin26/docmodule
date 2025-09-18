@@ -166,22 +166,23 @@
                 </Card>
 
                 <!-- Прикрепленные файлы -->
-                <Card v-if="page.files && page.files.length > 0">
+                <Card v-if="page.project_files && page.project_files.length > 0">
                     <CardHeader>
                         <CardTitle>Прикрепленные файлы</CardTitle>
                         <CardDescription> Файлы, связанные с данной страницей документации</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div class="space-y-2">
-                            <div v-for="(file, index) in page.files" :key="index"
+                            <div v-for="a in page.project_files" :key="a.id"
                                  class="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50">
                                 <FileIcon class="h-5 w-5 text-muted-foreground" />
                                 <div class="flex-1">
-                                    <p class="font-mono text-sm break-all">{{ getFileName(file) }}</p>
-                                    <p class="text-xs break-all text-muted-foreground">{{ file }}</p>
+                                    <p class="font-mono text-sm break-all">{{ getFileName(a.url) }}</p>
+                                    <p class="text-xs break-all text-muted-foreground">{{ a.url }}</p>
+                                    <p v-if="a.description" class="text-xs text-muted-foreground">— {{ a.description }}</p>
                                 </div>
-                                <Button as-child variant="outline" size="sm" v-if="isValidRepositoryUrl(file)">
-                                    <a :href="file" target="_blank" rel="noopener noreferrer"> Открыть файл </a>
+                                <Button as-child variant="outline" size="sm" v-if="isValidRepositoryUrl(a.url)">
+                                    <a :href="a.url" target="_blank" rel="noopener noreferrer"> Открыть файл </a>
                                 </Button>
                             </div>
                         </div>
@@ -237,7 +238,7 @@ interface Page {
     id: number;
     title: string;
     content: string;
-    files?: string[];
+    project_files?: { id: number; url: string; description?: string | null }[];
     created_at: string;
     approved_at: string;
     creator: Creator;
@@ -289,8 +290,9 @@ onMounted(() => {
 });
 
 // Можно ли запустить актуализацию (есть файлы и нет активной актуализации)
-const canActualize = computed(() => {
-    return props.page.files && props.page.files.length > 0 && canStartActualization.value;
+const canActualize = computed<boolean>(() => {
+    const hasFiles = Array.isArray(props.page.project_files) && props.page.project_files.length > 0;
+    return !!hasFiles && !!canStartActualization.value;
 });
 
 const createTask = () => {

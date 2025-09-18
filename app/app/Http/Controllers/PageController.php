@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Page\StorePageRequest;
 use App\Http\Requests\Page\UpdateVersionRequest;
+use App\Models\ProjectFile;
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Models\Page;
 use App\Models\PageVersion;
@@ -144,8 +145,33 @@ class PageController extends Controller
             'page_id' => $page->id,
             'title' => $validated['title'],
             'content' => $validated['content'],
-            'files' => $validated['files'] ?? [],
         ]);
+
+        // Синхронизация project_files при создании
+        $attachmentsInput = $validated['project_files'] ?? [];
+        if (!empty($attachmentsInput)) {
+            $projectId = $page->project_id;
+            $now = now();
+            $rows = array_map(static function (array $a) use ($projectId, $now) {
+                return [
+                    'project_id' => $projectId,
+                    'url' => $a['url'],
+                    'description' => $a['description'] ?? null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }, $attachmentsInput);
+            if ($rows) {
+                ProjectFile::upsert($rows, ['project_id', 'url'], ['description', 'updated_at']);
+            }
+            $urls = array_map(fn ($a) => $a['url'], $attachmentsInput);
+            $ids = ProjectFile::query()
+                ->where('project_id', $projectId)
+                ->when($urls, fn ($q) => $q->whereIn('url', $urls))
+                ->pluck('id')
+                ->all();
+            $version->projectFiles()->sync($ids);
+        }
 
         // Устанавливаем первую версию как текущую
         $page->update(['version_id' => $version->id]);
@@ -183,7 +209,7 @@ class PageController extends Controller
                 'id' => $page->id,
                 'title' => $page->currentVersion->title,
                 'content' => $page->currentVersion->content,
-                'files' => $page->currentVersion->files,
+                'project_files' => $page->currentVersion->projectFiles()->get(['id','url','description']),
                 'hasActiveDraft' => $page->hasActiveDraft(Auth::id()),
                 'currentDraft' => $page->getCurrentDraft(Auth::id()),
                 'version_id' => $page->currentVersion->id,
@@ -205,7 +231,7 @@ class PageController extends Controller
 
     public function edit(Page $page)
     {
-        $page->load(['project']);
+        $page->load(['project', 'currentVersion.projectFiles']);
 
         return Inertia::render('pages/Edit', [
             'page' => $page,
@@ -222,6 +248,7 @@ class PageController extends Controller
         }
 
         $page->load(['project']);
+        $version->load(['projectFiles']);
 
         return Inertia::render('pages/Edit', [
             'pageVersion' => $version,
@@ -240,8 +267,9 @@ class PageController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'nullable|string',
-            'files' => 'nullable|array',
-            'files.*' => 'required|string|url',
+            'project_files' => 'array',
+            'project_files.*.url' => 'required|string|url',
+            'project_files.*.description' => 'nullable|string',
         ]);
 
         $draft = $page->createDraft($validated);
@@ -273,7 +301,6 @@ class PageController extends Controller
         // Устанавливаем данные из конкретной версии
         $page->title = $version->title ?: 'Без названия';
         $page->content = $version->content ?: '';
-        $page->files = $version->files ?? [];
         $page->version_id = $version->id;
         $page->is_current_version = $page->version_id === $version->id;
 
@@ -281,12 +308,14 @@ class PageController extends Controller
         $pageDetailDTO = $this->documentationControl->getPageDetailDTO($page);
 
         return Inertia::render('pages/Show', [
-            'page' => $pageDetailDTO->toArray(),
+            'page' => array_merge($pageDetailDTO->toArray(), [
+                'project_files' => $version->projectFiles()->get(['id','url','description']),
+            ]),
             'version' => [
                 'id' => $version->id,
                 'title' => $version->title,
                 'content' => $version->content,
-                'files' => $version->files ?? [],
+                'project_files' => $version->projectFiles()->get(['id','url','description']),
                 'created_at' => $version->created_at->toISOString(),
                 'is_current' => $page->version_id === $version->id,
             ],
@@ -308,7 +337,32 @@ class PageController extends Controller
         if ($page->version_id === $version->id) {
             abort(401, 'Нельзя обновлять текущую версию');
         } else {
-            $version->update($validated);
+            $attachmentsInput = $validated['project_files'] ?? [];
+            unset($validated['project_files']);
+            \DB::transaction(function () use ($version, $page, $validated, $attachmentsInput) {
+                $version->update($validated);
+                $projectId = $page->project_id;
+                $now = now();
+                $rows = array_map(static function (array $a) use ($projectId, $now) {
+                    return [
+                        'project_id' => $projectId,
+                        'url' => $a['url'],
+                        'description' => $a['description'] ?? null,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }, $attachmentsInput);
+                if ($rows) {
+                    ProjectFile::upsert($rows, ['project_id', 'url'], ['description', 'updated_at']);
+                }
+                $urls = array_map(fn ($a) => $a['url'], $attachmentsInput);
+                $ids = ProjectFile::query()
+                    ->where('project_id', $projectId)
+                    ->when($urls, fn ($q) => $q->whereIn('url', $urls))
+                    ->pluck('id')
+                    ->all();
+                $version->projectFiles()->sync($ids);
+            });
 
             return redirect()->back()
                 ->with('success', 'Черновик обновлен.');
@@ -368,8 +422,10 @@ class PageController extends Controller
         $newVersion = $page->createNewVersion([
             'title' => $version->title,
             'content' => $version->content,
-            'files' => $version->files ?? [],
         ]);
+        // копирование связей project_files
+        $ids = $version->projectFiles()->pluck('project_files.id')->all();
+        $newVersion->projectFiles()->sync($ids);
 
         return redirect()->route('pages.index')
             ->with('success', 'Версия страницы восстановлена.');

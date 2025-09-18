@@ -162,7 +162,7 @@ export interface PageVersion {
     title: string;
     content: string;
     previous_version_id?: number | null;
-    files: string[];
+    project_files: { id: number; url: string; description?: string | null }[];
     created_at: string;
     updated_at: string;
 }

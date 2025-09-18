@@ -80,21 +80,21 @@
             </Card>
 
             <!-- Прикрепленные файлы -->
-            <Card v-if="page.files && page.files.length > 0">
+            <Card v-if="page.project_files && page.project_files.length > 0">
                 <CardHeader>
                     <CardTitle>Проанализированные файлы</CardTitle>
                     <CardDescription> Файлы, которые были использованы для актуализации документации </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div class="space-y-2">
-                        <div v-for="(file, index) in page.files" :key="index" class="flex items-center gap-3 rounded-lg border p-3">
+                        <div v-for="a in page.project_files" :key="a.id" class="flex items-center gap-3 rounded-lg border p-3">
                             <FileIcon class="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                             <div class="min-w-0 flex-1">
-                                <a :href="file" target="_blank" rel="noopener noreferrer" class="block truncate text-sm font-medium hover:underline">
-                                    {{ getFileName(file) }}
+                                <a :href="a.url" target="_blank" rel="noopener noreferrer" class="block truncate text-sm font-medium hover:underline">
+                                    {{ getFileName(a.url) }}
                                 </a>
                                 <p class="truncate text-xs text-muted-foreground">
-                                    {{ file }}
+                                    {{ a.url }}
                                 </p>
                             </div>
                         </div>
@@ -183,7 +183,7 @@ interface Page {
     id: number;
     title: string;
     content: string;
-    files?: string[];
+    project_files?: { id: number; url: string; description?: string | null }[];
 }
 
 interface ChatMessage {

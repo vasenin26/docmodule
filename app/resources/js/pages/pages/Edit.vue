@@ -81,6 +81,7 @@
                             <div class="space-y-2">
                                 <FileLinksList v-model="form.files" />
                                 <InputError v-if="errors?.files" :message="errors.files" />
+                                <InputError v-else-if="errors?.project_files" :message="errors.project_files" />
                             </div>
 
                             <!-- Checkbox для создания задачи -->
@@ -127,21 +128,21 @@
             @confirm="confirmActualizeDraft"
             @cancel="cancelActualization"
         />
+        
+        <!-- Chat modal placed after main template to avoid slot constraints -->
+        <SidePanel v-model:open="isChatModalOpen">
+            <AgentChat 
+                v-if="chat" 
+                :messages="chat.messages"
+                :loading="isPolling"
+                :status="actualizationStatus"
+                :sending="isSending"
+                @sendMessage="sendMessageToChat" 
+            />
+        </SidePanel>
     </AppLayout>
 </template>
 
-<!-- Chat modal placed after main template to avoid slot constraints -->
-<SidePanel v-model:open="isChatModalOpen">
-    <AgentChat 
-        v-if="chat" 
-        :messages="chat.messages"
-        :loading="isPolling"
-        :status="actualizationStatus"
-        :sending="isSending"
-        @sendMessage="sendMessageToChat" 
-    />
-    
-</SidePanel>
 
 <script setup lang="ts">
 import FileLinksList from '@/components/FileLinksList.vue';
@@ -178,6 +179,7 @@ type PageVersion = {
     page_id: number;
     content: string;
     files?: string[];
+    project_files?: { id: number; url: string; description?: string | null }[];
     is_draft?: boolean;
 };
 
@@ -199,7 +201,9 @@ const props = withDefaults(
 const form = useForm({
     title: props.pageVersion.title || 'Без названия',
     content: props.pageVersion.content,
-    files: props.pageVersion?.files || [],
+    files: (props.pageVersion?.project_files?.map((a: any) => a.url) as string[])
+        || props.pageVersion?.files
+        || [],
     createTask: false,
     is_current_version: false as boolean,
 });
@@ -224,43 +228,54 @@ const { sendMessage, updateChatMessages, isSending, error, hasError } = useActua
 // Метод для создания черновика
 const createDraft = () => {
     processing.value = true;
-
-    form.post(route('pages.create-draft', props.pageVersion.page_id), {
-        onSuccess: () => {
-            processing.value = false;
-        },
-        onError: () => {
-            processing.value = false;
-        },
+    const transformed = form.transform((data: any) => ({
+        ...data,
+        project_files: Array.isArray(data.files)
+            ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
+            : [],
+    }));
+    transformed.post(route('pages.create-draft', props.pageVersion.page_id), {
+        onSuccess: () => { processing.value = false; },
+        onError: () => { processing.value = false; },
     });
 };
 
 const submit = () => {
     processing.value = true;
 
-    const url = props.is_current_version
-        ? route('pages.create-draft', { page: props.pageVersion.page_id })
-        : route('pages.versions.update', [props.pageVersion.page_id, props.pageVersion.id]);
+    const createDraftUrl = route('pages.create-draft', { page: props.pageVersion.page_id });
+    const updateUrl = route('pages.versions.update', [props.pageVersion.page_id, props.pageVersion.id]);
 
-    form.put(url, {
-        onSuccess: () => {
-            processing.value = false;
-        },
-        onError: () => {
-            processing.value = false;
-        },
-    });
+    const transformed = form.transform((data: any) => ({
+        ...data,
+        project_files: Array.isArray(data.files)
+            ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
+            : [],
+    }));
+
+    const options = {
+        onSuccess: () => { processing.value = false; },
+        onError: () => { processing.value = false; },
+    } as any;
+
+    if (props.is_current_version) {
+        transformed.post(createDraftUrl, options);
+    } else {
+        transformed.put(updateUrl, options);
+    }
 };
 
 const approveDraft = () => {
     if (!props.is_current_version) {
-        form.put(route('drafts.approve', props.pageVersion.id), {
-            onSuccess: () => {
-                processing.value = false;
-            },
-            onError: () => {
-                processing.value = false;
-            },
+        const transformed = form.transform((data: any) => ({
+            ...data,
+            project_files: Array.isArray(data.files)
+                ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
+                : [],
+        }));
+        transformed.put(route('drafts.approve', props.pageVersion.id), {
+            onSuccess: () => { processing.value = false; },
+            onError: () => { processing.value = false; },
         });
     }
 };

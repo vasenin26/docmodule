@@ -36,8 +36,9 @@ class ApproveVersionRequest extends FormRequest
         return [
             'title' => 'required|string|max:255',
             'content' => 'nullable|string',
-            'files' => 'nullable|array',
-            'files.*' => 'required|string|url',
+            'project_files' => 'array',
+            'project_files.*.url' => 'required|string|url',
+            'project_files.*.description' => 'nullable|string',
             'createTask' => 'boolean',
         ];
     }
@@ -52,9 +53,9 @@ class ApproveVersionRequest extends FormRequest
         return [
             'title.required' => 'Название страницы обязательно для заполнения.',
             'title.max' => 'Название страницы не может быть длиннее 255 символов.',
-            'files.array' => 'Поле файлы должно быть массивом.',
-            'files.*.required' => 'Ссылка на файл обязательна.',
-            'files.*.url' => 'Ссылка на файл должна быть корректным URL.',
+            'project_files.array' => 'Поле вложений должно быть массивом.',
+            'project_files.*.url.required' => 'Ссылка на вложение обязательна.',
+            'project_files.*.url.url' => 'Ссылка на вложение должна быть корректным URL.',
             'createTask.boolean' => 'Поле создания задачи должно быть булевым значением.',
         ];
     }

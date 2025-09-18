@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -20,64 +21,22 @@ class PageVersion extends Model
         'title',
         'content',
         'previous_version_id',
-        'files',
         'is_draft',
     ];
 
     protected function casts(): array
     {
         return [
-            'files' => 'array',
             'is_draft' => 'boolean',
         ];
     }
 
-
-
     /**
-     * Валидировать ссылки на файлы в репозиториях
+     * Связанные файлы проекта через пивот
      */
-    public function validateFilePaths(array $files): bool
+    public function projectFiles(): BelongsToMany
     {
-        foreach ($files as $file) {
-            // Файл должен быть строкой с корректным URL
-            if (!is_string($file)) {
-                return false;
-            }
-
-            // URL должен быть корректной ссылкой
-            if (!filter_var($file, FILTER_VALIDATE_URL)) {
-                return false;
-            }
-
-            // Дополнительная проверка, что это ссылка на файл в git репозитории
-            if (!$this->isGitRepositoryFileUrl($file)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Проверить, является ли URL ссылкой на файл в git репозитории
-     */
-    private function isGitRepositoryFileUrl(string $url): bool
-    {
-        // Проверяем популярные git хостинги
-        $gitHosts = ['github.com', 'gitlab.com', 'bitbucket.org'];
-
-        $parsedUrl = parse_url($url);
-        if (!isset($parsedUrl['host'])) {
-            return false;
-        }
-
-        foreach ($gitHosts as $host) {
-            if (str_contains($parsedUrl['host'], $host)) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->belongsToMany(ProjectFile::class, 'project_file_page_version');
     }
 
     /**
@@ -153,11 +112,6 @@ class PageVersion extends Model
         $newVersion->fill($data);
         $newVersion->previous_version_id = $this->id;
         $newVersion->is_draft = true;
-
-        // Обеспечиваем корректное копирование поля files
-        if (!isset($data['files']) && $this->files) {
-            $newVersion->files = $this->files;
-        }
 
         $newVersion->save();
 

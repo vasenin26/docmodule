@@ -189,16 +189,32 @@ class PageContextService implements PageContextServiceInterface
 
     public function getPageFiles(int $pageId): array
     {
+        return $this->getPageProjectFiles($pageId);
+    }
+
+    public function getPageProjectFiles(int $pageId): array
+    {
         $page = $this->getPageById($pageId);
-        if (!$page) {
-            Log::warning('Page not found for files retrieval', [
+        if (!$page || !$page->version_id) {
+            Log::warning('Page not found for project files retrieval', [
                 'page_id' => $pageId,
                 'project_id' => $this->projectId
             ]);
             return [];
         }
 
-        return $page->files ?? [];
+        $version = \App\Models\PageVersion::with('projectFiles')->find($page->version_id);
+        if (!$version) {
+            return [];
+        }
+
+        return $version->projectFiles->map(function ($a) {
+            return [
+                'id' => $a->id,
+                'url' => $a->url,
+                'description' => $a->description,
+            ];
+        })->all();
     }
 
     public function getTaskHistory(int $pageId): Collection
