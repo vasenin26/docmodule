@@ -16,7 +16,7 @@ class PageVersionTest extends TestCase
     {
         $user = User::factory()->create();
         $page = Page::factory()->create(['created_by' => $user->id]);
-        
+
         $version = PageVersion::factory()->create([
             'page_id' => $page->id,
             'title' => 'Test Title',
@@ -43,7 +43,7 @@ class PageVersionTest extends TestCase
     {
         $user = User::factory()->create();
         $page = Page::factory()->create(['created_by' => $user->id]);
-        
+
         $version1 = PageVersion::factory()->create(['page_id' => $page->id]);
         $version2 = PageVersion::factory()->create([
             'page_id' => $page->id,
@@ -71,33 +71,5 @@ class PageVersionTest extends TestCase
         $this->assertEquals('Updated Content', $version2->content);
         $this->assertEquals($version1->id, $version2->previous_version_id);
         $this->assertEquals($page->id, $version2->page_id);
-    }
-
-    public function test_files_attribute_returns_array()
-    {
-        $user = User::factory()->create();
-        $page = Page::factory()->create(['created_by' => $user->id]);
-        
-        $version = PageVersion::factory()->create([
-            'page_id' => $page->id,
-            'files' => ['file1.txt', 'file2.txt'],
-        ]);
-
-        $this->assertIsArray($version->files);
-        $this->assertEquals(['file1.txt', 'file2.txt'], $version->files);
-    }
-
-    public function test_files_attribute_returns_empty_array_when_null()
-    {
-        $user = User::factory()->create();
-        $page = Page::factory()->create(['created_by' => $user->id]);
-        
-        $version = PageVersion::factory()->create([
-            'page_id' => $page->id,
-            'files' => null,
-        ]);
-
-        $this->assertIsArray($version->files);
-        $this->assertEquals([], $version->files);
     }
 }

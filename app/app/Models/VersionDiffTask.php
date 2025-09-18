@@ -37,6 +37,7 @@ class VersionDiffTask extends Model
     {
         return [
             'edited_at' => 'datetime',
+            'generation_status' => 'string',
         ];
     }
 
@@ -88,12 +89,7 @@ class VersionDiffTask extends Model
      */
     public function isGenerating(): bool
     {
-        $activeAgentTask = AgentTask::where([
-            'chat_id' => $this->llm_chat_id,
-            'status' => [AgentTask::STATUS_WAIT, AgentTask::STATUS_PROCESSING],
-        ])->count();
-
-        return $activeAgentTask !== 0;
+        return $this->generation_status === self::STATUS_GENERATING;
     }
 
     public function generationStatus(): string

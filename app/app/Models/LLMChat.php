@@ -29,6 +29,19 @@ class LLMChat extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::updating(function (LLMChat $chat) {
+            if ($chat->isDirty('messages')) {
+                $originalMessages = $chat->getOriginal('messages');
+                $originalHasMessages = !empty($originalMessages) && is_array($originalMessages) && count($originalMessages) > 0;
+                if ($originalHasMessages) {
+                    throw new \Exception('Изменение сохраненной истории переписки запрещено для сохранения исторических данных');
+                }
+            }
+        });
+    }
+
     /**
      * Проверка был ли рассчитан размер токенов (любого типа)
      *

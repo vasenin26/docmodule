@@ -23,7 +23,7 @@ class PageVersionFactory extends Factory
             'title' => $this->faker->sentence(3),
             'content' => $this->faker->paragraphs(3, true),
             'previous_version_id' => null,
-            'files' => [],
+            'is_draft' => false,
         ];
     }
 
@@ -35,16 +35,6 @@ class PageVersionFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'page_id' => $previousVersion->page_id,
             'previous_version_id' => $previousVersion->id,
-        ]);
-    }
-
-    /**
-     * Создать версию с файлами
-     */
-    public function withFiles(array $files): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'files' => $files,
         ]);
     }
 }

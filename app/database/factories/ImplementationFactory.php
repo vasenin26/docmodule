@@ -22,7 +22,7 @@ class ImplementationFactory extends Factory
     {
         return [
             'content' => $this->faker->paragraphs(3, true),
-            'techplane_id' => Techplane::factory(),
+            'techplane_id' => \App\Models\Techplane::factory(),
             'chat_id' => null,
             'status' => GenerationStatus::PENDING,
             'created_by' => User::factory(),

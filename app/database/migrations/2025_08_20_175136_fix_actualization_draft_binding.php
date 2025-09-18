@@ -9,30 +9,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('actualizations', function (Blueprint $table) {
-            // 1. Добавляем новое поле page_version_id
-            $table->foreignId('page_version_id')
-                  ->nullable()
-                  ->after('page_id')
-                  ->constrained('page_versions')
-                  ->onDelete('cascade');
-
-            // 2. Добавляем индекс для нового поля
-            $table->index(['page_version_id']);
-        });
-
-        Schema::table('actualizations', function (Blueprint $table) {
-            // 5. Делаем page_version_id обязательным
-            $table->foreignId('page_version_id')->nullable(false)->change();
-        });
+        // Поле теперь создаётся в базовой миграции, поэтому тут ничего не делаем
     }
 
     public function down(): void
     {
-        Schema::table('actualizations', function (Blueprint $table) {
-            $table->dropForeign(['page_version_id']);
-            $table->dropIndex(['page_version_id']);
-            $table->dropColumn('page_version_id');
-        });
+        // Нет отката, так как апстрим миграция уже содержит столбец
     }
 };

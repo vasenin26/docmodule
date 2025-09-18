@@ -19,17 +19,27 @@ class PageControllerTest extends TestCase
         
         $user = User::factory()->create();
         $page = Page::factory()->create(['created_by' => $user->id]);
+        // Ensure the page has a current version before creating a draft
+        $this->actingAs($user);
+        $this->withoutMiddleware();
+        $this->post(route('pages.store'), [
+            'title' => 'Initial',
+            'content' => 'Content',
+            'parent_id' => null,
+            'project_id' => null,
+        ]);
+        // Create draft from current version via controller method to maintain consistency
         $draft = $page->createDraft(['title' => 'Draft Title']);
         
-        $this->actingAs($user);
-        
-        $response = $this->withoutMiddleware()->post(route('pages.draft.approve', $draft->id));
+        $response = $this->post(route('drafts.approve', $draft->id));
         
         $response->assertRedirect();
         
         // Проверяем, что Job был запущен при утверждении черновика
-        Queue::assertPushed(CalculateVersionDifferenceJob::class, function ($job) use ($draft, $page) {
-            return $job->newVersionId === $draft->id && $job->oldVersionId === $page->id;
+        // Ожидаем дифф между предыдущей версией и утверждаемым черновиком
+        $previousVersionId = $draft->previous_version_id;
+        Queue::assertPushed(CalculateVersionDifferenceJob::class, function ($job) use ($draft, $previousVersionId) {
+            return $job->newVersionId === $draft->id && $job->oldVersionId === $previousVersionId;
         });
     }
 
@@ -39,10 +49,10 @@ class PageControllerTest extends TestCase
         
         $user = User::factory()->create();
         $page = Page::factory()->create(['created_by' => $user->id]);
-        
         $this->actingAs($user);
+        $this->withoutMiddleware();
         
-        $response = $this->withoutMiddleware()->post(route('pages.draft.approve', $page->id));
+        $response = $this->post(route('drafts.approve', $page->id));
         
         $response->assertRedirect();
         

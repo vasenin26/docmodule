@@ -25,6 +25,7 @@ class PageFactory extends Factory
             'created_by' => User::factory(),
             'deleted_by' => null,
             'deleted_at' => null,
+            'project_id' => \App\Models\Project::factory(),
         ];
     }
 
