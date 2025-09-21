@@ -3,9 +3,7 @@
 # --------------------------------------------
 FROM debian:bookworm AS base-runtime
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    APP_ENV=local \
-    APP_DEBUG=true
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
         software-properties-common \
@@ -52,6 +50,9 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
+
+# Composer
+FROM composer/composer:latest-bin AS composer
 
 # --------------------------------------------
 # Builder stage: composer + node
@@ -126,15 +127,14 @@ CMD ["/entrypoint.sh"]
 # --------------------------------------------
 FROM base-runtime AS dev
 
-ENV APP_ENV=local APP_DEBUG=true
-
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y php8.4-xdebug && rm -rf /var/lib/apt/lists/*
-
 # Composer + Node
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && apt-get update && apt-get install -y nodejs && rm -rf /var/lib/apt/lists/*
+COPY --from=composer /composer /usr/local/bin/composer
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && apt-get update && apt-get install -y nodejs php8.4-xdebug && rm -rf /var/lib/apt/lists/*
+
+COPY ./docker/php/xdebug.ini /etc/php/8.4/cli/conf.d/20-xdebug.ini
+ENV PHP_IDE_CONFIG="serverName=docsmodule"
 
 # Local user
 RUN groupadd -g 1000 local && useradd -m -u 1000 -g local local

@@ -58,6 +58,18 @@ class UpdateVersionRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        // ничего дополнительного
+        // Дополнительная валидация файлов - должны быть ссылками на git репозитории
+        if ($this->has('files') && $this->files) {
+            foreach ($this->files as $file) {
+                if (!is_string($file) || !filter_var($file, FILTER_VALIDATE_URL)) {
+                    continue;
+                }
+
+                // Проверяем, что это ссылка на git репозиторий
+                if (!$this->isGitRepositoryFileUrl($file)) {
+                    $this->merge(['validation_errors' => ['files' => 'Ссылки должны вести на файлы в git репозиториях (GitHub, GitLab, Bitbucket)']]);
+                }
+            }
+        }
     }
 }

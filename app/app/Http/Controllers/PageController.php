@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Common\DTO\ActualizationDTO;
+use App\Http\Requests\Page\ApproveVersionRequest;
 use App\Http\Requests\Page\StorePageRequest;
 use App\Http\Requests\Page\UpdateVersionRequest;
+use App\Jobs\CalculateVersionDifferenceJob;
 use App\Models\ProjectFile;
-use App\Jobs\GenerateTaskDescriptionJob;
 use App\Models\Page;
 use App\Models\PageVersion;
 use App\Models\Project;
 use App\Models\VersionDiffTask;
-use App\Models\LLMChat;
+use App\Services\ActualizationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -18,8 +21,10 @@ use Inertia\Inertia;
 
 class PageController extends Controller
 {
-    public function __construct(
-    ) {}
+    public function __construct()
+    {
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -49,7 +54,7 @@ class PageController extends Controller
             $search = $request->search;
             $query->whereHas('currentVersion', function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('content', 'like', "%{$search}%");
+                    ->orWhere('content', 'like', "%{$search}%");
             });
         }
 
@@ -164,10 +169,10 @@ class PageController extends Controller
             if ($rows) {
                 ProjectFile::upsert($rows, ['project_id', 'url'], ['description', 'updated_at']);
             }
-            $urls = array_map(fn ($a) => $a['url'], $attachmentsInput);
+            $urls = array_map(fn($a) => $a['url'], $attachmentsInput);
             $ids = ProjectFile::query()
                 ->where('project_id', $projectId)
-                ->when($urls, fn ($q) => $q->whereIn('url', $urls))
+                ->when($urls, fn($q) => $q->whereIn('url', $urls))
                 ->pluck('id')
                 ->all();
             $version->projectFiles()->sync($ids);
@@ -209,7 +214,7 @@ class PageController extends Controller
                 'id' => $page->id,
                 'title' => $page->currentVersion->title,
                 'content' => $page->currentVersion->content,
-                'project_files' => $page->currentVersion->projectFiles()->get(['id','url','description']),
+                'project_files' => $page->currentVersion->projectFiles()->get(['id', 'url', 'description']),
                 'hasActiveDraft' => $page->hasActiveDraft(Auth::id()),
                 'currentDraft' => $page->getCurrentDraft(Auth::id()),
                 'version_id' => $page->currentVersion->id,
@@ -237,7 +242,7 @@ class PageController extends Controller
             'page' => $page,
             'pageVersion' => $page->currentVersion,
             'is_current_version' => true,
-            'errors' => (object) [],
+            'errors' => (object)[],
         ]);
     }
 
@@ -255,7 +260,7 @@ class PageController extends Controller
             'page' => $page,
             'is_current_version' => $page->checkCurrentVersion($version->id),
             'actualization' => $version->getActiveActualization(),
-            'errors' => (object) [],
+            'errors' => (object)[],
         ]);
     }
 
@@ -276,6 +281,60 @@ class PageController extends Controller
 
         return redirect()->route('pages.versions.edit', [$page->id, $draft->id])
             ->with('success', 'Черновик создан.');
+    }
+
+    /**
+     * Запустить актуализацию для страницы (создает черновик из текущей версии)
+     * Используется на странице просмотра (Show.vue)
+     */
+    public function actualizeContent(ActualizationService $actualizationService, Request $request, Page $page): JsonResponse
+    {
+        // Бизнес-валидация: проверяем правила актуализации
+        $validationErrors = $this->validatePageForActualization($page);
+        if (!empty($validationErrors)) {
+            return response()->json([
+                'success' => false,
+                'message' => implode(', ', $validationErrors)
+            ], 422);
+        }
+
+        try {
+            // Создаем черновик из текущей версии и запускаем актуализацию
+            $actualization = $actualizationService->initiateForCurrentVersion($page, $request->user());
+            $actualizationDTO = ActualizationDTO::fromModel($actualization);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Актуализация успешно запущена. Создан черновик.',
+                'data' => $actualizationDTO->toArray()
+            ]);
+
+        } catch (\RuntimeException $e) {
+            Log::error('Actualization runtime error', [
+                'message' => $e->getMessage(),
+                'page_id' => $page->id,
+                'user_id' => $request->user()->id ?? 'no user',
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('Actualization error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'page_id' => $page->id,
+                'user_id' => $request->user()->id ?? 'no user',
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Произошла ошибка при запуске актуализации',
+                'debug' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 
     /**
@@ -309,13 +368,13 @@ class PageController extends Controller
 
         return Inertia::render('pages/Show', [
             'page' => array_merge($pageDetailDTO->toArray(), [
-                'project_files' => $version->projectFiles()->get(['id','url','description']),
+                'project_files' => $version->projectFiles()->get(['id', 'url', 'description']),
             ]),
             'version' => [
                 'id' => $version->id,
                 'title' => $version->title,
                 'content' => $version->content,
-                'project_files' => $version->projectFiles()->get(['id','url','description']),
+                'project_files' => $version->projectFiles()->get(['id', 'url', 'description']),
                 'created_at' => $version->created_at->toISOString(),
                 'is_current' => $page->version_id === $version->id,
             ],
@@ -355,10 +414,10 @@ class PageController extends Controller
                 if ($rows) {
                     ProjectFile::upsert($rows, ['project_id', 'url'], ['description', 'updated_at']);
                 }
-                $urls = array_map(fn ($a) => $a['url'], $attachmentsInput);
+                $urls = array_map(fn($a) => $a['url'], $attachmentsInput);
                 $ids = ProjectFile::query()
                     ->where('project_id', $projectId)
-                    ->when($urls, fn ($q) => $q->whereIn('url', $urls))
+                    ->when($urls, fn($q) => $q->whereIn('url', $urls))
                     ->pluck('id')
                     ->all();
                 $version->projectFiles()->sync($ids);
@@ -369,7 +428,7 @@ class PageController extends Controller
         }
     }
 
-    public function update(UpdateVersionRequest $request, Page $page)
+    public function update(Request $request, Page $page)
     {
         //этот метод остаётся чисто техническим, редактирование страницы возможно только админом
         abort(403);
@@ -434,62 +493,46 @@ class PageController extends Controller
     /**
      * Утвердить черновик
      */
-    public function approveDraft(UpdateVersionRequest $request, PageVersion $draft)
+    public function approveDraft(ApproveVersionRequest $request, PageVersion $pageVersion)
     {
-        $page = $draft->page;
+        $page = $pageVersion->page;
 
-        if ($page->version_id === $draft->id) {
-            abort(401, 'Нельзя обновлять текущую версию');
+        if ($page->version_id === $pageVersion->id) {
+            abort(401, 'Нельзя утвердить текущую версию');
         }
 
         $validated = $request->validated();
-        $draft->update($validated);
+        $pageVersion->update($validated);
 
-        try {
-            $page->approveDraft($draft);
+        $page->approveDraft($pageVersion);
 
-            if($request->boolean('create_task'))
-            {
-                $currentVersion = $page->currentVersion;
-                if ($currentVersion) {
+        if ($request->boolean('createTask')) {
+            $currentVersion = $page->currentVersion;
+            if ($currentVersion) {
 
-                    $versionDiffTask = $this->createTaskForPage($page);
-
-                    return redirect()->route('tasks.show', $versionDiffTask->id);
-                }
+                $this->createTaskForPage($page);
             }
-
-            return redirect()->route('pages.show', $page->id)
-                ->with('success');
-        } catch (\Exception $e) {
-            return redirect()->route('pages.show', $draft->page_id)
-                ->with('error', $e->getMessage());
         }
+
+        return redirect()->route('pages.show', $page->id)
+            ->with('success');
     }
 
     public function createTask(Page $page)
     {
-        try {
-            // Получаем текущую версию страницы
-            $currentVersion = $page->currentVersion;
-            if (!$currentVersion) {
-                throw new \Exception('У страницы нет текущей версии');
-            }
-
-            $versionDiffTask = $this->createTaskForPage($page);
-
-            return redirect()->route('tasks.show', $versionDiffTask->id)
-                ->with('success', 'Задача создана и обрабатывается.');
-
-        } catch (\Exception $e) {
-            return redirect()->route('pages.show', $page->id)
-                ->with('error', 'Не удалось создать задачу: ' . $e->getMessage());
+        // Получаем текущую версию страницы
+        $currentVersion = $page->currentVersion;
+        if (!$currentVersion) {
+            throw new \Exception('У страницы нет текущей версии');
         }
+
+        $this->createTaskForPage($page);
+
+        return redirect()->route('pages.show', $page->id);
     }
 
-    private function createTaskForPage(Page $page): VersionDiffTask
+    private function createTaskForPage(Page $page): void
     {
-
         // Получаем текущую версию страницы
         $currentVersion = $page->currentVersion;
         if (!$currentVersion) {
@@ -503,9 +546,33 @@ class PageController extends Controller
             newVersionId: $currentVersion->id,
             oldVersionId: $oldVersionId
         );
+    }
 
-        // Возвращаем заглушку задачи: в текущей архитектуре задача создаётся внутри job
-        // Для совместимости метода вернём последний созданный таск для этой версии (если он появится позже, тесты проверяют сам факт пуша job)
-        return new VersionDiffTask();
+
+    /**
+     * Валидация бизнес-правил для актуализации страницы
+     *
+     * @param Page $page
+     * @return array Массив ошибок валидации
+     */
+    private function validatePageForActualization(Page $page): array
+    {
+        $errors = [];
+
+        // Проверяем, что у страницы нет активной актуализации
+        if ($page->hasActiveActualization()) {
+            $errors[] = 'Page have active actualization';
+        }
+
+        var_dump($page->id);
+        var_dump($page->version_id);
+
+        if (!$page->currentVersion) {
+            $errors[] = 'Page have no current version';
+        } elseif ($page->currentVersion->projectFiles()->count() === 0) {
+            $errors[] = 'Page have no files';
+        }
+
+        return $errors;
     }
 }

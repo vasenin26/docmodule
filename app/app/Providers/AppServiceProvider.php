@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use App\Models\VersionDiffTask;
+use App\Models\PageVersion;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -79,5 +80,10 @@ class AppServiceProvider extends ServiceProvider
         
         // Явное связывание для параметра projectTask
         Route::model('projectTask', VersionDiffTask::class);
+        
+        // Кастомный биндинг для параметра page_version
+        Route::bind('page_version', function ($value) {
+            return PageVersion::findOrFail($value);
+        });
     }
 }

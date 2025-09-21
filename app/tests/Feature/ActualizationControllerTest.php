@@ -7,6 +7,7 @@ use App\Models\PageVersion;
 use App\Models\User;
 use App\Models\Actualization;
 use App\Models\Project;
+use App\Models\ProjectFile;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -17,14 +18,19 @@ class ActualizationControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->withoutMiddleware();
     }
 
     public function test_can_start_actualization_for_page()
     {
         $user = User::factory()->create();
         $project = Project::factory()->create(['owner_id' => $user->id]);
-        $page = Page::factory()->create(['project_id' => $project->id, 'created_by' => $user->id]);
+        $page = Page::factory()->withVersions()->create(['project_id' => $project->id, 'created_by' => $user->id]);
+
+        // Обновляем модель, чтобы получить связи
+        $page->refresh();
+        // Создаем файл и привязываем к странице
+        $projectFile = ProjectFile::factory()->create(['project_id' => $project->id]);
+        $page->currentVersion->projectFiles()->attach($projectFile->id);
 
         $response = $this->actingAs($user)
             ->postJson(route('pages.actualize', $page));
@@ -48,7 +54,7 @@ class ActualizationControllerTest extends TestCase
         $draft = PageVersion::where('page_id', $page->id)
             ->where('is_draft', true)
             ->first();
-        
+
         $this->assertDatabaseHas('actualizations', [
             'page_version_id' => $draft->id,
         ]);
@@ -58,8 +64,15 @@ class ActualizationControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $project = Project::factory()->create(['owner_id' => $user->id]);
-        $page = Page::factory()->create(['project_id' => $project->id, 'created_by' => $user->id]);
-        
+        $page = Page::factory()->withVersions()->create(['project_id' => $project->id, 'created_by' => $user->id]);
+
+        // Обновляем модель, чтобы получить связи
+        $page->refresh();
+
+        // Создаем файл и привязываем к странице
+        $projectFile = ProjectFile::factory()->create(['project_id' => $project->id]);
+        $page->currentVersion->projectFiles()->attach($projectFile->id);
+
         // Создаем черновик вручную
         $draft = PageVersion::factory()->create([
             'page_id' => $page->id,
@@ -85,8 +98,8 @@ class ActualizationControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $project = Project::factory()->create(['owner_id' => $user->id]);
-        $page = Page::factory()->create(['project_id' => $project->id, 'created_by' => $user->id]);
-        
+        $page = Page::factory()->withVersions()->create(['project_id' => $project->id, 'created_by' => $user->id]);
+
         // Создаем черновик
         $draft = PageVersion::factory()->create([
             'page_id' => $page->id,
@@ -113,8 +126,8 @@ class ActualizationControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $project = Project::factory()->create(['owner_id' => $user->id]);
-        $page = Page::factory()->create(['project_id' => $project->id, 'created_by' => $user->id]);
-        
+        $page = Page::factory()->withVersions()->create(['project_id' => $project->id, 'created_by' => $user->id]);
+
         // Создаем обычную версию (не черновик)
         $version = PageVersion::factory()->create([
             'page_id' => $page->id,
@@ -132,20 +145,25 @@ class ActualizationControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $project = Project::factory()->create(['owner_id' => $user->id]);
-        
+
         // Создаем страницу с текущей версией
         $currentVersion = PageVersion::factory()->create([
             'title' => 'Current Version',
             'content' => 'Current content',
         ]);
-        
+
         $page = Page::factory()->create([
             'project_id' => $project->id,
             'created_by' => $user->id,
             'version_id' => $currentVersion->id,
         ]);
-        
+
         $currentVersion->update(['page_id' => $page->id]);
+
+        // Создаем файл и привязываем к странице
+        $projectFile = ProjectFile::factory()->create(['project_id' => $project->id]);
+        $page->refresh(); // Обновляем связь с currentVersion
+        $page->currentVersion->projectFiles()->attach($projectFile->id);
 
         $response = $this->actingAs($user)
             ->postJson(route('pages.actualize', $page));
@@ -156,7 +174,7 @@ class ActualizationControllerTest extends TestCase
         $draft = PageVersion::where('page_id', $page->id)
             ->where('is_draft', true)
             ->first();
-            
+
         $this->assertNotNull($draft);
         $this->assertEquals($currentVersion->id, $draft->previous_version_id);
         $this->assertEquals($currentVersion->title, $draft->title);
@@ -165,5 +183,21 @@ class ActualizationControllerTest extends TestCase
         // Проверяем, что актуализация привязана к этому черновику
         $actualization = Actualization::where('page_id', $page->id)->first();
         $this->assertEquals($draft->id, $actualization->page_version_id);
+    }
+
+    public function test_cannot_actualize_page_without_files()
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create(['owner_id' => $user->id]);
+        $page = Page::factory()->withVersions()->create(['project_id' => $project->id, 'created_by' => $user->id]);
+
+        // Не создаем файлы для страницы
+
+        $response = $this->actingAs($user)
+            ->postJson(route('pages.actualize', $page));
+
+        $response->assertStatus(422)
+            ->assertJson(['success' => false])
+            ->assertJsonFragment(['message' => 'Page have no files']);
     }
 }

@@ -19,7 +19,12 @@ class AgentResultHandlerFactory implements AgentResultHandlerFactoryInterface
     public function createTaskHandler(AgentTask $task): ?AgentResultHandlerInterface
     {
         $handlerClass = $task->handler;
-        $implementationClass = class_implements($handlerClass);
+
+        try {
+            $implementationClass = class_implements($handlerClass);
+        } catch (\Exception $exception) {
+            return null;
+        }
 
         if(in_array(AgentResultHandlerInterface::class, $implementationClass)) {
             try {

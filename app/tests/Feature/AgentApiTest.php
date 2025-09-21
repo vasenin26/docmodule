@@ -143,6 +143,7 @@ class AgentApiTest extends TestCase
                 'total_tokens' => 150,
             ],
             'result' => 'Task completed successfully',
+            'completed' => true,
         ]);
 
         $response->assertStatus(200)
@@ -180,6 +181,7 @@ class AgentApiTest extends TestCase
                 'total_tokens' => 150,
             ],
             'result' => 'Task completed successfully',
+            'completed' => true,
         ]);
 
         $response->assertStatus(404)
@@ -213,6 +215,7 @@ class AgentApiTest extends TestCase
                 'total_tokens' => 150,
             ],
             'result' => 'Task completed successfully',
+            'completed' => true,
         ]);
 
         $response->assertStatus(404)

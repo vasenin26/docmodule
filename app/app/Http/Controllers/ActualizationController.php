@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreActualizationRequest;
+use App\Http\Requests\StartPageActualizationRequest;
 use App\Http\Requests\SendActualizationMessageRequest;
 use App\Models\Actualization;
 use App\Models\LLMChat;
@@ -32,54 +32,9 @@ class ActualizationController extends Controller
     }
 
     /**
-     * Запустить актуализацию для страницы (создает черновик из текущей версии)
-     * Используется на странице просмотра (Show.vue)
-     */
-    public function store(StoreActualizationRequest $request, Page $page): JsonResponse
-    {
-        try {
-            // Создаем черновик из текущей версии и запускаем актуализацию
-            $actualization = $this->actualizationService->initiateForCurrentVersion($page, $request->user());
-            $actualizationDTO = ActualizationDTO::fromModel($actualization);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Актуализация успешно запущена. Создан черновик.',
-                'data' => $actualizationDTO->toArray()
-            ]);
-
-        } catch (\RuntimeException $e) {
-            Log::error('Actualization runtime error', [
-                'message' => $e->getMessage(),
-                'page_id' => $page->id,
-                'user_id' => $request->user()->id ?? 'no user',
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
-
-        } catch (\Exception $e) {
-            Log::error('Actualization error', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'page_id' => $page->id,
-                'user_id' => $request->user()->id ?? 'no user',
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Произошла ошибка при запуске актуализации',
-                'debug' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
-        }
-    }
-
-    /**
      * Запустить актуализацию для конкретного черновика
      */
-    public function storeForDraft(StoreActualizationRequest $request, PageVersion $draft): JsonResponse
+    public function storeForDraft(StartPageActualizationRequest $request, PageVersion $draft): JsonResponse
     {
         try {
             $actualization = $this->actualizationService->initiate($draft, $request->user());

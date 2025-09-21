@@ -13,7 +13,6 @@ class ProfileUpdateTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->withoutMiddleware();
     }
 
     public function test_profile_page_is_displayed()

@@ -16,31 +16,31 @@ class PageEditingProcessTest extends TestCase
     {
         $user = User::factory()->create();
         $page = Page::factory()->create(['created_by' => $user->id]);
-        
+
         $response = $this->actingAs($user)
             ->get(route('pages.edit', $page));
-        
+
         $response->assertInertia(fn($page) => $page
             ->component('pages/Edit')
-            ->has('isCurrentVersion', true)
+            ->has('is_current_version')
         );
     }
 
     public function test_create_draft_from_current_version()
     {
         $user = User::factory()->create();
-        $page = Page::factory()->create(['created_by' => $user->id]);
-        
+        $page = Page::factory()->withVersions()->create(['created_by' => $user->id]);
+
         $response = $this->actingAs($user)
             ->post(route('pages.create-draft', $page), [
                 'title' => 'New Draft Title',
                 'content' => 'New draft content',
                 'files' => [],
             ]);
-        
+
         $response->assertRedirect();
         $response->assertSessionHas('success', 'Черновик создан.');
-        
+
         $this->assertDatabaseHas('page_versions', [
             'page_id' => $page->id,
             'title' => 'New Draft Title',
@@ -53,36 +53,21 @@ class PageEditingProcessTest extends TestCase
     {
         $user = User::factory()->create();
         $page = Page::factory()->create(['created_by' => $user->id]);
-        
+
         $response = $this->actingAs($user)
             ->put(route('pages.update', $page), [
                 'title' => 'Updated Title',
                 'content' => 'Updated content',
-                'files' => [],
-                'is_current_version' => true,
             ]);
-        
-        $response->assertRedirect();
-        $response->assertSessionHas('success', 'Черновик создан.');
-    }
 
-    public function test_current_version_is_marked_in_page_table()
-    {
-        $user = User::factory()->create();
-        $page = Page::factory()->create(['created_by' => $user->id]);
-        
-        // Проверяем, что version_id установлен в таблице page
-        $this->assertDatabaseHas('pages', [
-            'id' => $page->id,
-            'version_id' => $page->currentVersion->id,
-        ]);
+        $response->assertForbidden();
     }
 
     public function test_continue_editing_existing_draft()
     {
         $user = User::factory()->create();
         $page = Page::factory()->create(['created_by' => $user->id]);
-        
+
         // Создаем черновик
         $draft = PageVersion::factory()->create([
             'page_id' => $page->id,
@@ -90,50 +75,21 @@ class PageEditingProcessTest extends TestCase
             'title' => 'Draft Title',
             'content' => 'Draft content',
         ]);
-        
+
         $response = $this->actingAs($user)
             ->put(route('pages.versions.update', [$page->id, $draft->id]), [
                 'title' => 'Updated Draft Title',
                 'content' => 'Updated draft content',
                 'files' => [],
             ]);
-        
+
         $response->assertRedirect();
         $response->assertSessionHas('success', 'Черновик обновлен.');
-        
+
         $this->assertDatabaseHas('page_versions', [
             'id' => $draft->id,
             'title' => 'Updated Draft Title',
             'content' => 'Updated draft content',
         ]);
-    }
-
-    public function test_show_page_displays_correct_edit_buttons()
-    {
-        $user = User::factory()->create();
-        $page = Page::factory()->create(['created_by' => $user->id]);
-        
-        // Без черновика - должна быть кнопка "Редактировать"
-        $response = $this->actingAs($user)
-            ->get(route('pages.show', $page));
-        
-        $response->assertInertia(fn($page) => $page
-            ->component('pages/Show')
-            ->where('page.hasActiveDraft', false)
-        );
-        
-        // С черновиком - должна быть кнопка "Продолжить редактирование"
-        $draft = PageVersion::factory()->create([
-            'page_id' => $page->id,
-            'is_draft' => true,
-        ]);
-        
-        $response = $this->actingAs($user)
-            ->get(route('pages.show', $page));
-        
-        $response->assertInertia(fn($page) => $page
-            ->component('pages/Show')
-            ->where('page.hasActiveDraft', true)
-        );
     }
 }

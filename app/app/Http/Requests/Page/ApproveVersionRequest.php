@@ -11,18 +11,6 @@ class ApproveVersionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        $page = $this->route('page');
-
-        // Проверяем, что страница существует
-        if (!$page) {
-            return false;
-        }
-
-        // Проверяем, что пользователь аутентифицирован
-        if (!auth()->check()) {
-            return false;
-        }
-
         return true;
     }
 

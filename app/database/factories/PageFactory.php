@@ -53,10 +53,7 @@ class PageFactory extends Factory
                 'title' => fake()->sentence(3, 6),
                 'content' => fake()->paragraphs(3, true),
             ]);
-            
-            // Устанавливаем первую версию как текущую
-            $page->update(['version_id' => $firstVersion->id]);
-            
+
             // Создаем несколько дополнительных версий
             $previousVersion = $firstVersion;
             for ($i = 0; $i < rand(2, 4); $i++) {
@@ -68,7 +65,7 @@ class PageFactory extends Factory
                 ]);
                 $previousVersion = $newVersion;
             }
-            
+
             // Устанавливаем последнюю версию как текущую
             $page->update(['version_id' => $newVersion->id]);
         });
@@ -86,9 +83,9 @@ class PageFactory extends Factory
                 'title' => fake()->sentence(3, 6),
                 'content' => fake()->paragraphs(3, true),
             ]);
-            
+
             $page->update(['version_id' => $currentVersion->id]);
-            
+
             // Создаем черновик
             PageVersion::factory()->create([
                 'page_id' => $page->id,

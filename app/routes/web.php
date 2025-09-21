@@ -60,6 +60,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Новый маршрут для создания черновика
     Route::post('pages/{page}/create-draft', [PageController::class, 'createDraft'])->name('pages.create-draft');
+    Route::post('pages/{page}/actualize', [PageController::class, 'actualizeContent'])->name('pages.actualize');
 
     // Маршруты для работы с версиями страниц
     Route::get('pages/{page}/versions/{version}', [PageController::class, 'showVersion'])->name('pages.versions.show');
@@ -67,7 +68,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('pages/{page}/versions/{version}', [PageController::class, 'updateVersion'])->name('pages.versions.update');
 
     // Новые маршруты для черновиков
-    Route::put('drafts/{draft}/approve', [PageController::class, 'approveDraft'])->name('drafts.approve');
+    Route::post('drafts/{pageVersion}/approve', [PageController::class, 'approveDraft'])->name('drafts.approve');
     Route::get('pages/{page}/draft', [PageController::class, 'getDraft'])->name('pages.draft.get');
     Route::delete('pages/{page}/draft', [PageController::class, 'deleteDraft'])->name('pages.draft.delete');
 
@@ -75,8 +76,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('pages/{page}/create-task', [PageController::class, 'createTask'])->name('pages.create-task');
 
     // Маршруты актуализации
-    Route::post('pages/{page}/actualize', [ActualizationController::class, 'store'])
-        ->name('pages.actualize');
     Route::get('pages/{page}/actualization/status', [ActualizationController::class, 'status'])
         ->name('pages.actualization.status');
     Route::get('pages/{page}/actualizations', [ActualizationController::class, 'index'])
