@@ -150,4 +150,49 @@ class PageVersion extends Model
             ->with(['pageVersion', 'llmChat'])
             ->first();
     }
+
+    /**
+     * Sync project files to this version using provided attachment inputs.
+     * Each input item must contain 'url' and optionally 'description'.
+     */
+    public function syncProjectFilesByUrls(array $attachmentsInput, int $projectId): void
+    {
+        if (empty($attachmentsInput)) {
+            $this->projectFiles()->sync([]);
+            return;
+        }
+
+        $now = now();
+        $rows = array_map(static function (array $a) use ($projectId, $now) {
+            return [
+                'project_id' => $projectId,
+                'url' => $a['url'],
+                'description' => $a['description'] ?? null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }, $attachmentsInput);
+
+        if ($rows) {
+            ProjectFile::upsert($rows, ['project_id', 'url'], ['description', 'updated_at']);
+        }
+
+        $urls = array_map(static fn($a) => $a['url'], $attachmentsInput);
+        $ids = ProjectFile::query()
+            ->where('project_id', $projectId)
+            ->when($urls, static fn($q) => $q->whereIn('url', $urls))
+            ->pluck('id')
+            ->all();
+
+        $this->projectFiles()->sync($ids);
+    }
+
+    /**
+     * Copy project file links from another version to this one.
+     */
+    public function copyProjectFilesFrom(PageVersion $source): void
+    {
+        $ids = $source->projectFiles()->pluck('project_files.id')->all();
+        $this->projectFiles()->sync($ids);
+    }
 }

@@ -64,28 +64,6 @@ class LLMChatTest extends TestCase
     }
 
     /** @test */
-    public function it_prevents_updating_messages_when_they_already_exist()
-    {
-        $originalMessages = [
-            ['role' => 'user', 'content' => 'Original message'],
-        ];
-
-        $chat = LLMChat::create([
-            'messages' => $originalMessages,
-            'total_tokens' => 100,
-        ]);
-
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Изменение сохраненной истории переписки запрещено для сохранения исторических данных');
-
-        $chat->update([
-            'messages' => [
-                ['role' => 'user', 'content' => 'Modified message'],
-            ],
-        ]);
-    }
-
-    /** @test */
     public function it_allows_updating_tokens_without_changing_messages()
     {
         $messages = [

@@ -155,27 +155,7 @@ class PageController extends Controller
         // Синхронизация project_files при создании
         $attachmentsInput = $validated['project_files'] ?? [];
         if (!empty($attachmentsInput)) {
-            $projectId = $page->project_id;
-            $now = now();
-            $rows = array_map(static function (array $a) use ($projectId, $now) {
-                return [
-                    'project_id' => $projectId,
-                    'url' => $a['url'],
-                    'description' => $a['description'] ?? null,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }, $attachmentsInput);
-            if ($rows) {
-                ProjectFile::upsert($rows, ['project_id', 'url'], ['description', 'updated_at']);
-            }
-            $urls = array_map(fn($a) => $a['url'], $attachmentsInput);
-            $ids = ProjectFile::query()
-                ->where('project_id', $projectId)
-                ->when($urls, fn($q) => $q->whereIn('url', $urls))
-                ->pluck('id')
-                ->all();
-            $version->projectFiles()->sync($ids);
+            $version->syncProjectFilesByUrls($attachmentsInput, (int)$page->project_id);
         }
 
         // Устанавливаем первую версию как текущую
@@ -287,6 +267,17 @@ class PageController extends Controller
         ]);
 
         $draft = $page->createDraft($validated);
+
+        // Обработка project_files: если переданы в форме — используем их; иначе копируем с текущей версии
+        $attachmentsInput = $validated['project_files'] ?? [];
+        if (!empty($attachmentsInput)) {
+            $draft->syncProjectFilesByUrls($attachmentsInput, (int)$page->project_id);
+        } else {
+            $currentVersion = $page->currentVersion;
+            if ($currentVersion) {
+                $draft->copyProjectFilesFrom($currentVersion);
+            }
+        }
 
         return redirect()->route('pages.versions.edit', [$page->id, $draft->id])
             ->with('success', 'Черновик создан.');
@@ -417,27 +408,9 @@ class PageController extends Controller
             unset($validated['project_files']);
             \DB::transaction(function () use ($version, $page, $validated, $attachmentsInput) {
                 $version->update($validated);
-                $projectId = $page->project_id;
-                $now = now();
-                $rows = array_map(static function (array $a) use ($projectId, $now) {
-                    return [
-                        'project_id' => $projectId,
-                        'url' => $a['url'],
-                        'description' => $a['description'] ?? null,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ];
-                }, $attachmentsInput);
-                if ($rows) {
-                    ProjectFile::upsert($rows, ['project_id', 'url'], ['description', 'updated_at']);
+                if (!empty($attachmentsInput)) {
+                    $version->syncProjectFilesByUrls($attachmentsInput, (int)$page->project_id);
                 }
-                $urls = array_map(fn($a) => $a['url'], $attachmentsInput);
-                $ids = ProjectFile::query()
-                    ->where('project_id', $projectId)
-                    ->when($urls, fn($q) => $q->whereIn('url', $urls))
-                    ->pluck('id')
-                    ->all();
-                $version->projectFiles()->sync($ids);
             });
 
             return redirect()->back()
@@ -500,8 +473,7 @@ class PageController extends Controller
             'content' => $version->content,
         ]);
         // копирование связей project_files
-        $ids = $version->projectFiles()->pluck('project_files.id')->all();
-        $newVersion->projectFiles()->sync($ids);
+        $newVersion->copyProjectFilesFrom($version);
 
         return redirect()->route('pages.index')
             ->with('success', 'Версия страницы восстановлена.');
