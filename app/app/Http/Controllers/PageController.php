@@ -204,10 +204,19 @@ class PageController extends Controller
             'parent.currentVersion',
             'project',
             'currentVersion.previousVersion',
-            'diffDescriptions.creator',
             'latestActualization.llmChat',
             'latestActualization.createdBy',
         ]);
+
+        // Задачи, прикреплённые к отображаемой версии через пивот (task_page_versions)
+        $displayVersionId = $page->currentVersion?->id;
+        $attachedTasks = VersionDiffTask::with('creator')
+            ->when($displayVersionId, function ($query) use ($displayVersionId) {
+                $query->whereHas('pageVersions', function ($q) use ($displayVersionId) {
+                    $q->where('page_versions.id', $displayVersionId);
+                });
+            })
+            ->get();
 
         return Inertia::render('pages/Show', [
             'page' => [
@@ -221,7 +230,7 @@ class PageController extends Controller
                 'created_at' => $page->currentVersion->created_at,
                 'approved_at' => $page->updated_at,
                 'creator' => $page->creator,
-                'diffDescriptions' => $page->diffDescriptions,
+                'diffDescriptions' => $attachedTasks,
                 'project' => $page->project,
                 'children' => $page->children,
                 'parent' => $page->parent
@@ -352,10 +361,16 @@ class PageController extends Controller
             'children.creator',
             'parent',
             'project',
-            'diffDescriptions.creator',
             'latestActualization.llmChat',
             'latestActualization.createdBy'
         ]);
+
+        // Задачи, прикреплённые к отображаемой версии через пивот (task_page_versions)
+        $attachedTasks = VersionDiffTask::with('creator')
+            ->whereHas('pageVersions', function ($q) use ($version) {
+                $q->where('page_versions.id', $version->id);
+            })
+            ->get();
 
         // Устанавливаем данные из конкретной версии
         $page->title = $version->title ?: 'Без названия';
@@ -378,6 +393,8 @@ class PageController extends Controller
                 'created_at' => $version->created_at->toISOString(),
                 'is_current' => $page->version_id === $version->id,
             ],
+            // Для обратной совместимости с фронтом, который ожидает diffDescriptions на странице
+            'diffDescriptions' => $attachedTasks,
         ]);
     }
 

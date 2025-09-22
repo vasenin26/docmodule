@@ -128,16 +128,16 @@
             @confirm="confirmActualizeDraft"
             @cancel="cancelActualization"
         />
-        
+
         <!-- Chat modal placed after main template to avoid slot constraints -->
         <SidePanel v-model:open="isChatModalOpen">
-            <AgentChat 
-                v-if="chat" 
+            <AgentChat
+                v-if="chat"
                 :messages="chat.messages"
                 :loading="isPolling"
                 :status="actualizationStatus"
                 :sending="isSending"
-                @sendMessage="sendMessageToChat" 
+                @sendMessage="sendMessageToChat"
             />
         </SidePanel>
     </AppLayout>
@@ -273,7 +273,7 @@ const approveDraft = () => {
                 ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
                 : [],
         }));
-        transformed.put(route('drafts.approve', props.pageVersion.id), {
+        transformed.post(route('drafts.approve', props.pageVersion.id), {
             onSuccess: () => { processing.value = false; },
             onError: () => { processing.value = false; },
         });

@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Services\AgentJwtService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class AgentApiTest extends TestCase
@@ -39,8 +40,7 @@ class AgentApiTest extends TestCase
         $this->agent->update(['token' => $this->jwtToken]);
     }
 
-    /** @test */
-    public function agent_can_get_task_with_valid_jwt_and_uuid()
+    #[Test] public function agent_can_get_task_with_valid_jwt_and_uuid()
     {
         // Создаем задачу для агента
         $task = AgentTask::factory()->create([
@@ -73,8 +73,7 @@ class AgentApiTest extends TestCase
         $this->assertEquals(AgentTask::STATUS_PROCESSING, $task->status);
     }
 
-    /** @test */
-    public function agent_cannot_get_task_without_jwt_token()
+    #[Test] public function agent_cannot_get_task_without_jwt_token()
     {
         $response = $this->postJson('/api/agent/task', [
             'agent_uuid' => '550e8400-e29b-41d4-a716-446655440000',
@@ -84,8 +83,7 @@ class AgentApiTest extends TestCase
             ->assertJson(['error' => 'Token required']);
     }
 
-    /** @test */
-    public function agent_cannot_get_task_with_invalid_jwt_token()
+    #[Test] public function agent_cannot_get_task_with_invalid_jwt_token()
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer invalid-token',
@@ -97,8 +95,7 @@ class AgentApiTest extends TestCase
             ->assertJson(['error' => 'Invalid or expired token']);
     }
 
-    /** @test */
-    public function agent_cannot_get_task_without_agent_uuid()
+    #[Test] public function agent_cannot_get_task_without_agent_uuid()
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->jwtToken,
@@ -108,8 +105,7 @@ class AgentApiTest extends TestCase
             ->assertJsonValidationErrors(['agent_uuid']);
     }
 
-    /** @test */
-    public function agent_cannot_get_task_with_invalid_uuid_format()
+    #[Test] public function agent_cannot_get_task_with_invalid_uuid_format()
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->jwtToken,
@@ -121,8 +117,7 @@ class AgentApiTest extends TestCase
             ->assertJsonValidationErrors(['agent_uuid']);
     }
 
-    /** @test */
-    public function agent_can_update_task_with_correct_uuid()
+    #[Test] public function agent_can_update_task_with_correct_uuid()
     {
         // Создаем задачу, назначенную агенту
         $agentUuid = '550e8400-e29b-41d4-a716-446655440000';
@@ -157,8 +152,7 @@ class AgentApiTest extends TestCase
         $this->assertEquals(AgentTask::STATUS_SUCCESS, $task->status);
     }
 
-    /** @test */
-    public function agent_cannot_update_task_with_wrong_uuid()
+    #[Test] public function agent_cannot_update_task_with_wrong_uuid()
     {
         // Создаем задачу, назначенную агенту
         $agentUuid = '550e8400-e29b-41d4-a716-446655440000';
@@ -188,8 +182,7 @@ class AgentApiTest extends TestCase
             ->assertJson(['error' => 'Task not found, not assigned to this agent, or not in processing state']);
     }
 
-    /** @test */
-    public function agent_cannot_update_task_assigned_to_different_agent()
+    #[Test] public function agent_cannot_update_task_assigned_to_different_agent()
     {
         // Создаем другого агента
         $otherAgent = Agent::factory()->create([
