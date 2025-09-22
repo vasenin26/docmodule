@@ -564,9 +564,6 @@ class PageController extends Controller
             $errors[] = 'Page have active actualization';
         }
 
-        var_dump($page->id);
-        var_dump($page->version_id);
-
         if (!$page->currentVersion) {
             $errors[] = 'Page have no current version';
         } elseif ($page->currentVersion->projectFiles()->count() === 0) {

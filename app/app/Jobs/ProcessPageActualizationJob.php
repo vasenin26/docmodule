@@ -50,44 +50,30 @@ class ProcessPageActualizationJob implements ShouldQueue
         $actualization = Actualization::with(['pageVersion.page', 'page'])->findOrFail($this->actualizationId);
         $draft = $actualization->pageVersion;
         $page = $actualization->page;
-        
-        Log::info('Processing page actualization job started', [
-            'actualization_id' => $this->actualizationId,
-            'page_id' => $actualization->page_id,
-        ]);
-        
-        // Устанавливаем статус "processing"
-        $actualization->update(['status' => Actualization::STATUS_PROCESSING]);
-        
+
         $promptProvider = $promptProviderFactory->createProjectPromptService($page->project_id);
-        
+
         $currentContent = $draft->content ?? '';
-        
+
         // Создаем контекст для актуализации
         $context = new ActualizationContextDTO(
             attachedFiles: $draft->files ?? [],
             repositories: $page->project->repositories->pluck('url')->toArray(),
             projectId: $page->project_id
         );
-        
+
         $chat = $chatFactory->createChatForActualization(
             $promptProvider,
             $currentContent,
             $context
         );
-        
+
         $actualization->llm_chat_id = $chat->id;
         $actualization->save();
-        
+
         $handler = $agentResultHandlerFactory->createActualizationResultHandler($actualization);
-        
+
         $agentTaskManager->createTask($handler, $actualization->created_by, $page->project_id, $chat->id, true, AgentTaskType::TEXT);
-        
-        Log::info('Processing page actualization job completed - agent task created', [
-            'actualization_id' => $this->actualizationId,
-            'page_id' => $actualization->page_id,
-            'chat_id' => $chat->id,
-        ]);
     }
 
     /**

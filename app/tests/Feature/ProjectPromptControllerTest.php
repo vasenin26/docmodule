@@ -19,9 +19,7 @@ class ProjectPromptControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
-        $this->withoutMiddleware();
-        
+
         $this->user = User::factory()->create();
         $this->project = Project::factory()->for($this->user, 'owner')->create();
     }
@@ -32,7 +30,7 @@ class ProjectPromptControllerTest extends TestCase
             ->get(route('projects.prompts.index', $this->project));
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => 
+        $response->assertInertia(fn ($page) =>
             $page->component('projects/Prompts')
                 ->has('project')
                 ->has('prompts')
@@ -48,24 +46,6 @@ class ProjectPromptControllerTest extends TestCase
             ->get(route('projects.prompts.index', $this->project));
 
         $response->assertForbidden();
-    }
-
-    /**
-     * @test
-     * @skip Тест пропущен из-за фатальной ошибки в ProjectPromptController::store - не передается project_id
-     */
-    public function test_store_creates_new_prompt(): void
-    {
-        $this->markTestSkipped('Фатальная ошибка в коде: ProjectPromptController::store не передает project_id в updateOrCreate');
-    }
-
-    /**
-     * @test
-     * @skip Тест пропущен из-за фатальной ошибки в ProjectPromptController::store - не передается project_id
-     */
-    public function test_store_updates_existing_prompt(): void
-    {
-        $this->markTestSkipped('Фатальная ошибка в коде: ProjectPromptController::store не передает project_id в updateOrCreate');
     }
 
     public function test_destroy_deletes_prompt(): void
