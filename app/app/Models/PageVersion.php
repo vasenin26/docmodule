@@ -195,4 +195,13 @@ class PageVersion extends Model
         $ids = $source->projectFiles()->pluck('project_files.id')->all();
         $this->projectFiles()->sync($ids);
     }
+
+    /**
+     * Backward-compatible accessor: вернуть массив URL прикрепленных файлов
+     */
+    public function getFilesAttribute(): array
+    {
+        // Возвращаем список URL из связанной коллекции projectFiles
+        return $this->projectFiles()->pluck('url')->all();
+    }
 }

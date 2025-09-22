@@ -48,13 +48,11 @@ class ChatFactory implements LLMChatFactoryInterface
         foreach ($pageVersions as $pageVersion) {
             $pageDiffs[] = $this->diffGenerator->createDifferenceDataDTO($pageVersion);
 
-            if(!empty($pageVersion->files)) {
-                foreach ($pageVersion->files as $file) {
-                    if (in_array($file, $attached)) {
-                        continue;
-                    }
-                    $attached[] = $file;
+            foreach ($pageVersion->projectFiles as $file) {
+                if (in_array($file, $attached)) {
+                    continue;
                 }
+                $attached[] = $file;
             }
         }
 
@@ -63,7 +61,7 @@ class ChatFactory implements LLMChatFactoryInterface
         $conversation->addMessage(new UserMessage($prompt));
 
         foreach ($attached as $file) {
-            $conversation->addMessage(new GitFileMessage($file));
+            $conversation->addMessage(new GitFileMessage($file->url, $file->description));
         }
 
         return $this->createChat($conversation->serialize());
