@@ -47,14 +47,6 @@
                                 <p class="mt-1 text-sm text-muted-foreground">{{ task.id }}</p>
                             </div>
                             <div>
-                                <Label class="text-sm font-medium">ID версии страницы</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion?.id ?? '' }}</p>
-                            </div>
-                            <div>
-                                <Label class="text-sm font-medium">ID страницы</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion?.page?.id ?? '' }}</p>
-                            </div>
-                            <div>
                                 <Label class="text-sm font-medium">Создатель задачи</Label>
                                 <p class="mt-1 text-sm text-muted-foreground">{{ task.creator?.name }}</p>
                             </div>
@@ -92,9 +84,12 @@
                 </Card>
 
                 <!-- Технический план -->
-                <TechplanCard :techplane="task.techplane" :task-id="task.id" />
+
             </div>
             <div class="space-y-6 lg:col-span-1">
+
+                <!-- Технический план -->
+                <TechplanCard :techplane="task.techplane" :task-id="task.id" />
 
                 <!-- Информация о странице -->
                 <Card v-if="task.pageVersion && task.pageVersion.page">
@@ -142,8 +137,8 @@
                                     <div class="font-medium">{{ item.title }}</div>
                                     <div class="text-xs text-muted-foreground">Версия: {{ item.version ?? '—' }}</div>
                                 </div>
-                                <Button as-child size="sm" variant="outline" v-if="task.pageVersion?.page">
-                                    <Link :href="route('pages.show', task.pageVersion.page.id)">К странице</Link>
+                                <Button as-child size="sm" variant="outline">
+                                    <Link :href="route('pages.show', item.id)">К странице</Link>
                                 </Button>
                             </li>
                         </ul>

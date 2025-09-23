@@ -5,26 +5,25 @@
         </CardHeader>
         <CardContent>
             <div v-if="techplane">
-                <!-- Содержимое техплана -->
-                <div v-if="techplane.content" class="mb-4">
-                    <div class="prose prose-sm max-w-none">
-                        <MarkdownRenderer :content="techplane.content" />
+                <!-- Краткая информация без полного текста техплана -->
+                <div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                        <span class="text-sm font-medium">Статус</span>
+                        <p class="mt-1 text-sm text-muted-foreground">{{ techplane.generation_status }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm font-medium">Дата создания</span>
+                        <p class="mt-1 text-sm text-muted-foreground">{{ formatDate(techplane.created_at) }}</p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <span class="text-sm font-medium">Автор</span>
+                        <p class="mt-1 text-sm text-muted-foreground">{{ techplane.creator?.name }}</p>
                     </div>
                 </div>
-                <div v-else class="mb-4 text-muted-foreground italic">Техплан создан, но содержимое еще не сгенерировано</div>
 
                 <!-- Кнопки действий -->
                 <div class="flex gap-3">
-                    <Button
-                        v-if="techplane.generation_status !== 'generating'"
-                        @click="restartGeneration"
-                        :disabled="isRestartingGeneration"
-                        variant="outline"
-                    >
-                        <span v-if="isRestartingGeneration">Перезапуск...</span>
-                        <span v-else>Сгенерировать заново</span>
-                    </Button>
-                    <Button as-child variant="default">
+                    <Button v-if="techplane.content || techplane.generation_status === 'completed'" as-child variant="default">
                         <Link :href="route('techplanes.show', techplane.id)"> Открыть техплан </Link>
                     </Button>
                 </div>
@@ -40,7 +39,6 @@
 </template>
 
 <script setup lang="ts">
-import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@inertiajs/vue3';
@@ -66,41 +64,14 @@ const props = defineProps<Props>();
 
 const isRestartingGeneration = ref<boolean>(false);
 
-// Функция перезапуска генерации техплана
-const restartGeneration = async () => {
-    if (!props.techplane || isRestartingGeneration.value) {
-        return;
-    }
-
-    isRestartingGeneration.value = true;
-
-    try {
-        const response = await fetch(route('techplanes.restart-generation', props.techplane.id), {
-            method: 'POST',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-            },
-            credentials: 'same-origin',
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                // Можно показать уведомление или обновить состояние
-                console.log('Генерация техплана перезапущена');
-                // Перезагрузить страницу чтобы увидеть обновленный статус
-                window.location.reload();
-            }
-        } else {
-            console.error('Ошибка при перезапуске генерации техплана:', response.status, response.statusText);
-        }
-    } catch (error) {
-        console.error('Ошибка при перезапуске генерации техплана:', error);
-    } finally {
-        isRestartingGeneration.value = false;
-    }
+const formatDate = (date: string) => {
+    return new Date(date).toLocaleString('ru-RU', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
 };
+
 </script>
