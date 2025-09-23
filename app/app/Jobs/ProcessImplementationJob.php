@@ -33,18 +33,17 @@ class ProcessImplementationJob implements ShouldQueue
         $implementation = Implementation::with(['techplane.task.pageVersion.page'])->findOrFail($this->implementationId);
         $techplane = $implementation->techplane;
         $task = $techplane->task;
-        $page = $task->pageVersion->page;
 
         // Устанавливаем статус "processing"
         $implementation->update(['status' => GenerationStatus::PROCESSING]);
 
-        $promptProvider = $promptProviderFactory->createProjectPromptService($page->project_id);
+        $promptProvider = $promptProviderFactory->createProjectPromptService($task->project_id);
 
         // Создаем контекст для реализации техплана
         $context = new GeneratorContextDTO(
             attachedFiles: $task->pageVersion->files ?? [],
-            repositories: $page->project->repositories->pluck('url')->toArray(),
-            projectId: $page->project_id
+            repositories: $task->project->repositories->pluck('url')->toArray(),
+            projectId: $task->project_id
         );
 
         // Создаем чат для реализации
@@ -63,7 +62,7 @@ class ProcessImplementationJob implements ShouldQueue
         $agentTaskManager->createTask(
             $handler,
             $task->created_by,
-            $page->project_id,
+            $task->project_id,
             $chat->id,
             true,
             AgentTaskType::CODE

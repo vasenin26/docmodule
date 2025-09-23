@@ -6,7 +6,7 @@
         </div>
 
         <!-- Содержимое чата -->
-        <div ref="messagesContainer" class="flex-1 space-y-4 overflow-y-auto p-4">
+        <div ref="messagesContainer" class="flex-1 space-y-4 overflow-y-auto p-4" @scroll="handleScroll">
             <!-- Сообщения отсутствуют -->
             <div v-if="!messages || messages.length === 0" class="flex items-center justify-center py-8">
                 <div class="text-center text-gray-500">
@@ -73,6 +73,10 @@ function sendMessage() {
 
 const messagesContainer = ref<HTMLElement>();
 
+// Управление автопрокруткой
+const isAutoScrollEnabled = ref(true);
+const SCROLL_BOTTOM_THRESHOLD_PX = 16;
+
 // Автоматическая прокрутка к последнему сообщению
 async function scrollToBottom(): Promise<void> {
     await nextTick();
@@ -81,11 +85,23 @@ async function scrollToBottom(): Promise<void> {
     }
 }
 
+function isAtBottom(): boolean {
+    if (!messagesContainer.value) return true;
+    const el = messagesContainer.value;
+    const distanceToBottom = el.scrollHeight - (el.scrollTop + el.clientHeight);
+    return distanceToBottom <= SCROLL_BOTTOM_THRESHOLD_PX;
+}
+
+function handleScroll() {
+    // Включаем автопрокрутку только если пользователь у низа чата
+    isAutoScrollEnabled.value = isAtBottom();
+}
+
 // Следим за изменениями сообщений для автопрокрутки
 watch(
     () => props.messages,
     () => {
-        if (props.messages && props.messages.length > 0) {
+        if (props.messages && props.messages.length > 0 && isAutoScrollEnabled.value) {
             scrollToBottom();
         }
     },
@@ -99,5 +115,7 @@ onMounted(() => {
     if (props.messages && props.messages.length > 0) {
         scrollToBottom();
     }
+    // Инициализируем состояние автопрокрутки в зависимости от позиции
+    isAutoScrollEnabled.value = isAtBottom();
 });
 </script>

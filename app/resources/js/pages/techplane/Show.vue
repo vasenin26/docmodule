@@ -20,7 +20,7 @@
                         v-if="canExecuteTechplane"
                         @click="executeTechplane"
                         :disabled="isExecutingTechplane"
-                        variant="default" 
+                        variant="default"
                     >
                         <span v-if="isExecutingTechplane">Создание реализации...</span>
                         <span v-else>Выполнить</span>
@@ -64,10 +64,6 @@
                                     Задача #{{ techplane.task.id }}
                                 </Link>
                             </p>
-                        </div>
-                        <div>
-                            <Label class="text-sm font-medium text-gray-500">Страница</Label>
-                            <p class="text-sm">{{ techplane.task.pageVersion.page.title }}</p>
                         </div>
                         <div>
                             <Label class="text-sm font-medium text-gray-500">Статус</Label>
@@ -149,14 +145,6 @@ interface TechplaneData {
     llm_chat?: LLMChat | null;
     task: {
         id: number;
-        pageVersion: {
-            id: number;
-            title: string;
-            page: {
-                id: number;
-                title: string;
-            };
-        };
     };
 }
 

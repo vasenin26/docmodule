@@ -26,21 +26,23 @@ class ImplementationResultHandler implements AgentResultHandlerInterface
 
     public function handleResult(?string $result): void
     {
-        $this->implementation->content = $result;
-        $this->implementation->status = GenerationStatus::COMPLETED;
-        $this->implementation->save();
+        if ($result !== null) {
+            $this->implementation->content = $result;
+            $this->implementation->status = GenerationStatus::COMPLETED;
+            $this->implementation->save();
 
-        Log::info('Implementation completed', [
-            'implementation_id' => $this->implementation->id,
-            'techplane_id' => $this->implementation->techplane_id
-        ]);
+            Log::info('Implementation completed', [
+                'implementation_id' => $this->implementation->id,
+                'techplane_id' => $this->implementation->techplane_id
+            ]);
+        }
     }
 
     public static function createFromTask(AgentTask $task): static
     {
         $implementationId = $task->handler_options[self::OPTION_IMPLEMENTATION_ID] ?? null;
 
-        if(is_null($implementationId)) {
+        if (is_null($implementationId)) {
             throw new Exception('AgentTask have no required option', 500);
         }
 

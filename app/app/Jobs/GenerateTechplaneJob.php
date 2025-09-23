@@ -48,33 +48,32 @@ class GenerateTechplaneJob implements ShouldQueue
     ): void {
         $techplane = Techplane::with(['task.pageVersion.page'])->findOrFail($this->techplaneId);
         $task = $techplane->task;
-        $page = $task->pageVersion->page;
-        
+
         // Устанавливаем статус "generating"
         $techplane->update(['generation_status' => Techplane::STATUS_GENERATING]);
-        
-        $promptProvider = $promptProviderFactory->createProjectPromptService($page->project_id);
-        
+
+        $promptProvider = $promptProviderFactory->createProjectPromptService($task->project_id);
+
         $taskDescription = $task->content ?? 'Описание задачи отсутствует';
-        
+
         // Создаем контекст для генерации
         $context = new GeneratorContextDTO(
             attachedFiles: $task->pageVersion->files ?? [],
-            repositories: $page->project->repositories->pluck('url')->toArray(),
-            projectId: $page->project_id
+            repositories: $task->project->repositories->pluck('url')->toArray(),
+            projectId: $task->project_id
         );
-        
+
         $chat = $chatFactory->createChatForTechplane(
             $promptProvider,
             $taskDescription,
             $context
         );
-        
+
         $techplane->chat_id = $chat->id;
         $techplane->save();
-        
+
         $handler = $agentResultHandlerFactory->createTechplaneResultHandler($techplane);
-        
-        $agentTaskManager->createTask($handler, $task->created_by, $page->project_id, $chat->id, true, AgentTaskType::TEXT);
+
+        $agentTaskManager->createTask($handler, $task->created_by, $task->project_id, $chat->id, true, AgentTaskType::TEXT);
     }
 }

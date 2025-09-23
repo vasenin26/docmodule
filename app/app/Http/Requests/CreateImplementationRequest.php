@@ -10,18 +10,18 @@ class CreateImplementationRequest extends FormRequest
     {
         $user = $this->user();
         $techplane = $this->route('techplane');
-        
+
         if (!$user || !$techplane) {
             return false;
         }
-        
+
         // Загружаем связи если они не загружены
         if (!$techplane->relationLoaded('task')) {
             $techplane->load('task.pageVersion.page.project');
         }
-        
+
         // Проверяем доступ через проект страницы
-        return $techplane->task->pageVersion->page->project->canAccess($user);
+        return $techplane->task->project->canAccess($user);
     }
 
     public function rules(): array

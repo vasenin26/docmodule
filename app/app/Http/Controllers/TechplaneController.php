@@ -38,14 +38,6 @@ class TechplaneController extends Controller
                 'updated_at' => $techplane->updated_at,
                 'task' => [
                     'id' => $techplane->task->id,
-                    'pageVersion' => [
-                        'id' => $techplane->task->pageVersion->id,
-                        'title' => $techplane->task->pageVersion->title,
-                        'page' => [
-                            'id' => $techplane->task->pageVersion->page->id,
-                            'title' => $techplane->task->pageVersion->page->title,
-                        ],
-                    ],
                 ],
                 'creator' => $techplane->creator ? [
                     'id' => $techplane->creator->id,
@@ -151,7 +143,7 @@ class TechplaneController extends Controller
                     $agentTaskManager->createTask(
                         $handler,
                         $dto->userId,
-                        $techplane->task->pageVersion->page->project_id,
+                        $techplane->task->project_id,
                         $chat->id,
                         false,
                         AgentTaskType::TEXT
@@ -202,10 +194,10 @@ class TechplaneController extends Controller
     {
         // Создаем реализацию
         $implementation = $techplane->createImplementation(Auth::id());
-        
+
         // Запускаем обработку в фоне
         ProcessImplementationJob::dispatch($implementation->id);
-        
+
         // Если это AJAX запрос, возвращаем JSON
         if ($request->wantsJson()) {
             return response()->json([
@@ -214,7 +206,7 @@ class TechplaneController extends Controller
                 'redirect_url' => route('implementations.show', $implementation)
             ]);
         }
-        
+
         // Иначе возвращаем редирект
         return redirect()->route('implementations.show', $implementation)
             ->with('success', 'Реализация создана, обработка запущена');
