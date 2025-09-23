@@ -4,10 +4,11 @@ namespace App\Services\DiffGenerator;
 
 use App\Common\DTO\DifferenceDataDTO;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
+use App\Models\PageVersion;
 
 class DiffGeneratorService implements DiffGeneratorInterface
 {
-    public function createDifferenceDataDTO($currentVersion): DifferenceDataDTO
+    public function createDifferenceDataDTO(PageVersion $currentVersion): DifferenceDataDTO
     {
         $previousVersion = $currentVersion->previousVersion;
 
