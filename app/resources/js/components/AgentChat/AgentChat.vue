@@ -18,10 +18,11 @@
             <div v-else class="space-y-4">
                 <Message v-for="(message, index) in messages" :key="index" :message="message" :index="index" />
 
-                <div class="rounded-lg p-3 bg-gray-50 border border-gray-200" v-if="status != 'completed'">
-                    <span class="text-xs font-medium">
-                        Ответ генерируется....
-                    </span>
+                <div class="rounded-lg border border-gray-200 bg-gray-50 p-3" v-if="status != 'completed'">
+                    <div class="flex items-center">
+                        <span class="text-xs font-medium flex-grow">Ответ генерируется...</span>
+                        <Button size="sm" variant="outline" @click="stopGenerating">Стоп</Button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -62,6 +63,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
     (e: 'sendMessage', message: string): void;
+    (e: 'stop'): void;
 }>();
 
 const input = ref('');
@@ -95,6 +97,10 @@ function isAtBottom(): boolean {
 function handleScroll() {
     // Включаем автопрокрутку только если пользователь у низа чата
     isAutoScrollEnabled.value = isAtBottom();
+}
+
+function stopGenerating() {
+    emit('stop')
 }
 
 // Следим за изменениями сообщений для автопрокрутки

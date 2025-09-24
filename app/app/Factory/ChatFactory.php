@@ -56,7 +56,10 @@ class ChatFactory implements LLMChatFactoryInterface
             }
         }
 
-        $prompt = $promptProvider->getDescriptionGeneratorInstructions($pageDiffs);
+        $prompt = $promptProvider->getDescriptionGeneratorInstructions(
+            differenceData: $pageDiffs,
+            repositories: $task->project->repositories->pluck('url')->toArray(),
+        );
 
         $conversation->addMessage(new UserMessage($prompt));
 

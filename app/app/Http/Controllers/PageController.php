@@ -28,7 +28,7 @@ class PageController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request, Project $project = null)
+    public function index(Request $request, ?Project $project)
     {
         $query = Page::whereNotNull('version_id')
             ->with(['creator', 'children.creator', 'project', 'currentVersion']);

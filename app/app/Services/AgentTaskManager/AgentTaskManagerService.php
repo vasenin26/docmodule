@@ -207,4 +207,9 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
             throw $e;
         }
     }
+
+    public function stopTask(int $id): void
+    {
+        AgentTask::where('id', $id)->update(['status' => AgentTask::STATUS_SUCCESS]);
+    }
 }

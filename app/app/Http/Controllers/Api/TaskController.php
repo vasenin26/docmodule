@@ -75,6 +75,7 @@ class TaskController extends Controller
             'project_id' => $task->project_id,
             'result_required' => $task->result_required,
             'chat' => [
+                'id' => $task->llmChat->id,
                 'messages' => $task->llmChat->messages ?? [],
             ]
         ]);
@@ -92,7 +93,6 @@ class TaskController extends Controller
             $agentTask = AgentTask::where('id', $id)
                 ->where('agent_uuid', $request->getAgentUuid()) // Проверяем по UUID от клиента
                 ->where('agent_id', $agent->id) // Дополнительная проверка принадлежности агенту
-                ->where('status', AgentTask::STATUS_PROCESSING)
                 ->first();
 
             if (!$agentTask) {
@@ -122,6 +122,13 @@ class TaskController extends Controller
                 'completion_tokens' => ($chat->completion_tokens ?? 0) + ($updateData->stats->completion_tokens ?? 0),
                 'total_tokens' => ($chat->total_tokens ?? 0) + ($updateData->stats->total_tokens ?? 0),
             ]);
+
+            if($agentTask->status === AgentTask::STATUS_SUCCESS) {
+                return response()->json([
+                    'status' => 'stopped',
+                    'message' => 'Task was already stopped'
+                ]);
+            }
 
             if ($request->isCompleted()) {
                 $agentTask->update(['status' => AgentTask::STATUS_SUCCESS]);

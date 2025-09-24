@@ -105,6 +105,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('tasks/{task}/restart-generation', [TaskController::class, 'restartGeneration'])->name('tasks.restart-generation');
     Route::post('tasks/{task}/create-techplane', [TaskController::class, 'createTechplane'])->name('tasks.create-techplane');
     Route::post('tasks/{task}/send-message', [TaskController::class, 'sendMessage'])->name('tasks.send-message');
+    Route::put('tasks/{task}/stop-generating', [TaskController::class, 'stopGenerating'])->name('tasks.stop-generating');
 
     // Привязки страниц к задаче
     Route::post('tasks/{task}/attachments', [TaskAttachmentController::class, 'store'])->name('tasks.attachments.store');

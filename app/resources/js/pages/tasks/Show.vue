@@ -4,8 +4,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <Heading :title="task.pageVersion?.page ? `Задача для версии: ${task.pageVersion.title}` : 'Задача'" />
-                    <p class="mt-1 text-sm text-muted-foreground">Создана {{ formatDate(task.created_at) }}
-                        пользователем {{ task.creator?.name }}</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Создана {{ formatDate(task.created_at) }} пользователем {{ task.creator?.name }}</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <!-- Кнопка редактирования -->
@@ -14,8 +13,7 @@
                     </Button>
 
                     <!-- Кнопка перезапуска генерации -->
-                    <Button v-if="canRestartGeneration" @click="restartGeneration" :disabled="isRestartingGeneration"
-                            variant="outline" size="sm">
+                    <Button v-if="canRestartGeneration" @click="restartGeneration" :disabled="isRestartingGeneration" variant="outline" size="sm">
                         <span v-if="isRestartingGeneration">Перезапуск...</span>
                         <span v-else>Перезапустить генерацию</span>
                     </Button>
@@ -62,14 +60,11 @@
                 <Card>
                     <CardHeader>
                         <CardTitle>Описание задачи</CardTitle>
-                        <CardDescription> Автоматически сгенерированное описание задачи на основе изменений в
-                            документации
-                        </CardDescription>
+                        <CardDescription> Автоматически сгенерированное описание задачи на основе изменений в документации </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div class="prose prose-sm max-w-none">
-                            <MarkdownRenderer v-if="taskContent && taskContent.trim().length > 0"
-                                              :content="taskContent" />
+                            <MarkdownRenderer v-if="taskContent && taskContent.trim().length > 0" :content="taskContent" />
                             <div v-else class="text-muted-foreground italic">
                                 <div class="flex items-center gap-2">
                                     <div
@@ -84,10 +79,8 @@
                 </Card>
 
                 <!-- Технический план -->
-
             </div>
             <div class="space-y-6 lg:col-span-1">
-
                 <!-- Технический план -->
                 <TechplanCard :techplane="task.techplane" :task-id="task.id" />
 
@@ -105,21 +98,15 @@
                             </div>
                             <div>
                                 <Label class="text-sm font-medium">Автор страницы</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{
-                                        task.pageVersion.page.creator?.name
-                                    }}</p>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.page.creator?.name }}</p>
                             </div>
                             <div>
                                 <Label class="text-sm font-medium">Дата создания версии</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{
-                                        formatDate(task.pageVersion.created_at)
-                                    }}</p>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ formatDate(task.pageVersion.created_at) }}</p>
                             </div>
                             <div v-if="task.pageVersion.previousVersion">
                                 <Label class="text-sm font-medium">Предыдущая версия</Label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{
-                                        task.pageVersion.previousVersion.id
-                                    }}</p>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ task.pageVersion.previousVersion.id }}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -153,7 +140,7 @@
                     </CardHeader>
                     <CardContent class="space-y-4">
                         <!-- Сравнение заголовков -->
-                        <div v-if="task.pageVersion && (task.pageVersion.title !== (task.pageVersion.previousVersion?.title || ''))">
+                        <div v-if="task.pageVersion && task.pageVersion.title !== (task.pageVersion.previousVersion?.title || '')">
                             <Label class="text-sm font-medium">Изменение заголовка</Label>
                             <div class="mt-2 space-y-2">
                                 <div class="rounded border border-red-200 bg-red-50 p-2">
@@ -171,8 +158,7 @@
                         <div v-if="task.pageVersion && task.pageVersion.page">
                             <Label class="text-sm font-medium">Изменение содержимого</Label>
                             <div class="mt-2">
-                                <DiffViewer :old-content="task.pageVersion.previousVersion?.content || ''"
-                                            :new-content="task.pageVersion.content" />
+                                <DiffViewer :old-content="task.pageVersion.previousVersion?.content || ''" :new-content="task.pageVersion.content" />
                             </div>
                         </div>
                     </CardContent>
@@ -182,11 +168,15 @@
 
         <!-- Модальное окно чата -->
         <SidePanel v-model:open="isChatModalOpen">
-            <AgentChat v-if="chat" :messages="chat.messages"
-                       :loading="isPolling"
-                       :status="generationStatus"
-                       :sending="isSending"
-                    @sendMessage="sendMessageToChat" />
+            <AgentChat
+                v-if="chat"
+                :messages="chat.messages"
+                :loading="isPolling"
+                :status="generationStatus"
+                :sending="isSending"
+                @sendMessage="sendMessageToChat"
+                @stop="sendStopGenerating"
+            />
         </SidePanel>
     </AppLayout>
 </template>
@@ -258,7 +248,7 @@ interface TaskData {
 }
 
 const props = defineProps<{
-    task: TaskData & { attachedPageVersions?: { id:number; title:string; version:number|null }[] };
+    task: TaskData & { attachedPageVersions?: { id: number; title: string; version: number | null }[] };
 }>();
 
 // Реактивные переменные для отслеживания статуса
@@ -275,7 +265,7 @@ const isRestartingGeneration = ref<boolean>(false);
 const isChatModalOpen = ref<boolean>(false);
 
 // Composable для работы с чатом задачи
-const { sendMessage, updateChatMessages, isSending, error, hasError } = useTaskChat(props.task.id);
+const { sendMessage, stopGenerating, updateChatMessages, isSending, error, hasError } = useTaskChat(props.task.id);
 
 // Единый экземпляр API клиента
 const api = createApi();
@@ -382,7 +372,7 @@ const formatDate = (date: string) => {
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
     });
 };
 
@@ -413,4 +403,9 @@ const sendMessageToChat = async (message: string) => {
         console.error('Ошибка при отправке:', error.value);
     }
 };
+
+const sendStopGenerating = async () => {
+    await stopGenerating();
+    generationStatus.value = 'completed';
+}
 </script>

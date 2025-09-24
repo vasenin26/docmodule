@@ -12,10 +12,12 @@ export interface SendMessageResponse {
 
 import { createApi } from '@/service/api/Api';
 import { TaskSendMessageRequest } from '@/service/api/request/Task/TaskSendMessageRequest';
+import { TaskSendStopGenerating } from '@/service/api/request/Task/TaskSendStopGenerating';
 
 export function useTaskChat(taskId: number) {
     const isSending = ref(false);
     const error = ref<string | null>(null);
+    const api = createApi();
 
     /**
      * Отправить сообщение в чат задачи
@@ -30,7 +32,6 @@ export function useTaskChat(taskId: number) {
         error.value = null;
 
         try {
-            const api = createApi();
             const req = new TaskSendMessageRequest(taskId, { message });
             const data = await req.call(api);
 
@@ -48,6 +49,11 @@ export function useTaskChat(taskId: number) {
             isSending.value = false;
         }
     };
+
+    const stopGenerating = async () => {
+        const req = new TaskSendStopGenerating(taskId);
+        await req.call(api);
+    }
 
     /**
      * Обновить сообщения чата в локальном состоянии
@@ -73,6 +79,7 @@ export function useTaskChat(taskId: number) {
 
         // Методы
         sendMessage,
+        stopGenerating,
         updateChatMessages,
         clearError,
     };

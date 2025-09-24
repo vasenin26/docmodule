@@ -87,4 +87,6 @@ interface AgentTaskManagerInterface
      * @return int Количество сброшенных задач
      */
     public function resetStuckTasks(int $minutesStuck = 60): int;
+
+    public function stopTask(int $id): void;
 }

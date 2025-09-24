@@ -8,6 +8,7 @@ use App\Factory\PromptProviderFactory;
 use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Jobs\GenerateTaskDescriptionJob;
 use App\Jobs\GenerateTechplaneJob;
+use App\Models\AgentTask;
 use App\Models\VersionDiffTask;
 use App\Models\Techplane;
 use App\Models\LLMChat;
@@ -503,5 +504,17 @@ class TaskController extends Controller implements HasMiddleware
         ]);
 
         return redirect()->route('tasks.edit', $task);
+    }
+
+    public function stopGenerating(
+        VersionDiffTask           $task,
+        AgentTaskManagerInterface $agentTaskManager
+    )
+    {
+        $agentTask = AgentTask::find(['chat_id' => $task->llmChat->id])->firstOrFail();
+
+        $agentTaskManager->stopTask($agentTask->id);
+
+        return response()->json(['chat_id' => $task->llmChat->id, 'message' => 'Задача успешно остановлена', 'success' => true]);
     }
 }

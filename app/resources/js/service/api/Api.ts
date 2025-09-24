@@ -1,5 +1,5 @@
 export enum Method {
-    LIST = 'GET',
+    LIST = 'LIST',
     GET = 'GET',
     CREATE = 'POST',
     UPDATE = 'PUT',
@@ -30,7 +30,8 @@ class Api implements ApiInterface {
         const isAbsoluteUrl = /^https?:\/\//i.test(request.url);
         const url = isAbsoluteUrl ? request.url : this.baseUrl + request.url;
 
-        const method = request.method as string;
+        const method = this.getMethod(request)
+
         const hasBodyMethod = method !== Method.GET && method !== Method.LIST && method !== Method.DELETE;
 
         const isFormData = typeof FormData !== 'undefined' && request.body instanceof FormData;
@@ -87,6 +88,12 @@ class Api implements ApiInterface {
         } catch (_) {
             return undefined as unknown as T;
         }
+    }
+
+    private getMethod(request: Request<any>): string
+    {
+        if(request.method as string === 'LIST') return 'GET';
+        return request.method as string;
     }
 }
 
