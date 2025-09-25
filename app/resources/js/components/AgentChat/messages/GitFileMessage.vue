@@ -9,9 +9,9 @@ const props = defineProps<{
 
 const { expandedMessages, isLongMessage, getTruncatedContent, toggleMessageExpansion } = useMessageExpansion();
 
-function getFileName(url: string | undefined): string {
-    if (!url) return 'Неизвестный файл';
-    return url.split('/').pop() || url;
+function getFileName(path: string | undefined): string {
+    if (!path) return 'Неизвестный файл';
+    return path.split('/').pop() || path;
 }
 </script>
 
@@ -33,9 +33,9 @@ function getFileName(url: string | undefined): string {
 
         <!-- Содержимое сообщения -->
         <div class="text-sm space-y-3">
-            <!-- URL файла -->
+            <!-- URL репозитория -->
             <div v-if="message.message.url" class="space-y-1">
-                <div class="text-xs font-medium text-gray-600">Файл из репозитория:</div>
+                <div class="text-xs font-medium text-gray-600">Репозиторий:</div>
                 <div class="flex items-center space-x-2">
                     <div class="text-sm font-mono bg-gray-100 p-2 rounded border flex-1 overflow-x-auto">
                         {{ message.message.url }}
@@ -48,6 +48,14 @@ function getFileName(url: string | undefined): string {
                     >
                         Открыть
                     </a>
+                </div>
+            </div>
+
+            <!-- Путь к файлу -->
+            <div v-if="message.message.path" class="space-y-1">
+                <div class="text-xs font-medium text-gray-600">Путь к файлу:</div>
+                <div class="text-sm font-mono bg-gray-100 p-2 rounded border overflow-x-auto">
+                    {{ message.message.path }}
                 </div>
             </div>
 
