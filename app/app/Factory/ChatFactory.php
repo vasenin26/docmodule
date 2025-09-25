@@ -13,7 +13,7 @@ use Vasenin26\Conversation\Chat;
 use Vasenin26\Conversation\Messages\GitFileMessage;
 use Vasenin26\Conversation\Messages\PageVersionMessage;
 use Vasenin26\Conversation\Messages\SystemMessage;
-use Vasenin26\Conversation\Messages\UserMessage;
+use Vasenin26\Conversation\Messages\UserTaskMessage;
 
 
 class ChatFactory implements LLMChatFactoryInterface
@@ -61,7 +61,7 @@ class ChatFactory implements LLMChatFactoryInterface
             repositories: $task->project->repositories->pluck('url')->toArray(),
         );
 
-        $conversation->addMessage(new UserMessage($prompt));
+        $conversation->addMessage(new UserTaskMessage($prompt));
 
         foreach ($attached as $file) {
             $conversation->addMessage(new GitFileMessage($file->url, $file->description));
@@ -77,7 +77,7 @@ class ChatFactory implements LLMChatFactoryInterface
 
         $conversation = new Chat();
         $conversation->addMessage(new SystemMessage($role));
-        $conversation->addMessage(new UserMessage($prompt));
+        $conversation->addMessage(new UserTaskMessage($prompt));
 
         return $this->createChat($conversation->serialize());
     }
@@ -89,7 +89,7 @@ class ChatFactory implements LLMChatFactoryInterface
 
         $conversation = new Chat();
         $conversation->addMessage(new SystemMessage($role));
-        $conversation->addMessage(new UserMessage($prompt));
+        $conversation->addMessage(new UserTaskMessage($prompt));
 
         return $this->createChat($conversation->serialize());
     }
@@ -101,7 +101,7 @@ class ChatFactory implements LLMChatFactoryInterface
 
         $conversation = new Chat();
         $conversation->addMessage(new SystemMessage($role));
-        $conversation->addMessage(new UserMessage($prompt));
+        $conversation->addMessage(new UserTaskMessage($prompt));
 
         return $this->createChat($conversation->serialize());
     }
