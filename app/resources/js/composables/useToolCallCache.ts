@@ -5,12 +5,14 @@ export function useToolCallCache() {
 
     function registerFunctionName(toolCall: {
         id: string;
-        function: {
-            name: string;
-        };
+        function?: { name: string };
+        name?: string;
     }): string {
-        functions[toolCall.id] = toolCall.function.name;
-        return toolCall.function.name;
+        const name = toolCall.function?.name || toolCall.name || '';
+        if (toolCall.id && name) {
+            functions[toolCall.id] = name;
+        }
+        return name;
     }
 
     function getFunctionName(id: string): string {

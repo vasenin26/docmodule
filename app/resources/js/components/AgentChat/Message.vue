@@ -7,6 +7,7 @@ import ToolMessage from './messages/ToolMessage.vue';
 import GitFileMessage from './messages/GitFileMessage.vue';
 import PageVersionMessage from './messages/PageVersionMessage.vue';
 import InfoMessage from './messages/InfoMessage.vue';
+import ServiceMessage from './messages/ServiceMessage.vue';
 import UnknownMessage from './messages/UnknownMessage.vue';
 
 const props = defineProps<{
@@ -49,6 +50,11 @@ const props = defineProps<{
     />
     <InfoMessage 
         v-else-if="message.type === 'info'" 
+        :message="message" 
+        :index="index" 
+    />
+    <ServiceMessage 
+        v-else-if="message.type === 'service'" 
         :message="message" 
         :index="index" 
     />

@@ -50,6 +50,14 @@ function getFileName(url: string | undefined): string {
                     </a>
                 </div>
             </div>
+
+            <!-- Описание файла -->
+            <div v-if="message.message.description" class="space-y-1">
+                <div class="text-xs font-medium text-gray-600">Описание:</div>
+                <div class="text-sm text-gray-700 bg-gray-50 p-2 rounded border">
+                    {{ message.message.description }}
+                </div>
+            </div>
         </div>
     </div>
 </template>

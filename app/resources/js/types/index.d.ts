@@ -42,17 +42,15 @@ export interface User {
 }
 
 export interface LLMMessage {
-    type: 'user' | 'assistant' | 'system' | 'tool' | 'git-file' | 'page-version' | 'info';
+    type: 'user' | 'assistant' | 'system' | 'tool' | 'git-file' | 'page-version' | 'info' | 'service';
     message: {
         content?: string | null;
         timestamp?: string;
         tool_call_id?: string;
         tool_calls?: {
             id: string;
-            function: {
-                name: string;
-                arguments?: string;    // Аргументы функции (JSON строка)
-            };
+            name?: string;              // Имя функции (плоский формат)
+            arguments?: string;         // Аргументы (плоский формат)
         }[];
         // Новые поля для tool-сообщений:
         tool_name?: string;        // Название инструмента
@@ -67,8 +65,17 @@ export interface LLMMessage {
         id?: string;               // ID вызова инструмента (новый формат)
         // Поля для git-file сообщений:
         url?: string;              // URL файла в Git репозитории
+        description?: string;      // Описание файла
         // Поля для page-version сообщений:
         versionId?: string;        // ID версии страницы
+
+        // Поля для service сообщений:
+        key?: string;              // Ключ события сервиса
+        payload?: {                // Полезная нагрузка сервиса
+            message?: string;      // Текстовое сообщение
+            error?: string;        // Текст ошибки
+            [key: string]: unknown;
+        };
     };
 }
 

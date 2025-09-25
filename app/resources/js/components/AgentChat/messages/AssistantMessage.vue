@@ -12,6 +12,22 @@ const props = defineProps<{
 const { expandedMessages, isLongMessage, getTruncatedContent, toggleMessageExpansion } = useMessageExpansion();
 const { isLongText, getTruncatedText, toggleTextExpansion, isTextExpanded } = useTextExpansion();
 const { registerFunctionName, getFunctionName } = useToolCallCache();
+
+function getHeaderFunctionName(): string {
+    const calls = (props.message.message.tool_calls || []) as Array<{ id: string; name?: string }>;
+    if (calls && calls.length > 0) {
+        return calls.map(c => registerFunctionName(c)).filter(Boolean).join(', ');
+    }
+    return getFunctionName(props.message.message.tool_call_id || '');
+}
+
+function getToolCallName(toolCall: { name?: string }): string {
+    return toolCall.name || '';
+}
+
+function getToolCallArgs(toolCall: { arguments?: string }): string | undefined {
+    return toolCall.arguments;
+}
 </script>
 
 <template>
@@ -25,7 +41,7 @@ const { registerFunctionName, getFunctionName } = useToolCallCache();
                     </span>
                 </div>
                 <span class="text-xs font-medium text-green-700">
-                    Ассистент {{ getFunctionName(message.message.tool_call_id) }}
+                    Ассистент {{ getHeaderFunctionName() }}
                 </span>
             </div>
         </div>
@@ -45,11 +61,11 @@ const { registerFunctionName, getFunctionName } = useToolCallCache();
                 <!-- Аргументы каждого вызова -->
                 <div v-for="toolCall in message.message.tool_calls" :key="'args-' + toolCall.id" class="mb-2">
                     <div class="text-xs text-gray-600 font-medium mb-1">
-                        Аргументы функции {{ toolCall.function.name }}:
+                        Аргументы функции {{ getToolCallName(toolCall) }}:
                     </div>
-                    <div v-if="isLongText(toolCall.function.arguments, 100) && !isTextExpanded(toolCall.id)" class="space-y-1">
+                    <div v-if="isLongText(getToolCallArgs(toolCall), 100) && !isTextExpanded(toolCall.id)" class="space-y-1">
                         <div class="text-xs font-mono bg-gray-100 p-2 rounded border overflow-x-auto">
-                            {{ getTruncatedText(toolCall.function.arguments, 100) }}
+                            {{ getTruncatedText(getToolCallArgs(toolCall), 100) }}
                         </div>
                         <button @click="toggleTextExpansion(toolCall.id)" class="text-xs font-medium text-blue-600 hover:text-blue-800">
                             Показать полностью
@@ -57,10 +73,10 @@ const { registerFunctionName, getFunctionName } = useToolCallCache();
                     </div>
                     <div v-else class="space-y-1">
                         <div class="text-xs font-mono bg-gray-100 p-2 rounded border overflow-x-auto">
-                            {{ toolCall.function.arguments }}
+                            {{ getToolCallArgs(toolCall) }}
                         </div>
                         <button
-                            v-if="isLongText(toolCall.function.arguments, 100)"
+                            v-if="isLongText(getToolCallArgs(toolCall), 100)"
                             @click="toggleTextExpansion(toolCall.id)"
                             class="text-xs font-medium text-blue-600 hover:text-blue-800"
                         >
