@@ -4,6 +4,7 @@ namespace App\Factory;
 
 use App\Common\DTO\ActualizationContextDTO;
 use App\Common\DTO\GeneratorContextDTO;
+use App\Common\Utils\ExtractRepoUrl;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Interfaces\LLM\PromptProviderInterface;
@@ -19,7 +20,7 @@ use Vasenin26\Conversation\Messages\UserTaskMessage;
 class ChatFactory implements LLMChatFactoryInterface
 {
     public function __construct(
-        private DiffGeneratorInterface  $diffGenerator,
+        private DiffGeneratorInterface $diffGenerator,
     )
     {
     }
@@ -64,7 +65,12 @@ class ChatFactory implements LLMChatFactoryInterface
         $conversation->addMessage(new UserTaskMessage($prompt));
 
         foreach ($attached as $file) {
-            $conversation->addMessage(new GitFileMessage($file->url, $file->description));
+            $conversation->addMessage(
+                new GitFileMessage(
+                    ExtractRepoUrl::extractRepoUrl($file->url),
+                    ExtractRepoUrl::extractFilePath($file->url),
+                    $file->description
+                ));
         }
 
         return $this->createChat($conversation->serialize());
