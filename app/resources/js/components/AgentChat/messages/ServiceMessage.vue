@@ -16,16 +16,18 @@ function getServiceKey(): string {
 }
 
 function getServiceMessage(): string | undefined {
-    return props.message.message.payload?.message || props.message.message.content || undefined;
-}
-
-function getServiceError(): string | undefined {
-    return props.message.message.payload?.error || undefined;
+    return (props.message.message as any)?.message || undefined;
 }
 
 function hasAnyContent(): boolean {
-    return Boolean(getServiceMessage() || getServiceError());
+    return Boolean(getServiceMessage());
 }
+
+function getServiceStatus(): string | undefined {
+    return (props.message.message as any)?.status || undefined;
+}
+
+// payload выводить не требуется
 </script>
 
 <template>
@@ -40,6 +42,23 @@ function hasAnyContent(): boolean {
                 </div>
                 <span class="text-xs font-medium text-indigo-700">
                     Сервис: {{ getServiceKey() }}
+                </span>
+                <!-- Иконки статуса -->
+                <span v-if="getServiceStatus() === 'error'" class="inline-flex items-center" title="Ошибка">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-5a1 1 0 112 0 1 1 0 01-2 0zm1-8a1 1 0 00-1 1v5a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </span>
+                <span v-else-if="getServiceStatus() === 'success'" class="inline-flex items-center" title="Успех">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                </span>
+                <span v-else-if="getServiceStatus() === 'processing' || getServiceStatus() === 'wait'" class="inline-flex items-center" title="Выполняется">
+                    <svg class="h-4 w-4 text-indigo-500 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
                 </span>
             </div>
         </div>
@@ -71,18 +90,12 @@ function hasAnyContent(): boolean {
                 </div>
             </div>
 
-            <!-- Ошибка -->
-            <div v-if="getServiceError()" class="space-y-1">
-                <div class="text-xs font-medium text-gray-600">Ошибка:</div>
-                <div class="text-sm bg-red-50 text-red-800 p-2 rounded border border-red-200 overflow-x-auto whitespace-pre-wrap">
-                    {{ getServiceError() }}
-                </div>
-            </div>
+            
+
+            
 
             <!-- Пустое содержимое -->
-            <div v-if="!hasAnyContent()" class="text-gray-500 italic">
-                Сообщение сервиса без содержимого
-            </div>
+            <div v-if="!hasAnyContent()" class="text-gray-500 italic">Сообщение сервиса без содержимого</div>
         </div>
     </div>
 </template>

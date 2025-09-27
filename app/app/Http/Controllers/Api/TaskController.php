@@ -115,9 +115,8 @@ class TaskController extends Controller
             ]);
 
             $chat = $agentTask->llmChat;
-            $messages = count($chat->messages ?? []) < count($updateData->chat) ? $updateData->chat : $chat->messages;
             $chat->update([
-                'messages' => $messages,
+                'messages' => $updateData->chat,
                 'prompt_tokens' => ($chat->prompt_tokens ?? 0) + ($updateData->stats->prompt_tokens ?? 0),
                 'completion_tokens' => ($chat->completion_tokens ?? 0) + ($updateData->stats->completion_tokens ?? 0),
                 'total_tokens' => ($chat->total_tokens ?? 0) + ($updateData->stats->total_tokens ?? 0),
