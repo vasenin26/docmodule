@@ -108,7 +108,7 @@ class ImplementationController extends Controller
                     $agentTaskManager->createTask(
                         $handler,
                         $dto->userId,
-                        $implementation->techplane->task->pageVersion->page->project_id,
+                        $implementation->techplane->task->project_id,
                         $chat->id,
                         false,
                         \App\Common\Enums\AgentTaskType::CODE

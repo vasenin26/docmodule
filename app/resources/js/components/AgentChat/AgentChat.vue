@@ -83,7 +83,10 @@ const SCROLL_BOTTOM_THRESHOLD_PX = 16;
 async function scrollToBottom(): Promise<void> {
     await nextTick();
     if (messagesContainer.value) {
-        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+        messagesContainer.value.scrollTo({
+            top: messagesContainer.value.scrollHeight,
+            behavior: 'smooth'
+        });
     }
 }
 

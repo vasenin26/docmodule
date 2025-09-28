@@ -58,6 +58,11 @@ const props = defineProps<{
         :message="message" 
         :index="index" 
     />
+    <div 
+        v-else-if="message.type === 'call-tool'"
+        :message="message"
+        :index="index"
+    />
     <UnknownMessage 
         v-else 
         :message="message" 

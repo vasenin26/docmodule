@@ -25,18 +25,20 @@ class ActualizationResultHandler implements AgentResultHandlerInterface
 
     public function handleResult(?string $result): void
     {
-        // Обновляем черновик с новым содержимым
-        $draft = $this->actualization->pageVersion;
-        $draft->update(['content' => $result]);
+        if($result !== null) {
+            // Обновляем черновик с новым содержимым
+            $draft = $this->actualization->pageVersion;
+            $draft->update(['content' => $result]);
 
-        // Обновляем статус актуализации
-        $this->actualization->update(['status' => Actualization::STATUS_COMPLETED]);
+            // Обновляем статус актуализации
+            $this->actualization->update(['status' => Actualization::STATUS_COMPLETED]);
 
-        Log::info('Actualization completed', [
-            'actualization_id' => $this->actualization->id,
-            'page_id' => $this->actualization->page_id,
-            'page_version_id' => $this->actualization->page_version_id
-        ]);
+            Log::info('Actualization completed', [
+                'actualization_id' => $this->actualization->id,
+                'page_id' => $this->actualization->page_id,
+                'page_version_id' => $this->actualization->page_version_id
+            ]);
+        }
     }
 
     public static function createFromTask(AgentTask $task): static
