@@ -2,6 +2,7 @@
 import type { LLMMessage } from '@/types';
 import { computed } from 'vue';
 import TaskListItem from '@/components/AgentChat/messages/tools/TaskListItem.vue';
+import ToolHeaderStatus from '@/components/AgentChat/chunks/ToolHeaderStatus.vue';
 
 const props = defineProps<{
     message: LLMMessage;
@@ -10,56 +11,60 @@ const props = defineProps<{
 
 type TaskItem = { id: number; title: string; done: boolean };
 
-function getSuccess(): boolean {
+function getSuccessFlag(): boolean {
     const m: any = props.message.message;
     return (m?.success !== undefined ? m.success : m?.tool_success) === true;
 }
 
-function parseTasks(): TaskItem[] | undefined {
+function getResultRaw(): string | undefined {
     const m: any = props.message.message;
-    const raw: string | undefined = m?.result || m?.tool_result;
-    if (!raw) return undefined;
-    try {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-            return parsed as TaskItem[];
-        }
-        return undefined;
-    } catch {
-        return undefined;
-    }
+    return m?.result || m?.tool_result;
 }
+
+function parseAny(): any | undefined {
+    const raw = getResultRaw();
+    if (!raw) return undefined;
+    try { return JSON.parse(raw); } catch { return undefined; }
+}
+
+function parseTasks(): TaskItem[] | undefined {
+    const parsed = parseAny();
+    if (Array.isArray(parsed)) return parsed as TaskItem[];
+    return undefined;
+}
+
+function getErrorMessage(): string | undefined {
+    const parsed = parseAny();
+    if (parsed && typeof parsed.error === 'string') return parsed.error as string;
+    return undefined;
+}
+
+const isError = computed(() => !getSuccessFlag() || Boolean(getErrorMessage()) || (getResultRaw() && !Array.isArray(parseAny())));
 
 const tasks = computed<TaskItem[] | undefined>(() => parseTasks());
 
 function containerClass(): string {
-    return getSuccess() ? 'bg-orange-50 border border-orange-200' : 'bg-red-50 border border-red-200';
+    return isError.value ? 'bg-red-50 border border-red-200' : 'bg-orange-50 border border-orange-200';
 }
 </script>
 
 <template>
     <div class="rounded-lg p-3" :class="containerClass()">
-        <div class="mb-2 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <div class="flex h-5 w-5 items-center justify-center rounded-full" :class="getSuccess() ? 'bg-orange-500' : 'bg-red-500'">
-                    <span class="text-xs font-medium text-white">T</span>
-                </div>
-                <span class="text-xs font-medium" :class="getSuccess() ? 'text-orange-700' : 'text-red-700'">добавленные задачи</span>
-                <span class="px-2 py-1 rounded text-xs font-medium" :class="getSuccess() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                    {{ getSuccess() ? 'Успешно' : 'Ошибка' }}
-                </span>
-            </div>
-        </div>
+        <ToolHeaderStatus :title="'добавленные задачи'" :isError="isError" />
 
         <div class="text-sm space-y-3">
-            <template v-if="tasks !== undefined">
-                <div v-if="tasks!.length === 0" class="text-gray-500 italic">Список пуст</div>
-                <ul v-else class="space-y-2">
+            <template v-if="!isError">
+                <div v-if="tasks && tasks!.length === 0" class="text-gray-500 italic">Список пуст</div>
+                <ul v-else-if="tasks && tasks!.length > 0" class="space-y-2">
                     <TaskListItem v-for="task in tasks" :key="task.id" :id="task.id" :title="task.title" :done="task.done" expansionKeyPrefix="tasks-add-title-" />
                 </ul>
+                <div v-else class="text-gray-500 italic">Нет данных</div>
             </template>
             <template v-else>
-                <div class="text-gray-500 italic">Нет данных для отображения</div>
+                <div class="space-y-1">
+                    <div class="text-xs font-medium text-gray-600">Сообщение об ошибке:</div>
+                    <div class="text-sm bg-white p-2 rounded border overflow-x-auto whitespace-pre-wrap">{{ getErrorMessage() || 'Некорректные данные результата' }}</div>
+                </div>
             </template>
         </div>
     </div>

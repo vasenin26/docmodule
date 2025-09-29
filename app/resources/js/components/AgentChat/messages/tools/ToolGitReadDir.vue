@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LLMMessage } from '@/types';
 import { ref, computed } from 'vue';
+import ToolHeaderStatus from '@/components/AgentChat/chunks/ToolHeaderStatus.vue';
 
 const props = defineProps<{
     message: LLMMessage;
@@ -69,17 +70,7 @@ function containerClass(): string {
 
 <template>
     <div class="rounded-lg p-3" :class="containerClass()">
-        <div class="mb-2 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <div class="flex h-5 w-5 items-center justify-center rounded-full" :class="getSuccess() && !isErrorText() ? 'bg-orange-500' : 'bg-red-500'">
-                    <span class="text-xs font-medium text-white">T</span>
-                </div>
-                <span class="text-xs font-medium" :class="getSuccess() && !isErrorText() ? 'text-orange-700' : 'text-red-700'">список папок</span>
-                <span class="px-2 py-1 rounded text-xs font-medium" :class="getSuccess() && !isErrorText() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                    {{ getSuccess() && !isErrorText() ? 'Успешно' : 'Ошибка' }}
-                </span>
-            </div>
-        </div>
+        <ToolHeaderStatus :title="'список папок'" :isError="isErrorText()" />
 
         <div class="text-sm space-y-3">
             <div v-if="getArgs()?.path" class="space-y-1">
