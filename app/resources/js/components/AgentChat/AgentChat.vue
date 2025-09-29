@@ -8,7 +8,7 @@
         <!-- Содержимое чата -->
         <div ref="messagesContainer" class="flex-1 space-y-4 overflow-y-auto p-4" @scroll="handleScroll">
             <!-- Сообщения отсутствуют -->
-            <div v-if="!messages || messages.length === 0" class="flex items-center justify-center py-8">
+            <div v-if="!visibleMessages || visibleMessages.length === 0" class="flex items-center justify-center py-8">
                 <div class="text-center text-gray-500">
                     <div class="text-sm">История LLM пока пуста</div>
                 </div>
@@ -16,7 +16,7 @@
 
             <!-- Список сообщений -->
             <div v-else class="space-y-4">
-                <Message v-for="(message, index) in messages" :key="index" :message="message" :index="index" />
+                <Message v-for="(message, index) in visibleMessages" :key="index" :message="message" :index="index" />
 
                 <div class="rounded-lg border border-gray-200 bg-gray-50 p-3" v-if="status != 'completed'">
                     <div class="flex items-center">
@@ -74,6 +74,16 @@ function sendMessage() {
 }
 
 const messagesContainer = ref<HTMLElement>();
+
+// Сообщения, отображаемые в списке (скрываем пустые ответы ассистента)
+const visibleMessages = computed(() => {
+    const source = props.messages ?? [];
+    return source.filter(m => {
+        if (m.type !== 'assistant') return true;
+        const content = m.message?.content ?? '';
+        return String(content).trim().length > 0;
+    });
+});
 
 // Управление автопрокруткой
 const isAutoScrollEnabled = ref(true);
