@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { LLMMessage } from '@/types';
-import { ref, computed } from 'vue';
-import { useTextExpansion } from '@/composables/useTextExpansion';
+import { computed } from 'vue';
 import TaskListItem from '@/components/AgentChat/messages/tools/TaskListItem.vue';
 
 const props = defineProps<{
@@ -9,11 +8,7 @@ const props = defineProps<{
     index: number;
 }>();
 
-const { isLongText, getTruncatedText, toggleTextExpansion, isTextExpanded } = useTextExpansion();
-
 type TaskItem = { id: number; title: string; done: boolean };
-
-const showCompleted = ref(false);
 
 function getSuccess(): boolean {
     const m: any = props.message.message;
@@ -35,12 +30,7 @@ function parseTasks(): TaskItem[] | undefined {
     }
 }
 
-const displayedTasks = computed<TaskItem[] | undefined>(() => {
-    const all = parseTasks();
-    if (!all) return undefined;
-    if (showCompleted.value) return all;
-    return all.filter(t => !t.done);
-});
+const tasks = computed<TaskItem[] | undefined>(() => parseTasks());
 
 function containerClass(): string {
     return getSuccess() ? 'bg-orange-50 border border-orange-200' : 'bg-red-50 border border-red-200';
@@ -54,7 +44,7 @@ function containerClass(): string {
                 <div class="flex h-5 w-5 items-center justify-center rounded-full" :class="getSuccess() ? 'bg-orange-500' : 'bg-red-500'">
                     <span class="text-xs font-medium text-white">T</span>
                 </div>
-                <span class="text-xs font-medium" :class="getSuccess() ? 'text-orange-700' : 'text-red-700'">список задач</span>
+                <span class="text-xs font-medium" :class="getSuccess() ? 'text-orange-700' : 'text-red-700'">добавленные задачи</span>
                 <span class="px-2 py-1 rounded text-xs font-medium" :class="getSuccess() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
                     {{ getSuccess() ? 'Успешно' : 'Ошибка' }}
                 </span>
@@ -62,16 +52,10 @@ function containerClass(): string {
         </div>
 
         <div class="text-sm space-y-3">
-            <template v-if="displayedTasks !== undefined">
-                <div class="flex justify-center">
-                    <button @click="showCompleted = !showCompleted" class="text-xs font-medium text-blue-600 hover:text-blue-800">
-                        {{ showCompleted ? 'скрыть выполненные' : 'показать выполненные' }}
-                    </button>
-                </div>
-
-                <div v-if="displayedTasks!.length === 0" class="text-gray-500 italic">Список пуст</div>
+            <template v-if="tasks !== undefined">
+                <div v-if="tasks!.length === 0" class="text-gray-500 italic">Список пуст</div>
                 <ul v-else class="space-y-2">
-                    <TaskListItem v-for="task in displayedTasks" :key="task.id" :id="task.id" :title="task.title" :done="task.done" />
+                    <TaskListItem v-for="task in tasks" :key="task.id" :id="task.id" :title="task.title" :done="task.done" expansionKeyPrefix="tasks-add-title-" />
                 </ul>
             </template>
             <template v-else>
