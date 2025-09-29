@@ -51,7 +51,8 @@ function getErrorMessage(): string | undefined {
     return undefined;
 }
 
-const isError = computed(() => !getSuccessFlag() || Boolean(getErrorMessage()) || (getResultRaw() && !Array.isArray(parseAny())));
+// Ошибка только если success=false или есть явное сообщение об ошибке
+const isError = computed(() => !getSuccessFlag() || Boolean(getErrorMessage()));
 
 const tasks = computed<TaskItem[] | undefined>(() => parseTasks());
 const stats = computed(() => parseStats());
@@ -67,14 +68,6 @@ function containerClass(): string {
 
         <div class="text-sm space-y-3">
             <template v-if="!isError">
-                <!-- Статистика -->
-                <div v-if="stats" class="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
-                    <div class="font-medium text-blue-800 mb-1">Статистика задач:</div>
-                    <div class="text-blue-700">
-                        Всего: {{ stats.total }}, Выполнено: {{ stats.completed }}, Осталось: {{ stats.remaining }}
-                    </div>
-                </div>
-                
                 <div v-if="tasks && tasks!.length === 0" class="text-gray-500 italic">Список пуст</div>
                 <ul v-else-if="tasks && tasks!.length > 0" class="space-y-2">
                     <TaskListItem v-for="task in tasks" :key="task.id" :id="task.id" :title="task.title" :done="task.done" expansionKeyPrefix="tasks-add-title-" />

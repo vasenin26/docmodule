@@ -71,14 +71,6 @@ function containerClass(): string {
 
         <div class="text-sm space-y-3">
             <template v-if="!isError() && parseTitle()">
-                <!-- Статистика -->
-                <div v-if="stats" class="bg-green-50 border border-green-200 rounded p-2 text-xs">
-                    <div class="font-medium text-green-800 mb-1">Статистика задач:</div>
-                    <div class="text-green-700">
-                        Всего: {{ stats.total }}, Выполнено: {{ stats.completed }}, Осталось: {{ stats.remaining }}
-                    </div>
-                </div>
-                
                 <div class="space-y-1">
                     <div class="text-xs font-medium text-gray-600">Выполненная задача:</div>
                     <div v-if="isLongText(parseTitle(), 250) && !isTextExpanded('tasks-complete-title-' + props.index)" class="space-y-1">

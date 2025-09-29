@@ -34,7 +34,16 @@ function parseResultAny(): any {
 
 function parseTasks(): TaskItem[] | undefined {
     const parsed = parseResultAny();
+    // Новый формат: { tasks: TaskItem[], stats: {...} }
+    if (parsed && Array.isArray(parsed.tasks)) return parsed.tasks as TaskItem[];
+    // Старый формат: массив задач напрямую
     if (Array.isArray(parsed)) return parsed as TaskItem[];
+    return undefined;
+}
+
+function parseStats(): { total: number; completed: number; remaining: number } | undefined {
+    const parsed = parseResultAny();
+    if (parsed && parsed.stats) return parsed.stats as { total: number; completed: number; remaining: number };
     return undefined;
 }
 
@@ -44,7 +53,8 @@ function getErrorMessage(): string | undefined {
     return undefined;
 }
 
-const isError = computed(() => !getSuccessFlag() || Boolean(getErrorMessage()) || (getResultRaw() && !Array.isArray(parseResultAny())));
+// Ошибка только если success=false или есть поле error
+const isError = computed(() => !getSuccessFlag() || Boolean(getErrorMessage()));
 
 const displayedTasks = computed<TaskItem[] | undefined>(() => {
     const all = parseTasks();

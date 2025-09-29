@@ -16,115 +16,57 @@ const props = withDefaults(defineProps<Props>(), {
     messages: () => [],
 });
 
-// Анализ задач из последнего результата get-task-list
+// Единая выборка последних актуальных stats из сообщений
+function extractLatestStats(): { total: number; completed: number; remaining: number } | null {
+    if (!props.messages || props.messages.length === 0) return null;
+
+    const allowedTools = new Set(['get-task-list', 'tasks-add', 'tasks-complete']);
+
+    // Идем с конца к началу, чтобы взять самое свежее успешное сообщение нужного инструмента
+    for (let i = props.messages.length - 1; i >= 0; i--) {
+        const msg = props.messages[i];
+        if (msg.type !== 'tool') continue;
+        const toolName = (msg.message?.name || msg.message?.tool_name) as string | undefined;
+        if (!toolName || !allowedTools.has(toolName)) continue;
+
+        const isSuccess = (msg.message as any)?.success || (msg.message as any)?.tool_success;
+        if (!isSuccess) continue;
+
+        const resultRaw = (msg.message as any)?.result || (msg.message as any)?.tool_result;
+        if (!resultRaw) continue;
+
+        try {
+            const parsed = JSON.parse(resultRaw);
+            // Новый формат: stats из объекта результата
+            if (parsed && parsed.stats && typeof parsed.stats.total === 'number') {
+                const { total, completed, remaining } = parsed.stats;
+                return { total, completed, remaining };
+            }
+            // Старый формат: массив задач
+            if (Array.isArray(parsed)) {
+                const totalTasks = parsed.length;
+                const completedTasks = parsed.filter((t: any) => t && t.done === true).length;
+                const remainingCount = totalTasks - completedTasks;
+                return { total: totalTasks, completed: completedTasks, remaining: remainingCount };
+            }
+        } catch {
+            // ignore parse errors, continue
+        }
+    }
+    return null;
+}
+
+// Текстовая сводка по задачам на основании последних stats
 const taskInfo = computed(() => {
-    if (!props.messages || props.messages.length === 0) {
-        return '0';
-    }
-
-    // Ищем последнее сообщение с результатом get-task-list
-    const taskListMessages = props.messages.filter(msg => {
-        if (msg.type !== 'tool') return false;
-        const toolName = msg.message?.name || msg.message?.tool_name;
-        return toolName === 'get-task-list';
-    });
-
-    if (taskListMessages.length === 0) {
-        return '0';
-    }
-
-    // Берем последнее сообщение с результатом get-task-list
-    const lastTaskListMessage = taskListMessages[taskListMessages.length - 1];
-    const messageData = lastTaskListMessage.message;
-
-    // Проверяем успешность выполнения
-    const isSuccess = messageData?.success || messageData?.tool_success;
-    if (!isSuccess) {
-        return '0';
-    }
-
-    // Парсим результат
-    const resultRaw = messageData?.result || messageData?.tool_result;
-    if (!resultRaw) {
-        return '0';
-    }
-
-    try {
-        const parsed = JSON.parse(resultRaw);
-        
-        // Новый формат с объектом stats
-        if (parsed && parsed.stats) {
-            const { total, completed, remaining } = parsed.stats;
-            return `${remaining} из ${total}`;
-        }
-        
-        // Fallback для старого формата (массив задач)
-        if (Array.isArray(parsed)) {
-            const totalTasks = parsed.length;
-            const completedTasks = parsed.filter((task: any) => task.done === true).length;
-            const remainingCount = totalTasks - completedTasks;
-            return `${remainingCount} из ${totalTasks}`;
-        }
-        
-        return '0';
-    } catch (error) {
-        return '0';
-    }
+    const stats = extractLatestStats();
+    if (!stats) return '0';
+    return `${stats.remaining} из ${stats.total}`;
 });
 
-// Показывать ли блок с информацией о задачах
+// Показывать ли блок: только если есть stats и есть невыполненные задачи
 const shouldShow = computed(() => {
-    if (!props.messages || props.messages.length === 0) {
-        return false;
-    }
-
-    // Ищем последнее сообщение с результатом get-task-list
-    const taskListMessages = props.messages.filter(msg => {
-        if (msg.type !== 'tool') return false;
-        const toolName = msg.message?.name || msg.message?.tool_name;
-        return toolName === 'get-task-list';
-    });
-
-    if (taskListMessages.length === 0) {
-        return false;
-    }
-
-    // Берем последнее сообщение с результатом get-task-list
-    const lastTaskListMessage = taskListMessages[taskListMessages.length - 1];
-    const messageData = lastTaskListMessage.message;
-
-    // Проверяем успешность выполнения
-    const isSuccess = messageData?.success || messageData?.tool_success;
-    if (!isSuccess) {
-        return false;
-    }
-
-    // Парсим результат
-    const resultRaw = messageData?.result || messageData?.tool_result;
-    if (!resultRaw) {
-        return false;
-    }
-
-    try {
-        const parsed = JSON.parse(resultRaw);
-        
-        // Новый формат с объектом stats
-        if (parsed && parsed.stats) {
-            const { remaining } = parsed.stats;
-            return remaining > 0;
-        }
-        
-        // Fallback для старого формата (массив задач)
-        if (Array.isArray(parsed)) {
-            const totalTasks = parsed.length;
-            const completedTasks = parsed.filter((task: any) => task.done === true).length;
-            const remainingCount = totalTasks - completedTasks;
-            return remainingCount > 0;
-        }
-        
-        return false;
-    } catch (error) {
-        return false;
-    }
+    const stats = extractLatestStats();
+    if (!stats) return false;
+    return stats.remaining > 0;
 });
 </script>
