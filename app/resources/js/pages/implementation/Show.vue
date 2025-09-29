@@ -43,7 +43,7 @@
                         </div>
                         <div>
                             <Label class="text-sm font-medium text-gray-500">Статус</Label>
-                            <p class="text-sm">{{ implementation.status }}</p>
+                            <p class="text-sm">{{ implementation.actual_status }}</p>
                         </div>
                     </div>
                 </CardContent>
@@ -75,6 +75,7 @@
                     :loading="isPolling"
                     :status="implementationStatus"
                     :sending="chatSending"
+                    :requestCount="requestCount"
                     @sendMessage="sendMessageToChat" 
                 />
             </SidePanel>
@@ -101,6 +102,7 @@ interface ImplementationData {
     id: number;
     content: string | null;
     status: string;
+    actual_status: string;
     created_at: string;
     updated_at: string;
     creator: {
@@ -135,10 +137,11 @@ const api = createApi();
 const showChatModal = ref(false);
 
 // Реактивные данные для отслеживания состояния
-const implementationStatus = ref(props.implementation.status);
+const implementationStatus = ref(props.implementation.actual_status);
 const implementationContent = ref(props.implementation.content);
 const isPolling = ref(false);
 const pollInterval = ref<number | null>(null);
+const requestCount = ref<number>(0);
 
 // Реактивные переменные для чата
 const chat = ref<LLMChat | null>(props.implementation.llm_chat || null);
@@ -151,9 +154,10 @@ const checkImplementationStatus = async () => {
     try {
         const request = new ImplementationStatusRequest(props.implementation.id);
         const data = await request.call(api);
+        requestCount.value++;
         
         implementationStatus.value = data.status;
-        implementationContent.value = data.content;
+        implementationContent.value = data.content || null;
         
         // Обновляем сообщения чата, если пришли с сервера
         if (data.chat && data.chat.messages) {
@@ -214,6 +218,9 @@ const stopPolling = () => {
 // Функция отправки сообщения в чат
 const sendMessageToChat = async (message: string) => {
     const result = await sendMessage(message);
+
+    implementationStatus.value = 'processing';
+    startPolling();
     
     if (result?.success && result.chat) {
         // Обновляем локальное состояние чата

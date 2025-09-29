@@ -28,6 +28,15 @@ function getServiceStatus(): string | undefined {
     return (props.message.message as any)?.status || undefined;
 }
 
+function getServicePayload(): any {
+    return (props.message.message as any)?.payload || undefined;
+}
+
+function hasPayload(): boolean {
+    const payload = getServicePayload();
+    return Boolean(payload && Object.keys(payload).length > 0);
+}
+
 function mapStatus(): 'success' | 'error' | 'processing' | 'wait' {
     const s = getServiceStatus();
     if (s === 'error') return 'error';
@@ -70,8 +79,18 @@ function mapStatus(): 'success' | 'error' | 'processing' | 'wait' {
                 </div>
             </div>
 
+            <!-- Payload с счётчиками -->
+            <div v-if="hasPayload()" class="space-y-1">
+                <div class="text-xs font-medium text-gray-600">Использованные инструменты:</div>
+                <div class="bg-white p-2 rounded border flex flex-wrap gap-1.5">
+                    <span v-for="(count, key) in getServicePayload()" :key="key" class="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full font-medium">
+                        {{ key }} ({{ count }})
+                    </span>
+                </div>
+            </div>
+
             <!-- Пустое содержимое -->
-            <div v-if="!hasAnyContent()" class="text-gray-500 italic">Сообщение сервиса без содержимого</div>
+            <div v-if="!hasAnyContent() && !hasPayload()" class="text-gray-500 italic">Сообщение сервиса без содержимого</div>
         </div>
     </div>
 </template>

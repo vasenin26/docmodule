@@ -99,6 +99,7 @@
                     :loading="isPolling"
                     :status="generationStatus"
                     :sending="chatSending"
+                    :requestCount="requestCount"
                     @sendMessage="sendMessageToChat"
                 />
             </SidePanel>
@@ -161,6 +162,7 @@ const isPolling = ref(false);
 const pollInterval = ref<number | null>(null);
 const isRestartingGeneration = ref(false);
 const isExecutingTechplane = ref(false);
+const requestCount = ref<number>(0);
 const isMarkingDone = ref(false);
 const showDoneModal = ref(false);
 
@@ -193,6 +195,7 @@ const checkGenerationStatus = async () => {
     try {
         const request = new TechplaneStatusRequest(props.techplane.id);
         const data = await request.call(api);
+        requestCount.value++;
         generationStatus.value = data.status;
         techplaneContent.value = data.content;
 

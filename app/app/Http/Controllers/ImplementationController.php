@@ -32,7 +32,17 @@ class ImplementationController extends Controller
         ]);
 
         return Inertia::render('implementation/Show', [
-            'implementation' => $implementation,
+            'implementation' => [
+                'id' => $implementation->id,
+                'content' => $implementation->content,
+                'status' => $implementation->status->value,
+                'actual_status' => $implementation->actualStatus()->value,
+                'created_at' => $implementation->created_at,
+                'updated_at' => $implementation->updated_at,
+                'techplane' => $implementation->techplane,
+                'creator' => $implementation->creator,
+                'llm_chat' => $implementation->llmChat,
+            ],
         ]);
     }
 

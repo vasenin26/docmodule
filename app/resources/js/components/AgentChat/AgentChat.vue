@@ -20,12 +20,13 @@
 
                 <div class="rounded-lg border border-gray-200 bg-gray-50 p-3" v-if="status != 'completed'">
                     <div class="flex items-center">
-                        <span class="text-xs font-medium flex-grow">Ответ генерируется...</span>
+                        <span class="text-xs font-medium flex-grow">Ответ генерируется{{ loadingDots }}</span>
                         <Button size="sm" variant="outline" @click="stopGenerating">Стоп</Button>
                     </div>
                 </div>
             </div>
         </div>
+        <TaskProgressInfo :messages="messages" />
 
         <div class="flex flex-col gap-2 border-t p-4">
             <textarea
@@ -44,6 +45,7 @@
 
 <script setup lang="ts">
 import Message from '@/components/AgentChat/Message.vue';
+import TaskProgressInfo from '@/components/AgentChat/TaskProgressInfo.vue';
 import type { LLMMessage } from '@/types';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Button from '../ui/button/Button.vue';
@@ -53,6 +55,7 @@ interface Props {
     loading?: boolean;
     sending?: boolean;
     status?: string;
+    requestCount?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -67,6 +70,17 @@ const emit = defineEmits<{
 }>();
 
 const input = ref('');
+
+// Отображение точек на основе количества запросов
+const loadingDots = computed(() => {
+    if (!props.requestCount || props.requestCount === 0) {
+        return '';
+    }
+    
+    // Циклический счетчик: 1-4 точки, затем сброс к 1
+    const dotCount = ((props.requestCount - 1) % 4) + 1;
+    return '.'.repeat(dotCount);
+});
 
 function sendMessage() {
     emit('sendMessage', input.value);
@@ -128,6 +142,7 @@ watch(
 );
 
 const frozenInput = computed(() => props.status !== 'completed');
+
 
 // Прокрутка при монтировании
 onMounted(() => {

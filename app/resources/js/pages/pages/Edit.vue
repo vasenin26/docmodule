@@ -137,6 +137,7 @@
                 :loading="isPolling"
                 :status="actualizationStatus"
                 :sending="isSending"
+                :requestCount="requestCount"
                 @sendMessage="sendMessageToChat"
             />
         </SidePanel>
@@ -220,6 +221,7 @@ const chat = ref<LLMChat | null>(props.actualization?.llm_chat || null);
 const actualizationStatus = ref<string>(props.actualization?.status || 'unknown');
 const isPolling = ref<boolean>(false);
 const pollInterval = ref<number | null>(null);
+const requestCount = ref<number>(0);
 
 // API и composable для чата
 const api = createApi();
@@ -341,6 +343,7 @@ const fetchActualizationStatus = async () => {
         const req = new ActualizationStatusRequest(props.actualization.id);
         const data = await req.call(api);
         if (data.success) {
+            requestCount.value++;
             actualizationStatus.value = data.data.status;
             if (data.data.chat) {
                 chat.value = {

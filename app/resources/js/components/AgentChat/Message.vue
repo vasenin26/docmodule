@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LLMMessage } from '@/types';
 import UserMessage from './messages/UserMessage.vue';
+import UserTaskMessage from './messages/UserTaskMessage.vue';
 import AssistantMessage from './messages/AssistantMessage.vue';
 import SystemMessage from './messages/SystemMessage.vue';
 import ToolMessage from './messages/ToolMessage.vue';
@@ -20,6 +21,11 @@ const props = defineProps<{
 <template>
     <UserMessage 
         v-if="message.type === 'user'" 
+        :message="message" 
+        :index="index" 
+    />
+    <UserTaskMessage 
+        v-else-if="message.type === 'user-task'" 
         :message="message" 
         :index="index" 
     />

@@ -42,7 +42,7 @@ export interface User {
 }
 
 export interface LLMMessage {
-    type: 'user' | 'assistant' | 'system' | 'tool' | 'git-file' | 'page-version' | 'info' | 'service';
+    type: 'user' | 'assistant' | 'system' | 'tool' | 'git-file' | 'page-version' | 'info' | 'service' | 'user-task';
     message: {
         content?: string | null;
         timestamp?: string;
@@ -132,6 +132,7 @@ export interface Implementation {
     techplane_id: number;
     chat_id?: number | null;
     status: string;
+    actual_status: string;
     created_by: number;
     created_at: string;
     updated_at: string;

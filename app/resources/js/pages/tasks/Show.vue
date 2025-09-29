@@ -174,6 +174,7 @@
                 :loading="isPolling"
                 :status="generationStatus"
                 :sending="isSending"
+                :requestCount="requestCount"
                 @sendMessage="sendMessageToChat"
                 @stop="sendStopGenerating"
             />
@@ -257,6 +258,7 @@ const taskContent = ref<string | null>(props.task.content || null);
 const chat = ref<LLMChat | null>(props.task.llm_chat || null);
 const isPolling = ref<boolean>(false);
 const pollInterval = ref<number | null>(null);
+const requestCount = ref<number>(0);
 
 // Переменные для кнопки перезапуска
 const isRestartingGeneration = ref<boolean>(false);
@@ -286,6 +288,7 @@ const checkGenerationStatus = async () => {
     try {
         const request = new TaskStatusRequest(props.task.id);
         const data = await request.call(api);
+        requestCount.value++;
         generationStatus.value = data.status;
         taskContent.value = data.content || null;
 
