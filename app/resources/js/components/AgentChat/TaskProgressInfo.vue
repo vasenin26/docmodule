@@ -50,16 +50,23 @@ const taskInfo = computed(() => {
     }
 
     try {
-        const tasks = JSON.parse(resultRaw);
-        if (!Array.isArray(tasks)) {
-            return '0';
+        const parsed = JSON.parse(resultRaw);
+        
+        // Новый формат с объектом stats
+        if (parsed && parsed.stats) {
+            const { total, completed, remaining } = parsed.stats;
+            return `${remaining} из ${total}`;
         }
-
-        const totalTasks = tasks.length;
-        const completedTasks = tasks.filter((task: any) => task.done === true).length;
-        const remainingCount = totalTasks - completedTasks;
-
-        return `${remainingCount} из ${totalTasks}`;
+        
+        // Fallback для старого формата (массив задач)
+        if (Array.isArray(parsed)) {
+            const totalTasks = parsed.length;
+            const completedTasks = parsed.filter((task: any) => task.done === true).length;
+            const remainingCount = totalTasks - completedTasks;
+            return `${remainingCount} из ${totalTasks}`;
+        }
+        
+        return '0';
     } catch (error) {
         return '0';
     }
@@ -99,17 +106,23 @@ const shouldShow = computed(() => {
     }
 
     try {
-        const tasks = JSON.parse(resultRaw);
-        if (!Array.isArray(tasks)) {
-            return false;
+        const parsed = JSON.parse(resultRaw);
+        
+        // Новый формат с объектом stats
+        if (parsed && parsed.stats) {
+            const { remaining } = parsed.stats;
+            return remaining > 0;
         }
-
-        const totalTasks = tasks.length;
-        const completedTasks = tasks.filter((task: any) => task.done === true).length;
-        const remainingCount = totalTasks - completedTasks;
-
-        // Показываем блок только если есть невыполненные задачи
-        return remainingCount > 0;
+        
+        // Fallback для старого формата (массив задач)
+        if (Array.isArray(parsed)) {
+            const totalTasks = parsed.length;
+            const completedTasks = parsed.filter((task: any) => task.done === true).length;
+            const remainingCount = totalTasks - completedTasks;
+            return remainingCount > 0;
+        }
+        
+        return false;
     } catch (error) {
         return false;
     }

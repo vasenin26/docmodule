@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LLMMessage } from '@/types';
+import { computed } from 'vue';
 import { useTextExpansion } from '@/composables/useTextExpansion';
 import ToolHeaderStatus from '@/components/AgentChat/chunks/ToolHeaderStatus.vue';
 
@@ -9,6 +10,8 @@ const props = defineProps<{
 }>();
 
 const { isLongText, getTruncatedText, toggleTextExpansion, isTextExpanded } = useTextExpansion();
+
+const stats = computed(() => parseStats());
 
 function getSuccessFlag(): boolean {
     const m: any = props.message.message;
@@ -28,7 +31,19 @@ function parseResult(): any | undefined {
 
 function parseTitle(): string | undefined {
     const parsed = parseResult();
+    if (parsed && parsed.task && typeof parsed.task.title === 'string') {
+        return parsed.task.title as string;
+    }
+    // Fallback для старого формата
     if (parsed && typeof parsed.title === 'string') return parsed.title as string;
+    return undefined;
+}
+
+function parseStats(): { total: number; completed: number; remaining: number } | undefined {
+    const parsed = parseResult();
+    if (parsed && parsed.stats) {
+        return parsed.stats;
+    }
     return undefined;
 }
 
@@ -56,8 +71,16 @@ function containerClass(): string {
 
         <div class="text-sm space-y-3">
             <template v-if="!isError() && parseTitle()">
+                <!-- Статистика -->
+                <div v-if="stats" class="bg-green-50 border border-green-200 rounded p-2 text-xs">
+                    <div class="font-medium text-green-800 mb-1">Статистика задач:</div>
+                    <div class="text-green-700">
+                        Всего: {{ stats.total }}, Выполнено: {{ stats.completed }}, Осталось: {{ stats.remaining }}
+                    </div>
+                </div>
+                
                 <div class="space-y-1">
-                    <div class="text-xs font-medium text-gray-600">Результат:</div>
+                    <div class="text-xs font-medium text-gray-600">Выполненная задача:</div>
                     <div v-if="isLongText(parseTitle(), 250) && !isTextExpanded('tasks-complete-title-' + props.index)" class="space-y-1">
                         <div class="text-sm bg-white p-2 rounded border overflow-x-auto whitespace-pre-wrap">{{ getTruncatedText(parseTitle(), 250) }}</div>
                         <button @click="toggleTextExpansion('tasks-complete-title-' + props.index)" class="text-xs font-medium text-blue-600 hover:text-blue-800">Показать полностью</button>
