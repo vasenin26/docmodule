@@ -10,6 +10,7 @@ export interface ActualizationStatusResponse {
             id: number;
             messages: any[];
         } | null;
+        has_active_agent_task: boolean;
         created_at: string;
         updated_at: string;
         created_by: string;

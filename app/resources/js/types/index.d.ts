@@ -209,6 +209,7 @@ export interface Actualization {
     id: number;
     page_id: number;
     page_version_id: number; // Новое поле
+    generating: boolean
     status: 'pending' | 'processing' | 'completed' | 'failed';
     llm_chat_id?: number;
     created_by: number;

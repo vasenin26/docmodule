@@ -96,4 +96,27 @@ class Actualization extends Model
             }
         });
     }
+
+    /**
+     * Получить актуальный статус с учетом активных задач агента для чата
+     */
+    public function generationStatus(): string
+    {
+        if ($this->llm_chat_id) {
+            $activeAgentTask = AgentTask::where('chat_id', $this->llm_chat_id)
+                ->whereIn('status', [AgentTask::STATUS_WAIT, AgentTask::STATUS_PROCESSING])
+                ->first();
+
+            if ($activeAgentTask) {
+                return $activeAgentTask->status;
+            }
+        }
+
+        return AgentTask::STATUS_SUCCESS;
+    }
+
+    public function isGenerating(): bool
+    {
+        return in_array($this->generationStatus(), [self::STATUS_PROCESSING, self::STATUS_PENDING]);
+    }
 }

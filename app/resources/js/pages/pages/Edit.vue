@@ -9,23 +9,23 @@
                         type="button"
                         @click="showActualizeDialog"
                         variant="outline"
-                        :disabled="actualization"
+                        :disabled="actualizationButtonDisabled"
                     >
                         Актуализировать
                     </Button>
-
-                    <Button as-child variant="outline">
-                        <Link :href="route('pages.show', pageVersion?.page_id)"> Просмотр</Link>
-                    </Button>
-                    <PageListButton :page="page" />
                     <Button
-                        v-if="actualization"
+                        v-if="actualization && actualization.llm_chat"
                         @click="openChatModal"
                         variant="default"
                         size="sm"
                     >
                         Чат
                     </Button>
+
+                    <Button as-child variant="outline">
+                        <Link :href="route('pages.show', pageVersion?.page_id)"> Просмотр</Link>
+                    </Button>
+                    <PageListButton :page="page" />
                 </div>
             </div>
         </template>
@@ -35,9 +35,9 @@
             <div class="space-y-6 lg:col-span-1">
                 <ActualizationStatus
                     v-if="actualization"
-                    actualization="actualization"
+                    :actualization="actualization"
                 />
-                <Card v-else>
+                <Card>
                     <CardHeader>
                         <CardTitle>{{ pageVersion?.title || 'Без названия' }}</CardTitle>
                         <CardDescription>
@@ -93,7 +93,8 @@
                             <!-- Кнопки -->
                             <div class="flex items-center gap-4">
                                 <!-- Кнопка "Создать черновик" для текущей версии -->
-                                <Button v-if="is_current_version" type="submit" :disabled="processing" @click="createDraft">
+                                <Button v-if="is_current_version" type="submit" :disabled="processing"
+                                        @click="createDraft">
                                     {{ processing ? 'Создание...' : 'Создать черновик' }}
                                 </Button>
 
@@ -102,7 +103,9 @@
                                     {{ processing ? 'Сохранение...' : 'Сохранить' }}
                                 </Button>
 
-                                <Button v-if="!is_current_version" type="button" @click="approveDraft" variant="default"> Утвердить черновик </Button>
+                                <Button v-if="!is_current_version" type="button" @click="approveDraft"
+                                        variant="default"> Утвердить черновик
+                                </Button>
                                 <Button type="button" variant="outline" @click="cancel"> Отмена</Button>
                             </div>
                         </form>
@@ -135,7 +138,7 @@
                 v-if="chat"
                 :messages="chat.messages"
                 :loading="isPolling"
-                :status="actualizationStatus"
+                :status="actualizationProcessStatus"
                 :sending="isSending"
                 :requestCount="requestCount"
                 @sendMessage="sendMessageToChat"
@@ -166,13 +169,13 @@ import { Actualization, Page } from '@/types/index.ts';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import ActualizationStatus from '@/components/PageInfo/ActualizationStatus.vue';
-import ActualizationButton from '@/components/PageInfo/ActualizationButton.vue';
 import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import AgentChat from '@/components/AgentChat/AgentChat.vue';
 import type { LLMChat } from '@/types';
 import { useActualizationChat } from '@/composables/useActualizationChat';
 import { createApi } from '@/service/api/Api';
 import { ActualizationStatusRequest } from '@/service/api/request/Actualization/ActualizationStatusRequest';
+import { StartActualizationForDraftRequest } from '@/service/api/request/Actualization/StartActualizationForDraftRequest';
 
 type PageVersion = {
     id: number;
@@ -195,8 +198,8 @@ const props = withDefaults(
     {
         errors: () => ({}),
         hasActiveDraft: false,
-        isCurrentVersion: false,
-    },
+        isCurrentVersion: false
+    }
 );
 
 const form = useForm({
@@ -206,7 +209,7 @@ const form = useForm({
         || props.pageVersion?.files
         || [],
     createTask: false,
-    is_current_version: false as boolean,
+    is_current_version: false as boolean
 });
 
 const processing = ref(false);
@@ -218,14 +221,19 @@ const actualizationLoading = ref(false);
 // Управление модальным окном чата и состояние чата
 const isChatModalOpen = ref<boolean>(false);
 const chat = ref<LLMChat | null>(props.actualization?.llm_chat || null);
-const actualizationStatus = ref<string>(props.actualization?.status || 'unknown');
+const actualizationProcessStatus = ref<string>(props.actualization?.status || 'unknown');
 const isPolling = ref<boolean>(false);
 const pollInterval = ref<number | null>(null);
 const requestCount = ref<number>(0);
+const hasActiveAgentTask = ref<boolean>(false);
 
 // API и composable для чата
 const api = createApi();
-const { sendMessage, updateChatMessages, isSending, error, hasError } = useActualizationChat(props.actualization?.id || 0);
+const {
+    sendMessage,
+    updateChatMessages,
+    isSending,
+} = useActualizationChat(props.actualization?.id || 0);
 
 // Метод для создания черновика
 const createDraft = () => {
@@ -234,11 +242,15 @@ const createDraft = () => {
         ...data,
         project_files: Array.isArray(data.files)
             ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
-            : [],
+            : []
     }));
     transformed.post(route('pages.create-draft', props.pageVersion.page_id), {
-        onSuccess: () => { processing.value = false; },
-        onError: () => { processing.value = false; },
+        onSuccess: () => {
+            processing.value = false;
+        },
+        onError: () => {
+            processing.value = false;
+        }
     });
 };
 
@@ -252,12 +264,16 @@ const submit = () => {
         ...data,
         project_files: Array.isArray(data.files)
             ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
-            : [],
+            : []
     }));
 
     const options = {
-        onSuccess: () => { processing.value = false; },
-        onError: () => { processing.value = false; },
+        onSuccess: () => {
+            processing.value = false;
+        },
+        onError: () => {
+            processing.value = false;
+        }
     } as any;
 
     if (props.is_current_version) {
@@ -273,11 +289,15 @@ const approveDraft = () => {
             ...data,
             project_files: Array.isArray(data.files)
                 ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
-                : [],
+                : []
         }));
         transformed.post(route('drafts.approve', props.pageVersion.id), {
-            onSuccess: () => { processing.value = false; },
-            onError: () => { processing.value = false; },
+            onSuccess: () => {
+                processing.value = false;
+            },
+            onError: () => {
+                processing.value = false;
+            }
         });
     }
 };
@@ -295,23 +315,24 @@ const showActualizeDialog = () => {
 const confirmActualizeDraft = () => {
     actualizationLoading.value = true;
 
-    router.post(
-        route('drafts.actualize', props.pageVersion.id),
-        {},
-        {
-            onSuccess: () => {
-                showActualizeConfirm.value = false;
-                actualizationLoading.value = false;
-                // Обновить страницу или показать уведомление об успешной актуализации
-                location.reload(); // или router.reload()
-            },
-            onError: (errors) => {
-                actualizationLoading.value = false;
-                // Показать ошибку актуализации
-                console.error('Ошибка актуализации:', errors);
-            },
-        },
-    );
+    (async () => {
+        try {
+            const req = new StartActualizationForDraftRequest(props.pageVersion.id);
+            const result = await req.call(api);
+            showActualizeConfirm.value = false;
+            actualizationLoading.value = false;
+            if (result?.success) {
+                // Мгновенно переключаем UI в состояние ожидания и запускаем опрос
+                actualizationProcessStatus.value = 'pending';
+                startPolling();
+            } else {
+                console.error('Ошибка актуализации:', result?.message);
+            }
+        } catch (err) {
+            actualizationLoading.value = false;
+            console.error('Ошибка актуализации:', err);
+        }
+    })();
 };
 
 // Отменить актуализацию
@@ -329,7 +350,9 @@ const openChatModal = () => {
 
 // Отправить сообщение в чат актуализации
 const sendMessageToChat = async (message: string) => {
-    if (!props.actualization) return;
+    if (!props.actualization || props.actualization.generating) return;
+
+    startPolling();
     const response = await sendMessage(message);
     if (response && response.chat) {
         updateChatMessages(chat.value, response.chat.messages);
@@ -344,7 +367,8 @@ const fetchActualizationStatus = async () => {
         const data = await req.call(api);
         if (data.success) {
             requestCount.value++;
-            actualizationStatus.value = data.data.status;
+            actualizationProcessStatus.value = data.data.status;
+            hasActiveAgentTask.value = !!data.data.has_active_agent_task;
             if (data.data.chat) {
                 chat.value = {
                     id: data.data.chat.id,
@@ -352,6 +376,9 @@ const fetchActualizationStatus = async () => {
                     created_at: '',
                     updated_at: ''
                 } as LLMChat;
+            }
+            if (['completed', 'failed'].includes(actualizationProcessStatus.value)) {
+                stopPolling();
             }
         }
     } catch (err) {
@@ -378,14 +405,8 @@ const stopPolling = () => {
     isPolling.value = false;
 };
 
-// Проверить, можно ли перезапустить актуализацию
-const canRestartActualization = computed(() => {
-    return actualizationStatus.value && !['pending', 'processing'].includes(actualizationStatus.value);
-});
-
-// Обновить состояние кнопки актуализации
 const actualizationButtonDisabled = computed(() => {
-    return !!props.actualization && ['pending', 'processing'].includes(actualizationStatus.value);
+    return !!props.actualization && props.actualization.generating;
 });
 
 // Lifecycle hooks

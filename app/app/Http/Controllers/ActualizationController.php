@@ -108,9 +108,6 @@ class ActualizationController extends Controller
      */
     public function cancel(Request $request, Actualization $actualization): JsonResponse
     {
-        // Проверка прав доступа
-        $this->authorize('update', $actualization->page);
-
         try {
             $this->actualizationService->cancel($actualization);
 
@@ -164,8 +161,6 @@ class ActualizationController extends Controller
      */
     public function getStatusWithChat(Request $request, Actualization $actualization): JsonResponse
     {
-        $this->authorize('view', $actualization->page);
-
         $data = $this->actualizationService->getStatusWithChat($actualization);
 
         return response()->json([
@@ -184,17 +179,20 @@ class ActualizationController extends Controller
         AgentResultHandlerFactoryInterface $handlerFactory,
         AgentTaskManagerInterface $agentTaskManager
     ): JsonResponse {
-        $this->authorize('update', $actualization->page);
-
-        if (!in_array($actualization->status, [Actualization::STATUS_PENDING, Actualization::STATUS_PROCESSING])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Актуализация завершена, отправка сообщений недоступна'
-            ], 403);
-        }
-
         try {
             $dto = SendActualizationMessageDTO::fromRequest($request, $actualization);
+
+            if($actualization->isGenerating()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Есть запущенная актуализация'
+                ], 500);
+            }
+
+            // Разрешаем корректировку после завершения: если статус completed/failed — переводим в pending
+            if (in_array($actualization->status, [Actualization::STATUS_COMPLETED, Actualization::STATUS_FAILED])) {
+                $actualization->update(['status' => Actualization::STATUS_PENDING]);
+            }
 
             $success = DB::transaction(function () use ($dto, $actualization, $conversationFactory, $handlerFactory, $agentTaskManager) {
                 // Получаем или создаем чат
@@ -223,7 +221,7 @@ class ActualizationController extends Controller
                         $actualization->page->project_id,
                         $chat->id,
                         false,
-                        AgentTaskType::TEXT
+                        AgentTaskType::ACTUALIZATION
                     );
                 }
 

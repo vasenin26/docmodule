@@ -136,7 +136,7 @@ class PageVersion extends Model
     {
         return Actualization::where('page_version_id', $this->id)
             ->whereIn('status', [Actualization::STATUS_PENDING, Actualization::STATUS_PROCESSING])
-            ->with(['pageVersion', 'createdBy'])
+            ->with(['pageVersion', 'createdBy', 'llmChat'])
             ->first();
     }
 

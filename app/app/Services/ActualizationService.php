@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Actualization;
+use App\Models\AgentTask;
 use App\Models\Page;
 use App\Models\PageVersion;
 use App\Models\User;
@@ -25,8 +26,8 @@ class ActualizationService
             throw new \RuntimeException('Актуализация возможна только для черновиков');
         }
 
-        // Проверить, нет ли активной актуализации для этого черновика
-        if ($draft->hasActiveActualization()) {
+        $actualization = $draft->getActiveActualization();
+        if ($actualization && $actualization->isGenerating()) {
             throw new \RuntimeException('Для этого черновика уже есть активная актуализация');
         }
 
@@ -152,14 +153,24 @@ class ActualizationService
     {
         $actualization->load(['llmChat', 'createdBy', 'pageVersion']);
 
+        // Агрегированный статус и признак активной задачи агента
+        $aggregatedStatus = $actualization->generationStatus();
+        $hasActiveAgentTask = false;
+        if ($actualization->llm_chat_id) {
+            $hasActiveAgentTask = (bool) AgentTask::where('chat_id', $actualization->llm_chat_id)
+                ->whereIn('status', [AgentTask::STATUS_WAIT, AgentTask::STATUS_PROCESSING])
+                ->exists();
+        }
+
         return [
             'id' => $actualization->id,
-            'status' => $actualization->status,
+            'status' => $aggregatedStatus,
             'content' => $actualization->pageVersion->content ?? '',
             'chat' => $actualization->llmChat ? [
                 'id' => $actualization->llmChat->id,
                 'messages' => $actualization->llmChat->messages
             ] : null,
+            'has_active_agent_task' => $hasActiveAgentTask,
             'created_at' => $actualization->created_at,
             'updated_at' => $actualization->updated_at,
             'created_by' => $actualization->createdBy->name ?? 'Unknown',

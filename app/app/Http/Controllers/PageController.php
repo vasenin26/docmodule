@@ -244,11 +244,17 @@ class PageController extends Controller
         $page->load(['project']);
         $version->load(['projectFiles']);
 
+        $actualization = $version->getActiveActualization() ?? $version->getCompletedActualization();
+
         return Inertia::render('pages/Edit', [
             'pageVersion' => $version,
             'page' => $page,
             'is_current_version' => $page->checkCurrentVersion($version->id),
-            'actualization' => $version->getActiveActualization(),
+            // Передаем актуализацию: активную, иначе последнюю завершенную (для просмотра чата)
+            'actualization' => [
+                ...$actualization->toArray(),
+                'generating' => $actualization->isGenerating()
+            ],
             'errors' => (object)[],
         ]);
     }
