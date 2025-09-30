@@ -31,6 +31,11 @@ function parseResult(): any | undefined {
 
 function parseTitle(): string | undefined {
     const parsed = parseResult();
+    // Новый формат ToolResult: { message, payload }
+    if (parsed && parsed.payload && parsed.payload.task && typeof parsed.payload.task.title === 'string') {
+        return parsed.payload.task.title as string;
+    }
+    // Переходный формат
     if (parsed && parsed.task && typeof parsed.task.title === 'string') {
         return parsed.task.title as string;
     }
@@ -41,6 +46,9 @@ function parseTitle(): string | undefined {
 
 function parseStats(): { total: number; completed: number; remaining: number } | undefined {
     const parsed = parseResult();
+    if (parsed && parsed.payload && parsed.payload.stats) {
+        return parsed.payload.stats;
+    }
     if (parsed && parsed.stats) {
         return parsed.stats;
     }
@@ -49,6 +57,7 @@ function parseStats(): { total: number; completed: number; remaining: number } |
 
 function getErrorMessage(): string | undefined {
     const parsed = parseResult();
+    if (parsed && typeof parsed.message === 'string' && !getSuccessFlag()) return parsed.message as string;
     if (parsed && typeof parsed.error === 'string') return parsed.error as string;
     const raw = getResultRaw();
     if (typeof raw === 'string' && /^error[:]?/i.test(raw.trim())) return raw;

@@ -28,9 +28,23 @@ function getResultRaw(): string | undefined {
     return m?.result || m?.tool_result;
 }
 
+function parseResult(): any | undefined {
+    const raw = getResultRaw();
+    if (!raw) return undefined;
+    try {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.payload) return parsed.payload;
+        return parsed;
+    } catch {
+        return undefined;
+    }
+}
+
 function isErrorText(): boolean {
     if (!getSuccess()) return true;
     const raw = getResultRaw();
+    const pr = parseResult();
+    if (pr && typeof pr.message === 'string' && !getSuccess()) return true;
     if (typeof raw !== 'string') return false;
     const t = raw.trim();
     if (/^error/i.test(t)) return true;
@@ -39,6 +53,9 @@ function isErrorText(): boolean {
 }
 
 function getPaths(): string[] | undefined {
+    const pr = parseResult();
+    if (pr && Array.isArray(pr.paths)) return pr.paths as string[];
+    if (pr && Array.isArray(pr.entries)) return pr.entries as string[];
     const raw = getResultRaw();
     if (typeof raw !== 'string') return undefined;
     if (isErrorText()) return [];

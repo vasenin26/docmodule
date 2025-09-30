@@ -37,9 +37,14 @@ function extractLatestStats(): { total: number; completed: number; remaining: nu
 
         try {
             const parsed = JSON.parse(resultRaw);
-            // Новый формат: stats из объекта результата
+            // Новый формат ToolResult: { message, payload: { stats } }
+            if (parsed && parsed.payload && parsed.payload.stats && typeof parsed.payload.stats.total === 'number') {
+                const { total, completed, remaining } = parsed.payload.stats as { total: number; completed: number; remaining: number };
+                return { total, completed, remaining };
+            }
+            // Переходный формат: { stats }
             if (parsed && parsed.stats && typeof parsed.stats.total === 'number') {
-                const { total, completed, remaining } = parsed.stats;
+                const { total, completed, remaining } = parsed.stats as { total: number; completed: number; remaining: number };
                 return { total, completed, remaining };
             }
             // Старый формат: массив задач

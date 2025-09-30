@@ -32,7 +32,19 @@ function getResultRaw(): any {
     return m?.result || m?.tool_result;
 }
 
+function parseResult(): any | undefined {
+    const raw = getResultRaw();
+    if (!raw) return undefined;
+    try { return JSON.parse(raw as string); } catch { return undefined; }
+}
+
 function getFileContent(): string | undefined {
+    const parsed = parseResult();
+    // Новый формат ToolResult: { message, payload }
+    if (parsed && parsed.payload && typeof parsed.payload.content === 'string') return parsed.payload.content as string;
+    // Переходный формат: { content: string }
+    if (parsed && typeof parsed.content === 'string') return parsed.content as string;
+    // Старый формат: сырая строка в result (если не ошибка)
     const raw: any = getResultRaw();
     if (typeof raw === 'string' && !isErrorText(raw)) return raw;
     return undefined;
@@ -46,6 +58,9 @@ function isErrorText(raw: string): boolean {
 function isError(): boolean {
     const raw = getResultRaw();
     if (typeof raw === 'string' && isErrorText(raw)) return true;
+    // Если есть ToolResult.message и success=false — считаем ошибкой
+    const parsed = parseResult();
+    if (parsed && typeof parsed.message === 'string' && !getSuccessFlag()) return true;
     return !getSuccessFlag();
 }
 

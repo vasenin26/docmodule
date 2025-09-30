@@ -42,11 +42,28 @@ function isErrorText(): boolean {
 }
 
 function getEntries(): string[] | undefined {
-    const raw = getResultRaw();
-    if (typeof raw !== 'string') return undefined;
-    if (isErrorText()) return [];
-    const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-    return lines;
+    // Новый формат ToolResult: { message, payload: { entries: string[] } }
+    try {
+        const raw = getResultRaw();
+        if (!raw) return undefined;
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.payload && Array.isArray(parsed.payload.entries)) return parsed.payload.entries as string[];
+        // Переходный вариант: { entries: [...] }
+        if (parsed && Array.isArray(parsed.entries)) return parsed.entries as string[];
+        // Легаси: строки, разделённые переносами
+        if (typeof raw === 'string' && !isErrorText()) {
+            const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+            return lines;
+        }
+        return undefined;
+    } catch {
+        const raw = getResultRaw();
+        if (typeof raw === 'string' && !isErrorText()) {
+            const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+            return lines;
+        }
+        return undefined;
+    }
 }
 
 const showAll = ref(false);

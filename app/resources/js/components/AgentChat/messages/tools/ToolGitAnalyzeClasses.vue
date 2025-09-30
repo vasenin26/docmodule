@@ -29,7 +29,9 @@ function parseResult(): any | undefined {
     const raw: string | undefined = m?.result || m?.tool_result;
     if (!raw) return undefined;
     try {
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.payload) return parsed.payload;
+        return parsed;
     } catch {
         return undefined;
     }
@@ -49,19 +51,19 @@ function containerClass(): string {
     <div class="rounded-lg p-3" :class="containerClass()">
         <ToolHeaderStatus :title="'анализ классов'" :subtitle="parseArgs()?.namespace ? (parseArgs()?.url ? (parseArgs()?.url + ' • ' + parseArgs()?.namespace) : parseArgs()?.namespace) : parseArgs()?.url" :status="getSuccess() ? 'success' : 'error'" />
 
-        <div class="text-sm space-y-3" v-if="parseResult()?.data">
+        <div class="text-sm space-y-3" v-if="parseResult()">
             <div class="grid grid-cols-2 gap-2">
-                <div class="bg-white p-2 rounded border text-xs">PHP files: {{ parseResult()?.data?.total_php_files }}</div>
-                <div class="bg-white p-2 rounded border text-xs">Classes: {{ parseResult()?.data?.classes_count }}</div>
-                <div class="bg-white p-2 rounded border text-xs">Interfaces: {{ parseResult()?.data?.interfaces_count }}</div>
-                <div class="bg-white p-2 rounded border text-xs">Traits: {{ parseResult()?.data?.traits_count }}</div>
-                <div class="bg-white p-2 rounded border text-xs">Namespaces: {{ parseResult()?.data?.namespaces_count }}</div>
+                <div class="bg-white p-2 rounded border text-xs">PHP files: {{ parseResult()?.total_php_files }}</div>
+                <div class="bg-white p-2 rounded border text-xs">Classes: {{ parseResult()?.classes_count }}</div>
+                <div class="bg-white p-2 rounded border text-xs">Interfaces: {{ parseResult()?.interfaces_count }}</div>
+                <div class="bg-white p-2 rounded border text-xs">Traits: {{ parseResult()?.traits_count }}</div>
+                <div class="bg-white p-2 rounded border text-xs">Namespaces: {{ parseResult()?.namespaces_count }}</div>
             </div>
 
             <div class="space-y-1">
                 <div class="text-xs font-medium text-gray-600">Паттерны:</div>
-                <ul v-if="Array.isArray(parseResult()?.data?.architectural_patterns) && parseResult()?.data?.architectural_patterns.length" class="list-disc pl-5 text-xs space-y-1">
-                    <li v-for="p in parseResult()?.data?.architectural_patterns" :key="p">{{ p }}</li>
+                <ul v-if="Array.isArray(parseResult()?.architectural_patterns) && parseResult()?.architectural_patterns.length" class="list-disc pl-5 text-xs space-y-1">
+                    <li v-for="p in parseResult()?.architectural_patterns" :key="p">{{ p }}</li>
                 </ul>
                 <div v-else class="text-gray-500 italic text-xs">не найдены</div>
             </div>
@@ -72,7 +74,7 @@ function containerClass(): string {
                     <button @click="showClasses = !showClasses" class="text-xs font-medium text-blue-600 hover:text-blue-800">{{ showClasses ? 'скрыть' : 'показать' }}</button>
                 </div>
                 <ul v-if="showClasses" class="list-disc pl-5 text-xs space-y-1">
-                    <li v-for="c in parseResult()?.data?.classes" :key="c.full_name || c.name" class="bg-white p-2 rounded border">
+                    <li v-for="c in parseResult()?.classes" :key="c.full_name || c.name" class="bg-white p-2 rounded border">
                         <div class="font-mono truncate">{{ c.full_name || c.name }}</div>
                         <div v-if="c.extends" class="text-gray-600">extends: {{ c.extends }}</div>
                         <div v-if="Array.isArray(c.implements) && c.implements.length" class="text-gray-600">implements: {{ c.implements.join(', ') }}</div>
@@ -86,7 +88,7 @@ function containerClass(): string {
                     <button @click="showInterfaces = !showInterfaces" class="text-xs font-medium text-blue-600 hover:text-blue-800">{{ showInterfaces ? 'скрыть' : 'показать' }}</button>
                 </div>
                 <ul v-if="showInterfaces" class="list-disc pl-5 text-xs space-y-1">
-                    <li v-for="i in parseResult()?.data?.interfaces" :key="i.full_name || i.name" class="bg-white p-2 rounded border">
+                    <li v-for="i in parseResult()?.interfaces" :key="i.full_name || i.name" class="bg-white p-2 rounded border">
                         <div class="font-mono truncate">{{ i.full_name || i.name }}</div>
                         <div v-if="Array.isArray(i.extends) && i.extends.length" class="text-gray-600">extends: {{ i.extends.join(', ') }}</div>
                     </li>
@@ -99,7 +101,7 @@ function containerClass(): string {
                     <button @click="showTraits = !showTraits" class="text-xs font-medium text-blue-600 hover:text-blue-800">{{ showTraits ? 'скрыть' : 'показать' }}</button>
                 </div>
                 <ul v-if="showTraits" class="list-disc pl-5 text-xs space-y-1">
-                    <li v-for="t in parseResult()?.data?.traits" :key="t.full_name || t.name" class="bg-white p-2 rounded border">
+                    <li v-for="t in parseResult()?.traits" :key="t.full_name || t.name" class="bg-white p-2 rounded border">
                         <div class="font-mono truncate">{{ t.full_name || t.name }}</div>
                     </li>
                 </ul>
@@ -111,7 +113,7 @@ function containerClass(): string {
                     <button @click="showNamespaces = !showNamespaces" class="text-xs font-medium text-blue-600 hover:text-blue-800">{{ showNamespaces ? 'скрыть' : 'показать' }}</button>
                 </div>
                 <ul v-if="showNamespaces" class="list-disc pl-5 text-xs space-y-1">
-                    <li v-for="ns in parseResult()?.data?.namespaces" :key="ns" class="bg-white p-2 rounded border">
+                    <li v-for="ns in parseResult()?.namespaces" :key="ns" class="bg-white p-2 rounded border">
                         <div class="font-mono truncate">{{ ns }}</div>
                     </li>
                 </ul>

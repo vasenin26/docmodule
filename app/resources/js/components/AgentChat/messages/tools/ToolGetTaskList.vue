@@ -32,9 +32,18 @@ function parseResultAny(): any {
     try { return JSON.parse(raw); } catch { return undefined; }
 }
 
+function getToolResultMessage(): string | undefined {
+    const parsed = parseResultAny();
+    if (parsed && typeof parsed.message === 'string') return parsed.message as string;
+    if (parsed && typeof parsed.error === 'string') return parsed.error as string;
+    return undefined;
+}
+
 function parseTasks(): TaskItem[] | undefined {
     const parsed = parseResultAny();
-    // Новый формат: { tasks: TaskItem[], stats: {...} }
+    // Новый формат ToolResult: { message, payload }
+    if (parsed && parsed.payload && Array.isArray(parsed.payload.tasks)) return parsed.payload.tasks as TaskItem[];
+    // Переходный формат: { tasks: [...] }
     if (parsed && Array.isArray(parsed.tasks)) return parsed.tasks as TaskItem[];
     // Старый формат: массив задач напрямую
     if (Array.isArray(parsed)) return parsed as TaskItem[];
@@ -43,12 +52,16 @@ function parseTasks(): TaskItem[] | undefined {
 
 function parseStats(): { total: number; completed: number; remaining: number } | undefined {
     const parsed = parseResultAny();
+    // Новый формат ToolResult
+    if (parsed && parsed.payload && parsed.payload.stats) return parsed.payload.stats as { total: number; completed: number; remaining: number };
+    // Переходный формат
     if (parsed && parsed.stats) return parsed.stats as { total: number; completed: number; remaining: number };
     return undefined;
 }
 
 function getErrorMessage(): string | undefined {
     const parsed = parseResultAny();
+    if (parsed && typeof parsed.message === 'string' && !getSuccessFlag()) return parsed.message as string;
     if (parsed && typeof parsed.error === 'string') return parsed.error as string;
     return undefined;
 }

@@ -124,9 +124,8 @@ class PageVersion extends Model
      */
     public function hasActiveActualization(): bool
     {
-        return Actualization::where('page_version_id', $this->id)
-            ->whereIn('status', [Actualization::STATUS_PENDING, Actualization::STATUS_PROCESSING])
-            ->exists();
+        $actualization = Actualization::where('page_version_id', $this->id)->first();
+        return $actualization ? $actualization->isGenerating() : false;
     }
 
     /**
@@ -135,7 +134,6 @@ class PageVersion extends Model
     public function getActiveActualization(): ?Actualization
     {
         return Actualization::where('page_version_id', $this->id)
-            ->whereIn('status', [Actualization::STATUS_PENDING, Actualization::STATUS_PROCESSING])
             ->with(['pageVersion', 'createdBy', 'llmChat'])
             ->first();
     }

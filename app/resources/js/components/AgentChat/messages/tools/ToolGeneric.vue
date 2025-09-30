@@ -29,6 +29,32 @@ function getToolSuccess(): boolean | undefined {
     return (props.message.message as any).success !== undefined ? (props.message.message as any).success : (props.message.message as any).tool_success;
 }
 
+function parseToolResult(): { message?: string; payload?: any } | undefined {
+    const raw = getToolResult();
+    if (!raw) return undefined;
+    try {
+        const parsed = JSON.parse(raw);
+        // Новый формат ToolResult: { message: string, payload: any }
+        if (parsed && (typeof parsed.message === 'string' || parsed.payload !== undefined)) {
+            return { message: parsed.message, payload: parsed.payload };
+        }
+        // Легаси: показываем как есть
+        return undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+function getResultMessage(): string | undefined {
+    return parseToolResult()?.message;
+}
+
+function getResultPayloadPretty(): string | undefined {
+    const payload = parseToolResult()?.payload;
+    if (payload === undefined) return undefined;
+    try { return JSON.stringify(payload, null, 2); } catch { return String(payload); }
+}
+
 function getToolMessageClass(success: boolean | undefined): string {
     return success === false 
         ? 'bg-red-50 border border-red-200' 
@@ -81,13 +107,17 @@ function getToolLabelClass(success: boolean | undefined): string {
                     </button>
                 </div>
                 <div v-if="isTextExpanded('tool-result')" class="space-y-1">
-                    <div v-if="isLongText(getToolResult(), 300) && !isTextExpanded('tool-result-full')" class="space-y-1">
-                        <div class="text-sm font-mono bg-gray-100 p-2 rounded border overflow-x-auto whitespace-pre-wrap">{{ getTruncatedText(getToolResult(), 300) }}</div>
-                        <button @click="toggleTextExpansion('tool-result-full')" class="text-xs font-medium text-blue-600 hover:text-blue-800">Показать полностью</button>
+                    <div v-if="getResultMessage()" class="space-y-1">
+                        <div class="text-xs font-medium text-gray-600">Сообщение:</div>
+                        <div class="text-sm bg-white p-2 rounded border overflow-x-auto whitespace-pre-wrap">{{ getResultMessage() }}</div>
                     </div>
-                    <div v-else class="space-y-1">
+                    <div v-if="getResultPayloadPretty()" class="space-y-1">
+                        <div class="text-xs font-medium text-gray-600">Данные (payload):</div>
+                        <div class="text-xs font-mono bg-gray-100 p-2 rounded border overflow-x-auto whitespace-pre-wrap">{{ getResultPayloadPretty() }}</div>
+                    </div>
+                    <div v-if="!getResultMessage() && !getResultPayloadPretty()" class="space-y-1">
+                        <div class="text-xs font-medium text-gray-600">Сырые данные:</div>
                         <div class="text-sm font-mono bg-gray-100 p-2 rounded border overflow-x-auto whitespace-pre-wrap">{{ getToolResult() }}</div>
-                        <button v-if="isLongText(getToolResult(), 300)" @click="toggleTextExpansion('tool-result-full')" class="text-xs font-medium text-blue-600 hover:text-blue-800">Свернуть</button>
                     </div>
                 </div>
             </div>

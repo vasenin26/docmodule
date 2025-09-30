@@ -26,19 +26,26 @@ function parseArgs(): { url?: string; patterns?: string[] } | undefined {
 
 type ConfigFile = { file: string; type?: string; size?: number; description?: string };
 
-function parseResult(): { success?: boolean; message?: string; data?: { config_files?: ConfigFile[]; total_found?: number; search_patterns?: string[] } } | undefined {
+function parseResult(): any | undefined {
     const m: any = props.message.message;
     const raw: string | undefined = m?.result || m?.tool_result;
     if (!raw) return undefined;
     try {
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        // Новый формат ToolResult: { message, payload }
+        if (parsed && parsed.payload) return parsed.payload;
+        return parsed;
     } catch {
         return undefined;
     }
 }
 
 function files(): ConfigFile[] | undefined {
-    return parseResult()?.data?.config_files;
+    const pr = parseResult();
+    if (!pr) return undefined;
+    if (Array.isArray(pr.config_files)) return pr.config_files as ConfigFile[];
+    if (pr.data && Array.isArray(pr.data.config_files)) return pr.data.config_files as ConfigFile[];
+    return undefined;
 }
 
 const showAll = ref(false);
@@ -58,13 +65,13 @@ function containerClass(): string {
         <ToolHeaderStatus :title="'конфигурационные файлы'" :subtitle="parseArgs()?.url" :isError="!getSuccess()" />
 
         <div class="text-sm space-y-3">
-            <div v-if="parseResult()?.message" class="space-y-1">
+            <div v-if="(parseResult() as any)?.message" class="space-y-1">
                 <div class="text-xs font-medium text-gray-600">Сообщение:</div>
-                <div class="text-sm bg-white p-2 rounded border overflow-x-auto whitespace-pre-wrap">{{ parseResult()?.message }}</div>
+                <div class="text-sm bg-white p-2 rounded border overflow-x-auto whitespace-pre-wrap">{{ (parseResult() as any)?.message }}</div>
             </div>
 
             <div v-if="visibleFiles && visibleFiles!.length > 0" class="space-y-2">
-                <div class="text-xs font-medium text-gray-600">Найдено файлов ({{ parseResult()?.data?.total_found ?? files()!.length }}):</div>
+                <div class="text-xs font-medium text-gray-600">Найдено файлов ({{ (parseResult() as any)?.total_found ?? files()!.length }}):</div>
                 <ul class="space-y-1">
                     <li v-for="cf in visibleFiles" :key="cf.file" class="bg-white p-2 rounded border">
                         <div class="flex items-center justify-between gap-2">

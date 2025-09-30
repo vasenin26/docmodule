@@ -29,6 +29,9 @@ function parseAny(): any | undefined {
 
 function parseTasks(): TaskItem[] | undefined {
     const parsed = parseAny();
+    if (parsed && parsed.payload && Array.isArray(parsed.payload.tasks)) {
+        return parsed.payload.tasks as TaskItem[];
+    }
     if (parsed && parsed.tasks && Array.isArray(parsed.tasks)) {
         return parsed.tasks as TaskItem[];
     }
@@ -39,6 +42,9 @@ function parseTasks(): TaskItem[] | undefined {
 
 function parseStats(): { total: number; completed: number; remaining: number } | undefined {
     const parsed = parseAny();
+    if (parsed && parsed.payload && parsed.payload.stats) {
+        return parsed.payload.stats;
+    }
     if (parsed && parsed.stats) {
         return parsed.stats;
     }
@@ -47,6 +53,7 @@ function parseStats(): { total: number; completed: number; remaining: number } |
 
 function getErrorMessage(): string | undefined {
     const parsed = parseAny();
+    if (parsed && typeof parsed.message === 'string' && !getSuccessFlag()) return parsed.message as string;
     if (parsed && typeof parsed.error === 'string') return parsed.error as string;
     return undefined;
 }
