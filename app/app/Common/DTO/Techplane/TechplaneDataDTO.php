@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Common\DTO;
+namespace App\Common\DTO\Techplane;
+
+use App\Common\DTO\GeneratorContextDTO;
 
 readonly class TechplaneDataDTO
 {

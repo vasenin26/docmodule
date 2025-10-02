@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Common\DTO;
+namespace App\Common\DTO\Page;
 
 use App\Models\Page;
 use Illuminate\Database\Eloquent\Collection;
@@ -19,7 +19,7 @@ readonly class PageListDTO
                 'title' => $page->currentVersion?->title ?? 'Без названия'
             ];
         })->toArray();
-        
+
         return new self($pageList);
     }
 

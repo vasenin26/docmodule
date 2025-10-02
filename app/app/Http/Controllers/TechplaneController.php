@@ -2,19 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Common\DTO\SendTechplaneMessageDTO;
+use App\Common\DTO\Techplane\SendTechplaneMessageDTO;
 use App\Common\Enums\AgentTaskType;
-use Vasenin26\Conversation\Factory\ConversationFactory;
 use App\Http\Requests\CreateImplementationRequest;
 use App\Http\Requests\SendTechplaneMessageRequest;
-use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\AgentTaskManagerInterface;
+use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Jobs\GenerateTechplaneJob;
 use App\Jobs\ProcessImplementationJob;
-use App\Models\AgentTask;
 use App\Models\LLMChat;
 use App\Models\Techplane;
-use Vasenin26\Conversation\Messages\UserMessage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +19,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
+use Vasenin26\Conversation\Factory\ConversationFactory;
+use Vasenin26\Conversation\Messages\UserMessage;
 
 class TechplaneController extends Controller
 {

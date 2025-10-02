@@ -2,22 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StartPageActualizationRequest;
+use App\Common\DTO\Actualization\ActualizationDTO;
+use App\Common\DTO\Actualization\SendActualizationMessageDTO;
+use App\Common\Enums\AgentTaskType;
 use App\Http\Requests\SendActualizationMessageRequest;
+use App\Http\Requests\StartPageActualizationRequest;
+use App\Interfaces\AgentTaskManagerInterface;
+use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Models\Actualization;
 use App\Models\LLMChat;
 use App\Models\Page;
 use App\Models\PageVersion;
 use App\Services\ActualizationService;
-use App\Common\DTO\ActualizationDTO;
-use App\Common\DTO\PageDataDTO;
-use App\Common\DTO\SendActualizationMessageDTO;
-use App\Common\Enums\AgentTaskType;
-use App\Interfaces\AgentTaskManagerInterface;
-use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;

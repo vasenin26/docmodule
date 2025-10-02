@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Common\DTO;
+namespace App\Common\DTO\LLM;
 
 readonly class LLMResultDTO
 {
@@ -13,7 +13,7 @@ readonly class LLMResultDTO
     )
     {
     }
-    
+
     /**
      * Legacy метод для обратной совместимости
      * @deprecated Используйте total_tokens напрямую

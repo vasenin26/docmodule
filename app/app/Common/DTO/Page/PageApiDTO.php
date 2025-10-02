@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Common\DTO;
+namespace App\Common\DTO\Page;
 
 use App\Models\Page;
 
@@ -16,7 +16,7 @@ readonly class PageApiDTO
     public static function fromPage(Page $page): self
     {
         $currentVersion = $page->currentVersion;
-        
+
         return new self(
             id: $page->id,
             title: $currentVersion?->title ?? 'Без названия',

@@ -2,21 +2,20 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Common\DTO\PageApiDTO;
-use App\Common\DTO\PageListDTO;
-use App\Common\DTO\PageHierarchyDTO;
+use App\Common\DTO\Page\PageApiDTO;
+use App\Common\DTO\Page\PageHierarchyDTO;
+use App\Common\DTO\Page\PageListDTO;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Agent\GetPageRequest;
-use App\Http\Requests\Agent\GetPageVersionRequest;
-use App\Http\Requests\Agent\GetPageHierarchyRequest;
-use App\Http\Requests\Agent\GetPageChildrenRequest;
-use App\Http\Requests\Agent\GetPageParentRequest;
-use App\Http\Requests\Agent\GetRelatedPagesRequest;
 use App\Http\Requests\Agent\GetPageActualizationRequest;
+use App\Http\Requests\Agent\GetPageChildrenRequest;
 use App\Http\Requests\Agent\GetPageFilesRequest;
+use App\Http\Requests\Agent\GetPageHierarchyRequest;
+use App\Http\Requests\Agent\GetPageParentRequest;
+use App\Http\Requests\Agent\GetPageRequest;
 use App\Http\Requests\Agent\GetPageTasksRequest;
+use App\Http\Requests\Agent\GetPageVersionRequest;
+use App\Http\Requests\Agent\GetRelatedPagesRequest;
 use App\Interfaces\PageContextServiceFactoryInterface;
-use App\Interfaces\PageContextServiceInterface;
 use App\Models\Agent;
 use App\Models\PageVersion;
 use Illuminate\Http\JsonResponse;
@@ -82,7 +81,7 @@ class PageController extends Controller
         PageContextServiceFactoryInterface $pageContextServiceFactory
     ): JsonResponse {
         $agent = $request->get('agent');
-        
+
         Log::info('Page API request', [
             'agent_id' => $agent->id,
             'project_id' => $agent->project_id,
@@ -90,12 +89,12 @@ class PageController extends Controller
             'endpoint' => $request->path(),
             'ip' => $request->ip()
         ]);
-        
+
         // Создаем сервис с project_id агента через фабрику
         $service = $pageContextServiceFactory->createForProject($agent->project_id);
-        
+
         $page = $service->getPageById($id);
-        
+
         if (!$page) {
             Log::warning('Page not found', [
                 'page_id' => $id,
@@ -104,9 +103,9 @@ class PageController extends Controller
             ]);
             return response()->json(['error' => 'Page not found'], 404);
         }
-        
+
         $dto = PageApiDTO::fromPage($page);
-        
+
         return response()->json($dto->toArray());
     }
 
@@ -118,21 +117,21 @@ class PageController extends Controller
         PageContextServiceFactoryInterface $pageContextServiceFactory
     ): JsonResponse {
         $agent = $request->get('agent');
-        
+
         Log::info('Pages list API request', [
             'agent_id' => $agent->id,
             'project_id' => $agent->project_id,
             'endpoint' => $request->path(),
             'ip' => $request->ip()
         ]);
-        
+
         // Создаем сервис с project_id агента через фабрику
         $service = $pageContextServiceFactory->createForProject($agent->project_id);
-        
+
         $pages = $service->getAllProjectPages();
-        
+
         $dto = PageListDTO::fromCollection($pages);
-        
+
         return response()->json($dto->toArray());
     }
 
@@ -145,7 +144,7 @@ class PageController extends Controller
     ): JsonResponse {
         $agent = $request->get('agent');
         $rootPageId = $request->getRootPageId();
-        
+
         Log::info('Page hierarchy API request', [
             'agent_id' => $agent->id,
             'project_id' => $agent->project_id,
@@ -153,14 +152,14 @@ class PageController extends Controller
             'endpoint' => $request->path(),
             'ip' => $request->ip()
         ]);
-        
+
         // Создаем сервис с project_id агента через фабрику
         $service = $pageContextServiceFactory->createForProject($agent->project_id);
-        
+
         $pages = $service->getPageHierarchy($rootPageId);
-        
+
         $hierarchy = PageHierarchyDTO::fromCollection($pages);
-        
+
         return response()->json($hierarchy);
     }
 
@@ -173,7 +172,7 @@ class PageController extends Controller
         PageContextServiceFactoryInterface $pageContextServiceFactory
     ): JsonResponse {
         $agent = $request->get('agent');
-        
+
         Log::info('Page children API request', [
             'agent_id' => $agent->id,
             'project_id' => $agent->project_id,
@@ -181,10 +180,10 @@ class PageController extends Controller
             'endpoint' => $request->path(),
             'ip' => $request->ip()
         ]);
-        
+
         // Создаем сервис с project_id агента через фабрику
         $service = $pageContextServiceFactory->createForProject($agent->project_id);
-        
+
         // Проверяем доступ к странице
         if (!$service->validatePageAccess($id)) {
             Log::warning('Access denied to page children', [
@@ -194,11 +193,11 @@ class PageController extends Controller
             ]);
             return response()->json(['error' => 'Access denied to page'], 403);
         }
-        
+
         $children = $service->getPageChildren($id);
-        
+
         $dto = PageListDTO::fromCollection($children);
-        
+
         return response()->json($dto->toArray());
     }
 
@@ -211,7 +210,7 @@ class PageController extends Controller
         PageContextServiceFactoryInterface $pageContextServiceFactory
     ): JsonResponse {
         $agent = $request->get('agent');
-        
+
         Log::info('Page parent API request', [
             'agent_id' => $agent->id,
             'project_id' => $agent->project_id,
@@ -219,10 +218,10 @@ class PageController extends Controller
             'endpoint' => $request->path(),
             'ip' => $request->ip()
         ]);
-        
+
         // Создаем сервис с project_id агента через фабрику
         $service = $pageContextServiceFactory->createForProject($agent->project_id);
-        
+
         // Проверяем доступ к странице
         if (!$service->validatePageAccess($id)) {
             Log::warning('Access denied to page parent', [
@@ -232,15 +231,15 @@ class PageController extends Controller
             ]);
             return response()->json(['error' => 'Access denied to page'], 403);
         }
-        
+
         $parent = $service->getPageParent($id);
-        
+
         if (!$parent) {
             return response()->json(null);
         }
-        
+
         $dto = PageApiDTO::fromPage($parent);
-        
+
         return response()->json($dto->toArray());
     }
 
@@ -253,7 +252,7 @@ class PageController extends Controller
         PageContextServiceFactoryInterface $pageContextServiceFactory
     ): JsonResponse {
         $agent = $request->get('agent');
-        
+
         Log::info('Related pages API request', [
             'agent_id' => $agent->id,
             'project_id' => $agent->project_id,
@@ -261,10 +260,10 @@ class PageController extends Controller
             'endpoint' => $request->path(),
             'ip' => $request->ip()
         ]);
-        
+
         // Создаем сервис с project_id агента через фабрику
         $service = $pageContextServiceFactory->createForProject($agent->project_id);
-        
+
         // Проверяем доступ к странице
         if (!$service->validatePageAccess($id)) {
             Log::warning('Access denied to related pages', [
@@ -274,11 +273,11 @@ class PageController extends Controller
             ]);
             return response()->json(['error' => 'Access denied to page'], 403);
         }
-        
+
         $relatedPages = $service->findRelatedPages($id);
-        
+
         $dto = PageListDTO::fromCollection($relatedPages);
-        
+
         return response()->json($dto->toArray());
     }
 
@@ -291,7 +290,7 @@ class PageController extends Controller
         PageContextServiceFactoryInterface $pageContextServiceFactory
     ): JsonResponse {
         $agent = $request->get('agent');
-        
+
         Log::info('Page actualization API request', [
             'agent_id' => $agent->id,
             'project_id' => $agent->project_id,
@@ -299,10 +298,10 @@ class PageController extends Controller
             'endpoint' => $request->path(),
             'ip' => $request->ip()
         ]);
-        
+
         // Создаем сервис с project_id агента через фабрику
         $service = $pageContextServiceFactory->createForProject($agent->project_id);
-        
+
         // Проверяем доступ к странице
         if (!$service->validatePageAccess($id)) {
             Log::warning('Access denied to page actualization', [
@@ -312,9 +311,9 @@ class PageController extends Controller
             ]);
             return response()->json(['error' => 'Access denied to page'], 403);
         }
-        
+
         $page = $service->getPageWithActualization($id);
-        
+
         if (!$page) {
             Log::warning('Page with actualization not found', [
                 'page_id' => $id,
@@ -323,9 +322,9 @@ class PageController extends Controller
             ]);
             return response()->json(['error' => 'Page not found'], 404);
         }
-        
+
         $dto = PageApiDTO::fromPage($page);
-        
+
         return response()->json($dto->toArray());
     }
 
@@ -338,7 +337,7 @@ class PageController extends Controller
         PageContextServiceFactoryInterface $pageContextServiceFactory
     ): JsonResponse {
         $agent = $request->get('agent');
-        
+
         Log::info('Page files API request', [
             'agent_id' => $agent->id,
             'project_id' => $agent->project_id,
@@ -346,10 +345,10 @@ class PageController extends Controller
             'endpoint' => $request->path(),
             'ip' => $request->ip()
         ]);
-        
+
         // Создаем сервис с project_id агента через фабрику
         $service = $pageContextServiceFactory->createForProject($agent->project_id);
-        
+
         // Проверяем доступ к странице
         if (!$service->validatePageAccess($id)) {
             Log::warning('Access denied to page files', [
@@ -359,9 +358,9 @@ class PageController extends Controller
             ]);
             return response()->json(['error' => 'Access denied to page'], 403);
         }
-        
+
         $files = $service->getPageProjectFiles($id);
-        
+
         return response()->json($files);
     }
 
@@ -374,7 +373,7 @@ class PageController extends Controller
         PageContextServiceFactoryInterface $pageContextServiceFactory
     ): JsonResponse {
         $agent = $request->get('agent');
-        
+
         Log::info('Page tasks API request', [
             'agent_id' => $agent->id,
             'project_id' => $agent->project_id,
@@ -382,10 +381,10 @@ class PageController extends Controller
             'endpoint' => $request->path(),
             'ip' => $request->ip()
         ]);
-        
+
         // Создаем сервис с project_id агента через фабрику
         $service = $pageContextServiceFactory->createForProject($agent->project_id);
-        
+
         // Проверяем доступ к странице
         if (!$service->validatePageAccess($id)) {
             Log::warning('Access denied to page tasks', [
@@ -395,9 +394,9 @@ class PageController extends Controller
             ]);
             return response()->json(['error' => 'Access denied to page'], 403);
         }
-        
+
         $tasks = $service->getTaskHistory($id);
-        
+
         $taskList = $tasks->map(function ($task) {
             return [
                 'id' => $task->id,
@@ -415,7 +414,7 @@ class PageController extends Controller
                 ] : null,
             ];
         })->toArray();
-        
+
         return response()->json($taskList);
     }
 }

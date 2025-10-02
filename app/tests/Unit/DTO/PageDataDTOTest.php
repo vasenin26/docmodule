@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\DTO;
 
-use App\Common\DTO\PageDataDTO;
+use App\Common\DTO\Page\PageDataDTO;
 use Tests\TestCase;
 
 class PageDataDTOTest extends TestCase

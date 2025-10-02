@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Common\DTO\ActualizationDTO;
+use App\Common\DTO\Actualization\ActualizationDTO;
 use App\Http\Requests\Page\ApproveVersionRequest;
 use App\Http\Requests\Page\StorePageRequest;
 use App\Http\Requests\Page\UpdateVersionRequest;
 use App\Jobs\CalculateVersionDifferenceJob;
-use App\Models\ProjectFile;
 use App\Models\Page;
 use App\Models\PageVersion;
 use App\Models\Project;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Common\DTO;
+namespace App\Common\DTO\Page;
 
 use App\Models\PageVersion;
 

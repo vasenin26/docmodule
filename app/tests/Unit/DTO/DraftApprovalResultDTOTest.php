@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\DTO;
 
-use App\Common\DTO\DraftApprovalResultDTO;
+use App\Common\DTO\Page\DraftApprovalResultDTO;
 use Tests\TestCase;
 
 class DraftApprovalResultDTOTest extends TestCase

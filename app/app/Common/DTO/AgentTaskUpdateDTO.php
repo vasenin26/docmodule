@@ -2,6 +2,8 @@
 
 namespace App\Common\DTO;
 
+use App\Common\DTO\LLM\LLMResultDTO;
+
 readonly class AgentTaskUpdateDTO
 {
     public function __construct(
@@ -67,8 +69,8 @@ readonly class AgentTaskUpdateDTO
 
         // Проверяем, что каждое сообщение имеет обязательные поля
         foreach ($this->chat as $message) {
-            if (!is_array($message) || 
-                !isset($message['role']) || 
+            if (!is_array($message) ||
+                !isset($message['role']) ||
                 !isset($message['content'])) {
                 return false;
             }

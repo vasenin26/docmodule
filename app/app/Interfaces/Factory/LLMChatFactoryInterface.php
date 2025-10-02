@@ -2,8 +2,7 @@
 
 namespace App\Interfaces\Factory;
 
-use App\Common\DTO\ActualizationContextDTO;
-use App\Common\DTO\DifferenceDataDTO;
+use App\Common\DTO\Actualization\ActualizationContextDTO;
 use App\Common\DTO\GeneratorContextDTO;
 use App\Interfaces\LLM\PromptProviderInterface;
 use App\Models\LLMChat;

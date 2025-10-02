@@ -2,7 +2,7 @@
 
 namespace App\Factory;
 
-use App\Common\DTO\ActualizationContextDTO;
+use App\Common\DTO\Actualization\ActualizationContextDTO;
 use App\Common\DTO\GeneratorContextDTO;
 use App\Common\Utils\ExtractRepoUrl;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;

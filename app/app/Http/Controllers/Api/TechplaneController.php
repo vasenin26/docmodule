@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Common\DTO\TechplaneApiDTO;
-use App\Common\DTO\TechplaneMarkDoneDTO;
+use App\Common\DTO\Techplane\TechplaneApiDTO;
+use App\Common\DTO\Techplane\TechplaneMarkDoneDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Techplane\MarkDoneRequest;
 use App\Models\Techplane;

@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Common\DTO\TechplaneMarkDoneDTO;
+use App\Common\DTO\Techplane\TechplaneMarkDoneDTO;
 use App\Models\Solution;
 use App\Models\SolutionMergeRequest;
 use App\Models\Techplane;

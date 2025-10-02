@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Common\DTO;
+namespace App\Common\DTO\Actualization;
 
 use App\Models\Actualization;
 use Illuminate\Http\Request;

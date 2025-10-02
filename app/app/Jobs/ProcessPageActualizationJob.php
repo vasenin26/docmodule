@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Common\DTO\ActualizationContextDTO;
+use App\Common\DTO\Actualization\ActualizationContextDTO;
 use App\Common\Enums\AgentTaskType;
 use App\Factory\PromptProviderFactory;
 use App\Interfaces\AgentTaskManagerInterface;

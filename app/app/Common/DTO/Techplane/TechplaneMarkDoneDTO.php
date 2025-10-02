@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Common\DTO;
+namespace App\Common\DTO\Techplane;
 
 use App\Http\Requests\Api\Techplane\MarkDoneRequest;
 use App\Models\Techplane;

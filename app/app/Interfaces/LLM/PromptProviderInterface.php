@@ -2,7 +2,7 @@
 
 namespace App\Interfaces\LLM;
 
-use App\Common\DTO\ActualizationContextDTO;
+use App\Common\DTO\Actualization\ActualizationContextDTO;
 use App\Common\DTO\DifferenceDataDTO;
 use App\Common\DTO\GeneratorContextDTO;
 use App\Models\Repository;
