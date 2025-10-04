@@ -11,7 +11,7 @@ class Agent extends Model
 {
     use HasFactory;
     
-    protected $fillable = ['name', 'token', 'project_id'];
+    protected $fillable = ['name', 'token', 'project_id', 'uuid', 'public_key'];
     
     // Связи
     public function project(): BelongsTo

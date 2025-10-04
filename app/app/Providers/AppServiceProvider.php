@@ -6,6 +6,7 @@ use App\Factory\AgentResultHandlerFactory;
 use App\Factory\ChatFactory;
 use App\Factory\PageContextServiceFactory;
 use App\Factory\PromptProviderFactory;
+use App\Interfaces\AgentOrchestratorInterface;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
@@ -49,6 +50,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             AgentTaskManagerInterface::class,
             AgentTaskManagerService::class
+        );
+
+        // Регистрация оркестратора агентов (заглушка для разработки)
+        $this->app->bind(
+            AgentOrchestratorInterface::class,
+            \App\Services\AgentOrchestrator\FakeAgentOrchestratorService::class
         );
 
         // @deprecate проект не управляет репозиториями

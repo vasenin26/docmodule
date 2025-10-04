@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreAgentRequest;
 use App\Http\Requests\UpdateAgentRequest;
+use App\Jobs\RegisterAgentJob;
 use App\Models\Agent;
 use App\Models\Project;
 use App\Services\AgentJwtService;
@@ -11,6 +12,7 @@ use App\Services\AgentNameGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -68,9 +70,13 @@ class AgentController extends Controller
 
         $name = $request->validated('name');
 
-        // Сначала создаем агента без токена
+        // Генерируем UUID для агента
+        $agentUuid = Str::uuid()->toString();
+
+        // Создаем агента с UUID
         $agent = $project->agents()->create([
             'name' => $name,
+            'uuid' => $agentUuid,
             'token' => '', // Временно пустой токен
         ]);
 
@@ -78,9 +84,13 @@ class AgentController extends Controller
         $token = $this->jwtService->generateToken($agent);
         $agent->update(['token' => $token]);
 
+        // Запускаем фоновую задачу регистрации агента в оркестраторе
+        RegisterAgentJob::dispatch($agent->id);
+
+        // Переадресуем на страницу редактирования агента
         return redirect()
-            ->route('projects.agents.index', $project)
-            ->with('success', 'Агент успешно создан');
+            ->route('projects.agents.edit', [$project, $agent])
+            ->with('success', 'Агент успешно создан. Регистрация в оркестраторе выполняется в фоне.');
     }
 
     /**

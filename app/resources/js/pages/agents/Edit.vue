@@ -105,6 +105,61 @@
         </CardContent>
       </Card>
 
+      <!-- Публичный ключ -->
+      <Card class="mt-6">
+        <CardHeader>
+          <CardTitle>Публичный ключ</CardTitle>
+        </CardHeader>
+        <CardContent class="space-y-4">
+          <div class="space-y-2">
+            <Label>Публичный ключ агента</Label>
+            <div v-if="agent.public_key" class="flex items-center space-x-2">
+              <Input
+                :value="agent.public_key"
+                readonly
+                class="font-mono text-sm"
+                :type="showPublicKey ? 'text' : 'password'"
+                :id="`public-key-${agent.id}`"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                @click="togglePublicKeyVisibility"
+              >
+                <Icon :name="showPublicKey ? 'eye-off' : 'eye'" class="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                @click="copyPublicKey"
+              >
+                <Icon name="copy" class="h-4 w-4" />
+              </Button>
+            </div>
+            <div v-else class="rounded-md border border-dashed p-4 text-center">
+              <p class="text-sm text-muted-foreground">
+                Публичный ключ еще не получен. Регистрация агента в оркестраторе выполняется в фоновом режиме.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                class="mt-2"
+                @click="refreshPage"
+              >
+                <Icon name="refresh-cw" class="mr-2 h-4 w-4" />
+                Обновить страницу
+              </Button>
+            </div>
+            <p class="text-sm text-muted-foreground">
+              Передайте публичный ключ в сторонние сервисы для аутентификации агента.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       <!-- Информация о проекте -->
       <Card class="mt-6">
         <CardHeader>
@@ -153,6 +208,7 @@ interface Agent {
   id: number
   name: string
   token: string
+  public_key: string | null
   created_at: string
   updated_at: string
 }
@@ -175,6 +231,7 @@ const form = useForm({
 
 const showToken = ref(false)
 const isRegenerating = ref(false)
+const showPublicKey = ref(false)
 
 const updateAgent = () => {
   form.put(route('projects.agents.update', [props.project.id, props.agent.id]))
@@ -215,6 +272,29 @@ const regenerateToken = () => {
       }
     })
   }
+}
+
+const togglePublicKeyVisibility = () => {
+  showPublicKey.value = !showPublicKey.value
+}
+
+const copyPublicKey = async () => {
+  if (!props.agent.public_key) {
+    alert('Публичный ключ не найден')
+    return
+  }
+  
+  try {
+    await navigator.clipboard.writeText(props.agent.public_key)
+    alert('Публичный ключ скопирован в буфер обмена')
+  } catch (err) {
+    console.error('Ошибка копирования публичного ключа:', err)
+    alert('Ошибка копирования публичного ключа')
+  }
+}
+
+const refreshPage = () => {
+  router.reload()
 }
 
 const formatDate = (date: string) => {
