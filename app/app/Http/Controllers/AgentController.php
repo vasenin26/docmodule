@@ -6,6 +6,7 @@ use App\Http\Requests\StoreAgentRequest;
 use App\Http\Requests\UpdateAgentRequest;
 use App\Jobs\RegisterAgentJob;
 use App\Models\Agent;
+use App\Models\AgentTask;
 use App\Models\Project;
 use App\Services\AgentJwtService;
 use App\Services\AgentNameGenerator;
@@ -36,9 +37,30 @@ class AgentController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
+        // Сводка по задачам агентов в проекте
+        $statusCounts = AgentTask::query()
+            ->where('project_id', $project->id)
+            ->selectRaw('status, COUNT(*) as cnt')
+            ->groupBy('status')
+            ->pluck('cnt', 'status');
+
+        $totalTasks = $statusCounts->sum();
+        $lastCreatedAt = AgentTask::query()
+            ->where('project_id', $project->id)
+            ->latest('created_at')
+            ->value('created_at');
+
         return Inertia::render('agents/Index', [
             'project' => $project,
             'agents' => $agents,
+            'taskSummary' => [
+                'total' => $totalTasks,
+                'waiting' => (int)($statusCounts[AgentTask::STATUS_WAIT] ?? 0),
+                'processing' => (int)($statusCounts[AgentTask::STATUS_PROCESSING] ?? 0),
+                'success' => (int)($statusCounts[AgentTask::STATUS_SUCCESS] ?? 0),
+                'failed' => (int)($statusCounts[AgentTask::STATUS_FAILED] ?? 0),
+                'lastCreatedAt' => $lastCreatedAt,
+            ],
         ]);
     }
 

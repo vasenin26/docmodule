@@ -6,6 +6,7 @@ services:
       - APP_DEBUG=false
       - APP_URL=http://docsmodule.ru
       - API_URL=http://docsmodule.ru/api
+      - AGENT_SERVER=agent-svc
       - DB_CONNECTION=pgsql
       - DB_HOST=db
       - DB_PORT=5432

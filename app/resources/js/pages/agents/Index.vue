@@ -35,11 +35,12 @@
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle class="text-sm font-medium">Последний создан</CardTitle>
+            <CardTitle class="text-sm font-medium">Задачи агентов</CardTitle>
           </CardHeader>
           <CardContent>
-            <div class="text-sm">
-              {{ agents.data?.[0] ? formatDate(agents.data[0].created_at) : 'Нет агентов' }}
+            <div class="text-sm space-y-1">
+              <div><span class="text-muted-foreground">В ожидании:</span> {{ taskSummary?.waiting ?? 0 }}</div>
+              <div><span class="text-muted-foreground">В работе:</span> {{ taskSummary?.processing ?? 0 }}</div>
             </div>
           </CardContent>
         </Card>
@@ -168,9 +169,19 @@ interface AgentsData {
   links: any[]
 }
 
+interface TaskSummary {
+  total: number
+  waiting: number
+  processing: number
+  success: number
+  failed: number
+  lastCreatedAt: string | null
+}
+
 interface Props {
   project: Project
   agents: AgentsData
+  taskSummary: TaskSummary
 }
 
 const props = defineProps<Props>()
