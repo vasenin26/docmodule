@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Factory\AgentOrchestratorFactory;
 use App\Factory\AgentResultHandlerFactory;
 use App\Factory\ChatFactory;
 use App\Factory\PageContextServiceFactory;
@@ -52,10 +53,10 @@ class AppServiceProvider extends ServiceProvider
             AgentTaskManagerService::class
         );
 
-        // Регистрация оркестратора агентов (заглушка для разработки)
-        $this->app->bind(
+        // Регистрация оркестратора агентов через фабрику
+        $this->app->singleton(
             AgentOrchestratorInterface::class,
-            \App\Services\AgentOrchestrator\FakeAgentOrchestratorService::class
+            fn() => AgentOrchestratorFactory::create()
         );
 
         // @deprecate проект не управляет репозиториями
@@ -92,5 +93,8 @@ class AppServiceProvider extends ServiceProvider
         Route::bind('page_version', function ($value) {
             return PageVersion::findOrFail($value);
         });
+        
+        // Регистрация Observer для AgentTask
+        \App\Models\AgentTask::observe(\App\Observers\AgentTaskObserver::class);
     }
 }

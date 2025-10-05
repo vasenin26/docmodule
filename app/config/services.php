@@ -43,4 +43,20 @@ return [
         'timeout' => env('OPENAI_REQUEST_TIMEOUT', 30),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Agent Orchestrator Service Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Конфигурация для интеграции с внешним сервисом управления агентами.
+    | AGENT_SERVER - базовый URL сервиса (например: http://agent-svc)
+    | AGENT_ORCHESTRATOR_TIMEOUT - таймаут HTTP запросов в секундах
+    |
+    */
+
+    'agent_orchestrator' => [
+        'server_url' => env('AGENT_SERVER', 'http://localhost:8080'),
+        'timeout' => env('AGENT_ORCHESTRATOR_TIMEOUT', 30),
+    ],
+
 ];
