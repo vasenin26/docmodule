@@ -81,10 +81,12 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
 
             // Если нет активной задачи, ищем новую с блокировкой
             return DB::transaction(function () use ($instanceUuid, $agent) {
-                $waitingTask = AgentTask::where('status', AgentTask::STATUS_WAIT)
-                    ->whereNull('agent_id')
+                // Используем единую логику фильтрации задач
+                $waitingTask = AgentTask::availableForOrchestrator()
+                    ->where('project_id', $agent->project_id)  // Обычные агенты - только свой проект
                     ->orderBy('created_at')
                     ->lockForUpdate()
+                    ->skipLocked()
                     ->first();
 
                 if ($waitingTask) {
@@ -98,7 +100,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
                     Log::info('Task assigned to agent', [
                         'task_id' => $waitingTask->id,
                         'agent_id' => $agent->id,
-                        'agent_id' => $instanceUuid,
+                        'agent_uuid' => $instanceUuid,
                     ]);
 
                     return $waitingTask->fresh(); // Обновляем модель из БД

@@ -20,6 +20,7 @@ class Project extends Model
     protected $fillable = [
         'title',
         'owner_id',
+        'public_key',
     ];
 
 

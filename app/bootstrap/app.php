@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'agent.jwt' => \App\Http\Middleware\AgentJwtAuth::class,
+            'orchestrator.auth' => \App\Http\Middleware\OrchestratorAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

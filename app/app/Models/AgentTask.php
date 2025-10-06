@@ -22,6 +22,11 @@ class AgentTask extends Model
         'agent_uuid',
         'agent_id',
         'result_required',
+        'context_id',
+        'timeout',
+        'reserved_at',
+        'reserved_until',
+        'reserved_seconds',
     ];
 
     protected function casts(): array
@@ -30,6 +35,8 @@ class AgentTask extends Model
             'handler_options' => 'array',
             'result_required' => 'boolean',
             'type' => AgentTaskType::class,
+            'reserved_at' => 'datetime',
+            'reserved_until' => 'datetime',
         ];
     }
 
@@ -120,5 +127,64 @@ class AgentTask extends Model
     {
         return $query->where('status', self::STATUS_PROCESSING)
                     ->where('updated_at', '<', now()->subMinutes($minutesAgo));
+    }
+
+    /**
+     * Scope для выборки задач доступных для оркестратора
+     * Включает свободные задачи и задачи с истекшим резервированием
+     */
+    public function scopeAvailableForOrchestrator($query)
+    {
+        return $query->where('status', self::STATUS_WAIT)
+            ->where(function ($q) {
+                $q->where(function ($q1) {
+                    // Полностью свободные задачи
+                    $q1->whereNull('agent_id')
+                       ->whereNull('agent_uuid');
+                })->orWhere(function ($q2) {
+                    // Зарезервированные, но с истекшим резервированием
+                    $q2->whereNotNull('reserved_until')
+                       ->where('reserved_until', '<', now());
+                });
+            });
+    }
+
+    /**
+     * Scope для задач с истекшим резервированием
+     */
+    public function scopeWithExpiredReservation($query)
+    {
+        return $query->whereNotNull('reserved_until')
+                     ->where('reserved_until', '<', now());
+    }
+
+    /**
+     * Проверка, зарезервирована ли задача
+     */
+    public function isReserved(): bool
+    {
+        return $this->reserved_until !== null && $this->reserved_until->isFuture();
+    }
+
+    /**
+     * Проверка, истекло ли резервирование
+     */
+    public function reservationExpired(): bool
+    {
+        return $this->reserved_until !== null && $this->reserved_until->isPast();
+    }
+
+    /**
+     * Резервирование задачи на указанное количество секунд
+     */
+    public function reserve(int $seconds, int $agentId, string $agentUuid): void
+    {
+        $this->update([
+            'agent_id' => $agentId,
+            'agent_uuid' => $agentUuid,
+            'reserved_at' => now(),
+            'reserved_until' => now()->addSeconds($seconds),
+            'reserved_seconds' => $seconds,
+        ]);
     }
 }

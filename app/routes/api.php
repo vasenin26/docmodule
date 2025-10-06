@@ -51,3 +51,18 @@ Route::prefix('admin/agent')->middleware(['auth', 'admin'])->group(function () {
 // Public API for techplanes
 Route::post('techplanes/{techplane}/done', [\App\Http\Controllers\Api\TechplaneController::class, 'markDone'])
     ->name('api.techplanes.done');
+
+// Orchestrator API routes
+Route::prefix('v1/orchestrator')
+    ->name('orchestrator.')
+    ->middleware(['orchestrator.auth'])
+    ->group(function () {
+        Route::get('tasks/next', [\App\Http\Controllers\Api\OrchestratorController::class, 'getNextTask'])
+            ->name('tasks.next');
+        
+        Route::post('tasks/{taskId}/reserve', [\App\Http\Controllers\Api\OrchestratorController::class, 'reserveTask'])
+            ->name('tasks.reserve');
+        
+        Route::put('projects/{projectId}/key', [\App\Http\Controllers\Api\OrchestratorController::class, 'updateProjectKey'])
+            ->name('projects.key.update');
+    });
