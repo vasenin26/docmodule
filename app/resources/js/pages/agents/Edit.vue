@@ -85,6 +85,27 @@
           <div class="border-t pt-4">
             <div class="flex items-center justify-between">
               <div>
+                <h4 class="text-sm font-medium">Запуск агента</h4>
+                <p class="text-sm text-muted-foreground">
+                  Отправить команду запуска агента в оркестратор
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                @click="startAgent"
+                :disabled="isStarting || !agent.token"
+              >
+                <Icon v-if="isStarting" name="loader-2" class="mr-2 h-4 w-4 animate-spin" />
+                {{ isStarting ? 'Запуск...' : 'Запустить' }}
+              </Button>
+            </div>
+          </div>
+
+          <div class="border-t pt-4">
+            <div class="flex items-center justify-between">
+              <div>
                 <h4 class="text-sm font-medium">Регенерация токена</h4>
                 <p class="text-sm text-muted-foreground">
                   Создайте новый токен, если текущий был скомпрометирован
@@ -231,6 +252,7 @@ const form = useForm({
 
 const showToken = ref(false)
 const isRegenerating = ref(false)
+const isStarting = ref(false)
 const showPublicKey = ref(false)
 
 const updateAgent = () => {
@@ -272,6 +294,16 @@ const regenerateToken = () => {
       }
     })
   }
+}
+
+const startAgent = () => {
+  isStarting.value = true
+  
+  router.post(route('projects.agents.start', [props.project.id, props.agent.id]), {}, {
+    onFinish: () => {
+      isStarting.value = false
+    }
+  })
 }
 
 const togglePublicKeyVisibility = () => {

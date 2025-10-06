@@ -181,4 +181,28 @@ class AgentController extends Controller
             ->with('success', 'Токен агента успешно обновлен')
             ->with('newToken', $newToken);
     }
+
+    /**
+     * Запуск агента в оркестраторе
+     */
+    public function startAgent(Project $project, Agent $agent): RedirectResponse
+    {
+        if (!$project->canAccess(Auth::user())) {
+            abort(403);
+        }
+
+        // Проверяем наличие UUID и токена
+        if (!$agent->uuid || !$agent->token) {
+            return redirect()
+                ->route('projects.agents.edit', [$project, $agent])
+                ->with('error', 'Невозможно запустить агента: отсутствует UUID или токен');
+        }
+
+        // Запускаем фоновую задачу регистрации агента в оркестраторе
+        RegisterAgentJob::dispatch($agent->id);
+
+        return redirect()
+            ->route('projects.agents.edit', [$project, $agent])
+            ->with('success', 'Команда запуска агента отправлена. Регистрация выполняется в фоновом режиме.');
+    }
 }

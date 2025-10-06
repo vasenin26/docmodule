@@ -32,8 +32,8 @@ class StartAgentCommand extends Request implements Command
     public function execute(RestApiClient $client): mixed
     {
         $response = $client->execute($this);
-        
-        if ($response->getStatusCode() !== 200) {
+
+        if ($response->getStatusCode() !== 201) {
             throw new RuntimeException(
                 'Failed to start agent. Status: ' . $response->getStatusCode()
             );

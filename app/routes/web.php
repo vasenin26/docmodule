@@ -171,6 +171,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('projects.agents.destroy');
     Route::post('projects/{project}/agents/{agent}/regenerate-token', [AgentController::class, 'regenerateToken'])
         ->name('projects.agents.regenerate-token');
+    Route::post('projects/{project}/agents/{agent}/start', [AgentController::class, 'startAgent'])
+        ->name('projects.agents.start');
 });
 
 
