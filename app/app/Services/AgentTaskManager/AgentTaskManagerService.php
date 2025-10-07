@@ -85,8 +85,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
                 $waitingTask = AgentTask::availableForOrchestrator()
                     ->where('project_id', $agent->project_id)  // Обычные агенты - только свой проект
                     ->orderBy('created_at')
-                    ->lockForUpdate()
-                    ->skipLocked()
+                    ->lock('FOR UPDATE SKIP LOCKED')
                     ->first();
 
                 if ($waitingTask) {

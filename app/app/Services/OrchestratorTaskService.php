@@ -34,8 +34,7 @@ class OrchestratorTaskService
 
                 $task = $query
                     ->orderBy('created_at', 'asc')
-                    ->lockForUpdate()
-                    ->skipLocked()
+                    ->lock('FOR UPDATE SKIP LOCKED')
                     ->first();
 
                 if ($task) {
@@ -75,7 +74,7 @@ class OrchestratorTaskService
             DB::transaction(function () use ($task, $agent, $seconds, $agentUuid) {
                 // Перезагружаем задачу с блокировкой
                 $task = AgentTask::where('id', $task->id)
-                    ->lockForUpdate()
+                    ->lock('FOR UPDATE SKIP LOCKED')
                     ->first();
 
                 if (!$task) {
