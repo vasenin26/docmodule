@@ -85,16 +85,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Project::class, ProjectPolicy::class);
-        
+
         // Явное связывание для параметра projectTask
         Route::model('projectTask', VersionDiffTask::class);
-        
+
         // Кастомный биндинг для параметра page_version
         Route::bind('page_version', function ($value) {
             return PageVersion::findOrFail($value);
         });
-        
-        // Регистрация Observer для AgentTask
-        \App\Models\AgentTask::observe(\App\Observers\AgentTaskObserver::class);
     }
 }

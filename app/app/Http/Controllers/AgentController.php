@@ -4,14 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreAgentRequest;
 use App\Http\Requests\UpdateAgentRequest;
-use App\Jobs\RegisterAgentJob;
 use App\Models\Agent;
 use App\Models\AgentTask;
 use App\Models\Project;
 use App\Services\AgentJwtService;
 use App\Services\AgentNameGenerator;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -106,9 +104,6 @@ class AgentController extends Controller
         $token = $this->jwtService->generateToken($agent);
         $agent->update(['token' => $token]);
 
-        // Запускаем фоновую задачу регистрации агента в оркестраторе
-        RegisterAgentJob::dispatch($agent->id);
-
         // Переадресуем на страницу редактирования агента
         return redirect()
             ->route('projects.agents.edit', [$project, $agent])
@@ -197,9 +192,6 @@ class AgentController extends Controller
                 ->route('projects.agents.edit', [$project, $agent])
                 ->with('error', 'Невозможно запустить агента: отсутствует UUID или токен');
         }
-
-        // Запускаем фоновую задачу регистрации агента в оркестраторе
-        RegisterAgentJob::dispatch($agent->id);
 
         return redirect()
             ->route('projects.agents.edit', [$project, $agent])
