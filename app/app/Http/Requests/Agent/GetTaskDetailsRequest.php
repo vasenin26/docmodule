@@ -20,7 +20,7 @@ class GetTaskDetailsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'agent_id' => [
+            'agent_uuid' => [
                 'required',
                 'string',
                 'uuid',
@@ -35,9 +35,9 @@ class GetTaskDetailsRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'agent_id.required' => 'Agent ID is required',
-            'agent_id.uuid' => 'Agent ID must be a valid UUID',
-            'agent_id.max' => 'Agent ID cannot exceed 36 characters',
+            'agent_uuid.required' => 'Agent ID is required',
+            'agent_uuid.uuid' => 'Agent ID must be a valid UUID',
+            'agent_uuid.max' => 'Agent ID cannot exceed 36 characters',
         ];
     }
 
@@ -47,10 +47,10 @@ class GetTaskDetailsRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $agentId = $this->input('agent_id');
-            
+            $agentId = $this->input('agent_uuid');
+
             if ($agentId && !$this->isValidUuid($agentId)) {
-                $validator->errors()->add('agent_id', 'Invalid UUID format');
+                $validator->errors()->add('agent_uuid', 'Invalid UUID format');
             }
         });
     }
@@ -66,9 +66,9 @@ class GetTaskDetailsRequest extends FormRequest
     /**
      * Get the validated agent ID
      */
-    public function getAgentId(): string
+    public function getAgentUuid(): string
     {
-        return $this->validated('agent_id');
+        return $this->validated('agent_uuid');
     }
 
     /**

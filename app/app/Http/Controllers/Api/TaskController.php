@@ -154,6 +154,79 @@ class TaskController extends Controller
         }
     }
 
+    /**
+     * Получить подробную информацию о задаче по её идентификатору
+     * GET /api/agent/task/{id}
+     */
+    public function getTaskById(GetTaskDetailsRequest $request, int $id): JsonResponse
+    {
+        $agent = $request->get('agent');
+        $agentUuid = $request->getAgentUuid();
+
+        $task = $this->taskManager->getTaskForAgentById($agent, $agentUuid, $id);
+
+        if (!$task) {
+            $this->logSuspiciousActivity($request, 'task_read_denied', [
+                'requested_task_id' => $id,
+                'agent_id' => $agent->id,
+                'agent_uuid' => $agentUuid,
+                'reason' => 'task_not_found_or_not_owned',
+            ]);
+
+            return response()->json([
+                'task_id' => null,
+                'message' => 'Task not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'id' => $task->id,
+            'type' => $task->type->value,
+            'agent_uuid' => $task->agent_uuid,
+            'project_id' => $task->project_id,
+            'result_required' => $task->result_required,
+            'chat' => [
+                'id' => $task->llmChat->id,
+                'messages' => $task->llmChat->messages ?? [],
+            ]
+        ]);
+    }
+
+    /**
+     * Подтвердить перевод задачи в состояние processing
+     * PUT /api/agent/task/{id}/process
+     */
+    public function processTask(GetTaskDetailsRequest $request, int $id): JsonResponse
+    {
+        $agent = $request->get('agent');
+        $agentUuid = $request->getAgentUuid();
+
+        $task = $this->taskManager->getTaskForAgentById($agent, $agentUuid, $id);
+
+        if (!$task) {
+            $this->logSuspiciousActivity($request, 'task_process_denied', [
+                'requested_task_id' => $id,
+                'agent_id' => $agent->id,
+                'agent_uuid' => $agentUuid,
+                'reason' => 'task_not_found_or_not_owned',
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Task not found'
+            ], 404);
+        }
+
+        if ($task->status !== AgentTask::STATUS_PROCESSING) {
+            $task->update(['status' => AgentTask::STATUS_PROCESSING]);
+        }
+
+        return response()->json([
+            'status' => 'processing',
+            'message' => 'Task marked as processing'
+        ]);
+    }
+
     private function logSuspiciousActivity($request, string $action, array $context = []): void
     {
         Log::warning("Suspicious agent activity: {$action}", array_merge([

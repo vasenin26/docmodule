@@ -39,6 +39,36 @@
                 </CardContent>
             </Card>
 
+            <!-- SSH ключ проекта -->
+            <Card class="mt-6">
+                <CardHeader>
+                    <CardTitle>SSH ключ проекта</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div v-if="project.public_key" class="space-y-3">
+                        <div class="rounded-md border bg-muted p-3 font-mono text-xs break-all">
+                            {{ showPublicKey ? project.public_key : '••••••••••••••••••••••••••••••••••••••••••' }}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <Button type="button" variant="secondary" size="sm" @click="togglePublicKeyVisibility">
+                                <Icon :name="showPublicKey ? 'eye-off' : 'eye'" class="mr-2 h-3 w-3" />
+                                {{ showPublicKey ? 'Скрыть' : 'Показать' }}
+                            </Button>
+                            <Button type="button" variant="outline" size="sm" @click="copyPublicKey">
+                                <Icon name="copy" class="mr-2 h-3 w-3" />
+                                Копировать
+                            </Button>
+                        </div>
+                        <p class="text-xs text-muted-foreground">
+                            Этот публичный ключ можно добавить в настройки доступа ваших Git-репозиториев.
+                        </p>
+                    </div>
+                    <div v-else class="py-4 text-sm text-muted-foreground">
+                        Публичный ключ ещё не сгенерирован для этого проекта.
+                    </div>
+                </CardContent>
+            </Card>
+
             <!-- Управление репозиториями -->
             <Card class="mt-6">
                 <CardHeader>
@@ -133,6 +163,7 @@ interface Project {
     title: string;
     owner_id: number;
     owner: User;
+    public_key?: string;
     repositories?: Repository[];
     created_at: string;
     updated_at: string;
@@ -151,6 +182,7 @@ const repositoryForm = useForm({
 });
 
 const repositoryProcessing = ref(false);
+const showPublicKey = ref(false);
 
 // Клиентская валидация URL
 const isValidUrl = (url: string) => {
@@ -242,6 +274,25 @@ const removeRepository = (repositoryId: number) => {
                 },
             },
         );
+    }
+};
+
+const togglePublicKeyVisibility = () => {
+    showPublicKey.value = !showPublicKey.value;
+};
+
+const copyPublicKey = async () => {
+    if (!props.project.public_key) {
+        alert('Публичный ключ не найден');
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(props.project.public_key);
+        alert('Публичный ключ скопирован в буфер обмена');
+    } catch (err) {
+        console.error('Ошибка копирования публичного ключа:', err);
+        alert('Ошибка копирования публичного ключа');
     }
 };
 </script>

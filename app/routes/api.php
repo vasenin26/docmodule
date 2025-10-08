@@ -11,6 +11,8 @@ Route::get('health', function () {
 Route::prefix('agent')->name('agent.')->middleware(['agent.jwt'])->group(function () {
     Route::post('task', [TaskController::class, 'getTask'])->name('task.get');
     Route::put('task/{id}', [TaskController::class, 'updateTask'])->name('task.update');
+    Route::get('task/{id}', [TaskController::class, 'getTaskById'])->name('task.show');
+    Route::put('task/{id}/process', [TaskController::class, 'processTask'])->name('task.process');
 
     // Page API routes
     Route::get('page/version/{id}', [PageController::class, 'getPageVersion'])->name('page.version');
