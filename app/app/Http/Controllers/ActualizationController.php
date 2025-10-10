@@ -10,6 +10,7 @@ use App\Http\Requests\StartPageActualizationRequest;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Models\Actualization;
+use App\Models\AgentTask;
 use App\Models\LLMChat;
 use App\Models\Page;
 use App\Models\PageVersion;
@@ -257,5 +258,21 @@ class ActualizationController extends Controller
                 'message' => 'Внутренняя ошибка сервера'
             ], 500);
         }
+    }
+
+    /**
+     * Остановить генерацию агентских задач для актуализации
+     */
+    public function stopGenerating(Actualization $actualization, AgentTaskManagerInterface $agentTaskManager): JsonResponse
+    {
+        $stoppedTasks = AgentTask::stopGeneratingForChat((int)$actualization->llm_chat_id, $agentTaskManager);
+
+        return response()->json([
+            'actualization_id' => $actualization->id,
+            'agent_task_id' => $stoppedTasks,
+            'chat_id' => $actualization->llm_chat_id,
+            'message' => 'Генерация актуализации успешно остановлена',
+            'success' => true
+        ]);
     }
 }

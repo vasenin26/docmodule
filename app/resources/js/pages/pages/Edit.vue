@@ -141,7 +141,9 @@
                 :status="actualizationProcessStatus"
                 :sending="isSending"
                 :requestCount="requestCount"
+                :contextFill="chat?.context_fill ?? 0"
                 @sendMessage="sendMessageToChat"
+                @stop="sendStopGenerating"
             />
         </SidePanel>
     </AppLayout>
@@ -165,7 +167,7 @@ import { ConfirmDialog } from '@/components/ui/dialog';
 import Input from '@/components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Actualization, Page } from '@/types/index.ts';
+import { Actualization, Page } from '@/types/index';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import ActualizationStatus from '@/components/PageInfo/ActualizationStatus.vue';
@@ -231,6 +233,7 @@ const hasActiveAgentTask = ref<boolean>(false);
 const api = createApi();
 const {
     sendMessage,
+    stopGenerating,
     updateChatMessages,
     isSending,
 } = useActualizationChat(props.actualization?.id || 0);
@@ -370,12 +373,18 @@ const fetchActualizationStatus = async () => {
             actualizationProcessStatus.value = data.data.status;
             hasActiveAgentTask.value = !!data.data.has_active_agent_task;
             if (data.data.chat) {
-                chat.value = {
-                    id: data.data.chat.id,
-                    messages: data.data.chat.messages,
-                    created_at: '',
-                    updated_at: ''
-                } as LLMChat;
+                if (!chat.value) {
+                    chat.value = {
+                        id: data.data.chat.id,
+                        messages: data.data.chat.messages,
+                        created_at: '',
+                        updated_at: ''
+                    } as LLMChat;
+                } else {
+                    chat.value.messages = data.data.chat.messages;
+                }
+                // Прокидываем context_fill из API
+                (chat.value as any).context_fill = (data.data.chat as any).context_fill ?? (chat.value as any)?.context_fill ?? 0;
             }
             if (['completed', 'failed'].includes(actualizationProcessStatus.value)) {
                 stopPolling();
@@ -415,6 +424,11 @@ onMounted(() => {
         fetchActualizationStatus();
     }
 });
+
+const sendStopGenerating = async () => {
+    await stopGenerating();
+    actualizationProcessStatus.value = 'completed';
+};
 
 onUnmounted(() => {
     stopPolling();

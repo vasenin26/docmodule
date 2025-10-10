@@ -183,7 +183,8 @@ class ActualizationService
             'content' => $actualization->pageVersion->content ?? '',
             'chat' => $actualization->llmChat ? [
                 'id' => $actualization->llmChat->id,
-                'messages' => $actualization->llmChat->messages
+                'messages' => $actualization->llmChat->messages,
+                'context_fill' => $actualization->llmChat->context_fill,
             ] : null,
             'has_active_agent_task' => $hasActiveAgentTask,
             'created_at' => $actualization->created_at,

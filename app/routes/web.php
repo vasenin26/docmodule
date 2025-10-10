@@ -90,6 +90,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('actualizations.status-with-chat');
     Route::post('actualizations/{actualization}/send-message', [ActualizationController::class, 'sendMessage'])
         ->name('actualizations.send-message');
+    Route::put('actualizations/{actualization}/stop-generating', [ActualizationController::class, 'stopGenerating'])
+        ->name('actualizations.stop-generating');
 
     // Новый маршрут для актуализации конкретного черновика
     Route::post('/drafts/{draft}/actualize', [ActualizationController::class, 'storeForDraft'])

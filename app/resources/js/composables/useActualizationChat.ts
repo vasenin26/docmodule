@@ -2,6 +2,7 @@ import { ref, computed } from 'vue';
 import type { LLMChat } from '@/types';
 import { createApi } from '@/service/api/Api';
 import { SendActualizationMessageRequest } from '@/service/api/request/Actualization/SendActualizationMessageRequest';
+import { ActualizationStopGeneratingRequest } from '@/service/api/request/Actualization/ActualizationStopGeneratingRequest';
 
 export interface SendMessageResponse {
     success: boolean;
@@ -15,6 +16,7 @@ export interface SendMessageResponse {
 export function useActualizationChat(actualizationId: number) {
     const isSending = ref(false);
     const error = ref<string | null>(null);
+    const api = createApi();
 
     const sendMessage = async (message: string): Promise<SendMessageResponse | null> => {
         if (!message.trim()) {
@@ -26,7 +28,6 @@ export function useActualizationChat(actualizationId: number) {
         error.value = null;
 
         try {
-            const api = createApi();
             const req = new SendActualizationMessageRequest(actualizationId, { message });
             const data = await req.call(api);
 
@@ -55,11 +56,17 @@ export function useActualizationChat(actualizationId: number) {
         error.value = null;
     };
 
+    const stopGenerating = async () => {
+        const req = new ActualizationStopGeneratingRequest(actualizationId);
+        await req.call(api);
+    };
+
     return {
         isSending: computed(() => isSending.value),
         error: computed(() => error.value),
         hasError: computed(() => error.value !== null),
         sendMessage,
+        stopGenerating,
         updateChatMessages,
         clearError,
     };
