@@ -515,10 +515,15 @@ class TaskController extends Controller implements HasMiddleware
         AgentTaskManagerInterface $agentTaskManager
     )
     {
-        $agentTask = AgentTask::find(['chat_id' => $task->llmChat->id])->firstOrFail();
+        $agentTasks = AgentTask::where(['chat_id' => $task->llmChat->id, 'status' => AgentTask::STATUS_PROCESSING])
+            ->get();
+        $stoppedTasks = [];
 
-        $agentTaskManager->stopTask($agentTask->id);
+        foreach ($agentTasks as $agentTask) {
+            $agentTaskManager->stopTask($agentTask->id);
+            $stoppedTasks[] = $agentTask->id;
+        }
 
-        return response()->json(['chat_id' => $task->llmChat->id, 'message' => 'Задача успешно остановлена', 'success' => true]);
+        return response()->json(['task_description_id' => $task->id, 'agent_task_id' => $stoppedTasks, 'chat_id' => $task->llmChat->id, 'message' => 'Задача успешно остановлена', 'success' => true]);
     }
 }

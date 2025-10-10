@@ -109,6 +109,13 @@ class TaskController extends Controller
                 ], 404);
             }
 
+            if($agentTask->status === AgentTask::STATUS_SUCCESS) {
+                return response()->json([
+                    'status' => 'stopped',
+                    'message' => 'Task was already stopped'
+                ]);
+            }
+
             $updateData = AgentTaskUpdateDTO::fromArray([
                 'chat' => $request->getChatMessages(),
                 'stats' => $request->getTokenStats(),
@@ -124,13 +131,6 @@ class TaskController extends Controller
                 'total_tokens' => ($chat->total_tokens ?? 0) + ($updateData->stats->total_tokens ?? 0),
                 'context_fill' => $updateData->context_fill ?? $chat->context_fill,
             ]);
-
-            if($agentTask->status === AgentTask::STATUS_SUCCESS) {
-                return response()->json([
-                    'status' => 'stopped',
-                    'message' => 'Task was already stopped'
-                ]);
-            }
 
             if ($request->isCompleted()) {
                 $agentTask->update(['status' => AgentTask::STATUS_SUCCESS]);
