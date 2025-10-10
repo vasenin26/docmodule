@@ -20,12 +20,14 @@ class LLMChat extends Model
         'prompt_tokens',
         'completion_tokens',
         'total_tokens',
+        'context_fill',
     ];
 
     protected function casts(): array
     {
         return [
             'messages' => 'array',
+            'context_fill' => 'float',
         ];
     }
 

@@ -3,13 +3,15 @@
 namespace App\Common\DTO;
 
 use App\Common\DTO\LLM\LLMResultDTO;
+use Illuminate\Support\Facades\Request;
 
-readonly class AgentTaskUpdateDTO
+class AgentTaskUpdateDTO
 {
     public function __construct(
         public array $chat,
         public LLMResultDTO $stats,
-        public ?string $result = null
+        public ?string $result = null,
+        public ?float $context_fill = null
     ) {}
 
     /**
@@ -42,7 +44,8 @@ readonly class AgentTaskUpdateDTO
         return new self(
             chat: $data['chat'],
             stats: $stats,
-            result: $data['result'] ?? null
+            result: $data['result'] ?? null,
+            context_fill: self::clamp(isset($data['context_fill']) ? (is_numeric($data['context_fill']) ? (float)$data['context_fill'] : null) : null),
         );
     }
 
@@ -105,6 +108,26 @@ readonly class AgentTaskUpdateDTO
             'stats' => $this->getTokenStats(),
             'has_result' => $this->isFinal(),
             'result_length' => $this->result ? strlen($this->result) : 0,
+            'context_fill' => $this->context_fill,
         ];
+    }
+
+    public function hasContextFill(): bool
+    {
+        return $this->context_fill !== null;
+    }
+
+    private static function clamp(?float $value): ?float
+    {
+        if ($value === null) {
+            return null;
+        }
+        if ($value < 0.0) {
+            return 0.0;
+        }
+        if ($value > 1.0) {
+            return 1.0;
+        }
+        return $value;
     }
 }

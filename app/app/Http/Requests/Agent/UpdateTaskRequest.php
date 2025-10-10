@@ -62,6 +62,11 @@ class UpdateTaskRequest extends FormRequest
                 'string',
                 'max:16777215', // TEXT field limit
             ],
+            // Прогресс заполнения контекста (0..1), мягкая валидация — клампим вручную
+            'context_fill' => [
+                'nullable',
+                'numeric',
+            ],
         ];
     }
 
@@ -171,5 +176,35 @@ class UpdateTaskRequest extends FormRequest
     public function isCompleted(): bool
     {
         return $this->validated('completed');
+    }
+
+    /**
+     * Получить значение context_fill с клампом в диапазон [0, 1]
+     */
+    public function getContextFill(): ?float
+    {
+        $raw = $this->input('context_fill');
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+        $value = is_numeric($raw) ? (float)$raw : null;
+        return $this->clampFloat($value);
+    }
+
+    /**
+     * Мягкое ограничение значения в диапазон [0, 1]
+     */
+    private function clampFloat(?float $value): ?float
+    {
+        if ($value === null) {
+            return null;
+        }
+        if ($value < 0.0) {
+            return 0.0;
+        }
+        if ($value > 1.0) {
+            return 1.0;
+        }
+        return $value;
     }
 }

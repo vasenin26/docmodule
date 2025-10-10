@@ -46,6 +46,7 @@ class TechplaneController extends Controller
                 'llm_chat' => $techplane->llmChat ? [
                     'id' => $techplane->llmChat->id,
                     'messages' => $techplane->llmChat->messages,
+                    'context_fill' => $techplane->llmChat->context_fill,
                     'created_at' => $techplane->llmChat->created_at,
                     'updated_at' => $techplane->llmChat->updated_at,
                 ] : null,
@@ -94,6 +95,7 @@ class TechplaneController extends Controller
             'chat' => $techplane->llmChat ? [
                 'id' => $techplane->llmChat->id,
                 'messages' => $techplane->llmChat->messages,
+                'context_fill' => $techplane->llmChat->context_fill,
             ] : null,
         ]);
     }
@@ -165,7 +167,8 @@ class TechplaneController extends Controller
                     'message' => 'Сообщение отправлено и передано агенту на обработку',
                     'chat' => [
                         'id' => $techplane->llmChat->id,
-                        'messages' => $techplane->llmChat->messages
+                        'messages' => $techplane->llmChat->messages,
+                        'context_fill' => $techplane->llmChat->context_fill,
                     ]
                 ]);
             }

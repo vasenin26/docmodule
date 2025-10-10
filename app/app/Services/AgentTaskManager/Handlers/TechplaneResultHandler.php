@@ -11,6 +11,7 @@ use Mockery\Exception;
 class TechplaneResultHandler implements AgentResultHandlerInterface
 {
     const OPTION_TECHPLANE_ID = 'techplane_id';
+    const PAYLOAD_CONTENT_FILED = 'content';
 
     public function __construct(private Techplane $techplane)
     {
@@ -25,7 +26,10 @@ class TechplaneResultHandler implements AgentResultHandlerInterface
 
     public function handleResult(?string $result): void
     {
-        $this->techplane->content = $result;
+        if(!empty($result)){
+            $this->techplane->content = $result;
+        }
+
         $this->techplane->generation_status = Techplane::STATUS_COMPLETED;
 
         $this->techplane->save();

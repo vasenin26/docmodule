@@ -25,7 +25,7 @@ class VersionDiffResultHandler implements AgentResultHandlerInterface
 
     public function handleResult(?string $result): void
     {
-        if($result !== null) {
+        if(!empty($result)) {
             $this->versionDiffTask->content = $result;
         }
 

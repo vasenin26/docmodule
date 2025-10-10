@@ -39,6 +39,7 @@
                 <span v-if="sending">Отправка...</span>
                 <span v-else>Отправить</span>
             </Button>
+            <LinearProgress v-if="typeof safeContextFill === 'number'" :value="safeContextFill" :heightPx="5" />
         </div>
     </div>
 </template>
@@ -49,6 +50,7 @@ import TaskProgressInfo from '@/components/AgentChat/TaskProgressInfo.vue';
 import type { LLMMessage } from '@/types';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Button from '../ui/button/Button.vue';
+import LinearProgress from '@/components/ui/progress/LinearProgress.vue';
 
 interface Props {
     messages?: LLMMessage[];
@@ -56,12 +58,14 @@ interface Props {
     sending?: boolean;
     status?: string;
     requestCount?: number;
+    contextFill?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     messages: () => [],
     loading: false,
     sending: false,
+    contextFill: 0,
 });
 
 const emit = defineEmits<{
@@ -142,6 +146,14 @@ watch(
 );
 
 const frozenInput = computed(() => props.status !== 'completed');
+
+const safeContextFill = computed(() => {
+    const v = Number(props.contextFill);
+    if (!isFinite(v)) return 0;
+    if (v < 0) return 0;
+    if (v > 1) return 1;
+    return v;
+});
 
 
 // Прокрутка при монтировании

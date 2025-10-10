@@ -86,6 +86,7 @@ export interface LLMChat {
     prompt_tokens?: number | null;
     completion_tokens?: number | null;
     total_tokens?: number | null;
+    context_fill?: number | null;
     created_at: string;
     updated_at: string;
 }

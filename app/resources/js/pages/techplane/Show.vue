@@ -100,6 +100,7 @@
                     :status="generationStatus"
                     :sending="chatSending"
                     :requestCount="requestCount"
+                    :contextFill="chat?.context_fill ?? 0"
                     @sendMessage="sendMessageToChat"
                 />
             </SidePanel>
@@ -211,6 +212,8 @@ const checkGenerationStatus = async () => {
             } else {
                 chat.value.messages = data.chat.messages;
             }
+            // Прокидываем context_fill
+            (chat.value as any).context_fill = (data.chat as any).context_fill ?? (chat.value as any)?.context_fill ?? 0;
         }
 
         // Остановить опрос если генерация завершена

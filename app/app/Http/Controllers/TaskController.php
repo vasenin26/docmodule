@@ -140,6 +140,7 @@ class TaskController extends Controller implements HasMiddleware
                 'llm_chat' => $task->llmChat ? [
                     'id' => $task->llmChat->id,
                     'messages' => $task->llmChat->messages,
+                    'context_fill' => $task->llmChat->context_fill,
                     'created_at' => $task->llmChat->created_at,
                     'updated_at' => $task->llmChat->updated_at,
                 ] : null,
@@ -212,6 +213,7 @@ class TaskController extends Controller implements HasMiddleware
                 'llm_chat' => $task->llmChat ? [
                     'id' => $task->llmChat->id,
                     'messages' => $task->llmChat->messages,
+                    'context_fill' => $task->llmChat->context_fill,
                     'created_at' => $task->llmChat->created_at,
                     'updated_at' => $task->llmChat->updated_at,
                 ] : null,
@@ -303,6 +305,7 @@ class TaskController extends Controller implements HasMiddleware
             'chat' => $task->llmChat ? [
                 'id' => $task->llmChat->id,
                 'messages' => $task->llmChat->messages,
+                'context_fill' => $task->llmChat->context_fill,
             ] : null,
         ]);
     }
@@ -425,7 +428,8 @@ class TaskController extends Controller implements HasMiddleware
                     'message' => 'Сообщение отправлено и передано агенту на обработку',
                     'chat' => [
                         'id' => $task->llmChat->id,
-                        'messages' => $task->llmChat->messages
+                        'messages' => $task->llmChat->messages,
+                        'context_fill' => $task->llmChat->context_fill,
                     ]
                 ]);
             }

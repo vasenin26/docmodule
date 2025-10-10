@@ -175,6 +175,7 @@
                 :status="generationStatus"
                 :sending="isSending"
                 :requestCount="requestCount"
+                :contextFill="chat?.context_fill ?? 0"
                 @sendMessage="sendMessageToChat"
                 @stop="sendStopGenerating"
             />
@@ -305,6 +306,8 @@ const checkGenerationStatus = async () => {
             } else {
                 chat.value.messages = data.chat.messages;
             }
+            // Прокидываем context_fill из API
+            (chat.value as any).context_fill = (data.chat as any).context_fill ?? (chat.value as any)?.context_fill ?? 0;
         }
 
         // Останавливаем опрос если генерация завершена или завершилась с ошибкой

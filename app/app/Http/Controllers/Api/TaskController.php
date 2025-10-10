@@ -77,6 +77,7 @@ class TaskController extends Controller
             'chat' => [
                 'id' => $task->llmChat->id,
                 'messages' => $task->llmChat->messages ?? [],
+                'context_fill' => $task->llmChat->context_fill,
             ]
         ]);
     }
@@ -112,6 +113,7 @@ class TaskController extends Controller
                 'chat' => $request->getChatMessages(),
                 'stats' => $request->getTokenStats(),
                 'result' => $request->getResult(),
+                'context_fill' => $request->getContextFill(),
             ]);
 
             $chat = $agentTask->llmChat;
@@ -120,6 +122,7 @@ class TaskController extends Controller
                 'prompt_tokens' => ($chat->prompt_tokens ?? 0) + ($updateData->stats->prompt_tokens ?? 0),
                 'completion_tokens' => ($chat->completion_tokens ?? 0) + ($updateData->stats->completion_tokens ?? 0),
                 'total_tokens' => ($chat->total_tokens ?? 0) + ($updateData->stats->total_tokens ?? 0),
+                'context_fill' => $updateData->context_fill ?? $chat->context_fill,
             ]);
 
             if($agentTask->status === AgentTask::STATUS_SUCCESS) {
@@ -188,6 +191,7 @@ class TaskController extends Controller
             'chat' => [
                 'id' => $task->llmChat->id,
                 'messages' => $task->llmChat->messages ?? [],
+                'context_fill' => $task->llmChat->context_fill,
             ]
         ]);
     }
