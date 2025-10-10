@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Common\Enums\AgentTaskType;
+use App\Interfaces\AgentTaskManagerInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -186,5 +187,25 @@ class AgentTask extends Model
             'reserved_until' => now()->addSeconds($seconds),
             'reserved_seconds' => $seconds,
         ]);
+    }
+
+    /**
+     * Остановить все активные (processing) задачи для указанного чата и вернуть их идентификаторы
+     */
+    public static function stopGeneratingForChat(int $chatId, AgentTaskManagerInterface $agentTaskManager): array
+    {
+        $agentTasks = self::where([
+            'chat_id' => $chatId,
+            'status' => self::STATUS_PROCESSING,
+        ])->get();
+
+        $stoppedTaskIds = [];
+
+        foreach ($agentTasks as $agentTask) {
+            $agentTaskManager->stopTask($agentTask->id);
+            $stoppedTaskIds[] = $agentTask->id;
+        }
+
+        return $stoppedTaskIds;
     }
 }

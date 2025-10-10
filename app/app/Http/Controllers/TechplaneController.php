@@ -21,6 +21,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Vasenin26\Conversation\Factory\ConversationFactory;
 use Vasenin26\Conversation\Messages\UserMessage;
+use App\Models\AgentTask;
 
 class TechplaneController extends Controller
 {
@@ -212,5 +213,21 @@ class TechplaneController extends Controller
         // Иначе возвращаем редирект
         return redirect()->route('implementations.show', $implementation)
             ->with('success', 'Реализация создана, обработка запущена');
+    }
+
+    /**
+     * Остановить генерацию агентских задач для техплана
+     */
+    public function stopGenerating(Techplane $techplane, AgentTaskManagerInterface $agentTaskManager): JsonResponse
+    {
+        $stoppedTasks = AgentTask::stopGeneratingForChat((int)$techplane->chat_id, $agentTaskManager);
+
+        return response()->json([
+            'techplane_id' => $techplane->id,
+            'agent_task_id' => $stoppedTasks,
+            'chat_id' => $techplane->chat_id,
+            'message' => 'Генерация техплана успешно остановлена',
+            'success' => true
+        ]);
     }
 }

@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\AgentTask;
 
 class ImplementationController extends Controller
 {
@@ -153,5 +154,21 @@ class ImplementationController extends Controller
                 'message' => 'Произошла ошибка при отправке сообщения'
             ], 500);
         }
+    }
+
+    /**
+     * Остановить генерацию агентских задач для реализации
+     */
+    public function stopGenerating(Implementation $implementation, AgentTaskManagerInterface $agentTaskManager): JsonResponse
+    {
+        $stoppedTasks = AgentTask::stopGeneratingForChat((int)$implementation->chat_id, $agentTaskManager);
+
+        return response()->json([
+            'implementation_id' => $implementation->id,
+            'agent_task_id' => $stoppedTasks,
+            'chat_id' => $implementation->chat_id,
+            'message' => 'Генерация реализации успешно остановлена',
+            'success' => true
+        ]);
     }
 }

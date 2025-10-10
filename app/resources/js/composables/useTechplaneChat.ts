@@ -2,6 +2,7 @@ import { ref, computed } from 'vue';
 import type { LLMChat } from '@/types';
 import { createApi } from '@/service/api/Api';
 import { TechplaneSendMessageRequest } from '@/service/api/request/Techplane/TechplaneSendMessageRequest';
+import { TechplaneStopGeneratingRequest } from '@/service/api/request/Techplane/TechplaneStopGeneratingRequest';
 
 export interface SendMessageResponse {
     success: boolean;
@@ -15,6 +16,7 @@ export interface SendMessageResponse {
 export function useTechplaneChat(techplaneId: number) {
     const isSending = ref(false);
     const error = ref<string | null>(null);
+    const api = createApi();
 
     const sendMessage = async (message: string): Promise<SendMessageResponse | null> => {
         if (!message.trim()) {
@@ -26,7 +28,6 @@ export function useTechplaneChat(techplaneId: number) {
         error.value = null;
 
         try {
-            const api = createApi();
             const req = new TechplaneSendMessageRequest(techplaneId, { message });
             const data = await req.call(api);
 
@@ -45,6 +46,11 @@ export function useTechplaneChat(techplaneId: number) {
         }
     };
 
+    const stopGenerating = async () => {
+        const req = new TechplaneStopGeneratingRequest(techplaneId);
+        await req.call(api);
+    };
+
     const updateChatMessages = (chat: LLMChat | null, newMessages: any[]) => {
         if (chat) {
             chat.messages = newMessages;
@@ -60,6 +66,7 @@ export function useTechplaneChat(techplaneId: number) {
         error: computed(() => error.value),
         hasError: computed(() => error.value !== null),
         sendMessage,
+        stopGenerating,
         updateChatMessages,
         clearError,
     };

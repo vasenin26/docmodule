@@ -122,6 +122,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('techplanes.send-message');
     Route::post('techplanes/{techplane}/execute', [TechplaneController::class, 'execute'])
         ->name('techplanes.execute');
+    Route::put('techplanes/{techplane}/stop-generating', [TechplaneController::class, 'stopGenerating'])
+        ->name('techplanes.stop-generating');
 
     // Маршруты для реализаций
     Route::get('implementations/{implementation}', [ImplementationController::class, 'show'])
@@ -130,6 +132,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('implementations.check-status');
     Route::post('implementations/{implementation}/send-message', [ImplementationController::class, 'sendMessage'])
         ->name('implementations.send-message');
+    Route::put('implementations/{implementation}/stop-generating', [ImplementationController::class, 'stopGenerating'])
+        ->name('implementations.stop-generating');
 
     // НОВЫЕ маршруты в рамках проекта
     Route::prefix('projects/{project}')->group(function () {

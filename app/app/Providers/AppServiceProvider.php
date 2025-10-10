@@ -2,12 +2,10 @@
 
 namespace App\Providers;
 
-use App\Factory\AgentOrchestratorFactory;
 use App\Factory\AgentResultHandlerFactory;
 use App\Factory\ChatFactory;
 use App\Factory\PageContextServiceFactory;
 use App\Factory\PromptProviderFactory;
-use App\Interfaces\AgentOrchestratorInterface;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
@@ -51,12 +49,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             AgentTaskManagerInterface::class,
             AgentTaskManagerService::class
-        );
-
-        // Регистрация оркестратора агентов через фабрику
-        $this->app->singleton(
-            AgentOrchestratorInterface::class,
-            fn() => AgentOrchestratorFactory::create()
         );
 
         // @deprecate проект не управляет репозиториями

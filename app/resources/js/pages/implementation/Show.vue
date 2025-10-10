@@ -78,6 +78,7 @@
                     :requestCount="requestCount"
                     :contextFill="chat?.context_fill ?? 0"
                     @sendMessage="sendMessageToChat" 
+                    @stop="sendStopGenerating"
                 />
             </SidePanel>
         </div>
@@ -148,7 +149,7 @@ const requestCount = ref<number>(0);
 const chat = ref<LLMChat | null>(props.implementation.llm_chat || null);
 
 // Composable для работы с чатом реализации
-const { sendMessage, updateChatMessages, isSending: chatSending, error, hasError } = useImplementationChat(props.implementation.id);
+const { sendMessage, stopGenerating, updateChatMessages, isSending: chatSending, error, hasError } = useImplementationChat(props.implementation.id);
 
 // Функция для проверки статуса
 const checkImplementationStatus = async () => {
@@ -234,6 +235,11 @@ const sendMessageToChat = async (message: string) => {
     
     // Обновляем чат после отправки сообщения
     setTimeout(checkImplementationStatus, 1000);
+};
+
+const sendStopGenerating = async () => {
+    await stopGenerating();
+    implementationStatus.value = 'completed';
 };
 
 // Lifecycle hooks

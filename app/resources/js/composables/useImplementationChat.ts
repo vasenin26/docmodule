@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 import { createApi } from '@/service/api/Api';
 import { SendImplementationMessageRequest } from '@/service/api/request/Implementation/SendImplementationMessageRequest';
+import { ImplementationStopGeneratingRequest } from '@/service/api/request/Implementation/ImplementationStopGeneratingRequest';
 import type { LLMChat } from '@/types';
 
 export interface SendMessageResponse {
@@ -15,6 +16,7 @@ export interface SendMessageResponse {
 export function useImplementationChat(implementationId: number) {
     const isSending = ref(false);
     const error = ref<string | null>(null);
+    const api = createApi();
 
     const sendMessage = async (message: string): Promise<SendMessageResponse | null> => {
         if (!message.trim()) {
@@ -26,7 +28,6 @@ export function useImplementationChat(implementationId: number) {
         error.value = null;
 
         try {
-            const api = createApi();
             const req = new SendImplementationMessageRequest(implementationId, { message });
             const data = await req.call(api);
 
@@ -45,6 +46,11 @@ export function useImplementationChat(implementationId: number) {
         }
     };
 
+    const stopGenerating = async () => {
+        const req = new ImplementationStopGeneratingRequest(implementationId);
+        await req.call(api);
+    };
+
     const updateChatMessages = (chat: LLMChat | null, newMessages: any[]) => {
         if (chat) {
             chat.messages = newMessages;
@@ -60,6 +66,7 @@ export function useImplementationChat(implementationId: number) {
         error: computed(() => error.value),
         hasError: computed(() => error.value !== null),
         sendMessage,
+        stopGenerating,
         updateChatMessages,
         clearError,
     };

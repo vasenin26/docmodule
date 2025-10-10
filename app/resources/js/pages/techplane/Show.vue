@@ -102,6 +102,7 @@
                     :requestCount="requestCount"
                     :contextFill="chat?.context_fill ?? 0"
                     @sendMessage="sendMessageToChat"
+                    @stop="sendStopGenerating"
                 />
             </SidePanel>
 
@@ -175,7 +176,7 @@ const isSending = ref<boolean>(false);
 const api = createApi();
 
 // Composable для работы с чатом техплана
-const { sendMessage, updateChatMessages, isSending: chatSending, error, hasError } = useTechplaneChat(props.techplane.id);
+const { sendMessage, stopGenerating, updateChatMessages, isSending: chatSending, error, hasError } = useTechplaneChat(props.techplane.id);
 
 // Вычисляемые свойства
 const canRestartGeneration = computed(() => {
@@ -240,6 +241,11 @@ const startPolling = () => {
         isPolling.value = true;
         pollInterval.value = setInterval(checkGenerationStatus, 3000); // каждые 3 секунды
     }
+};
+
+const sendStopGenerating = async () => {
+    await stopGenerating();
+    generationStatus.value = 'completed';
 };
 
 // Функция для остановки опроса
