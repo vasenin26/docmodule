@@ -14,7 +14,7 @@ class Techplane extends Model
 {
     protected $fillable = [
         'task_id',
-        'content', 
+        'content',
         'created_by',
         'chat_id',
         'generation_status',
@@ -25,7 +25,7 @@ class Techplane extends Model
 
     // Константы статусов генерации
     public const STATUS_PENDING = 'pending';
-    public const STATUS_GENERATING = 'generating'; 
+    public const STATUS_GENERATING = 'generating';
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_FAILED = 'failed';
 
@@ -104,7 +104,6 @@ class Techplane extends Model
             ->first();
 
         if ($activeAgentTask) {
-            Log::info($activeAgentTask);
             return $activeAgentTask->status;
         }
 

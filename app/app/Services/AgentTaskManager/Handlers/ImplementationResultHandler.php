@@ -28,14 +28,15 @@ class ImplementationResultHandler implements AgentResultHandlerInterface
     {
         if ($result !== null) {
             $this->implementation->content = $result;
-            $this->implementation->status = GenerationStatus::COMPLETED;
-            $this->implementation->save();
-
-            Log::info('Implementation completed', [
-                'implementation_id' => $this->implementation->id,
-                'techplane_id' => $this->implementation->techplane_id
-            ]);
         }
+
+        Log::info('Implementation completed', [
+            'implementation_id' => $this->implementation->id,
+            'techplane_id' => $this->implementation->techplane_id
+        ]);
+
+        $this->implementation->status = GenerationStatus::COMPLETED;
+        $this->implementation->save();
     }
 
     public static function createFromTask(AgentTask $task): static

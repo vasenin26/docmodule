@@ -42,13 +42,15 @@ function isErrorText(): boolean {
 }
 
 function getEntries(): string[] | undefined {
-    // Новый формат ToolResult: { message, payload: { entries: string[] } }
+    // Новый формат ToolResult: { message, payload: { files: string[] } }
     try {
         const raw = getResultRaw();
         if (!raw) return undefined;
         const parsed = JSON.parse(raw);
-        if (parsed && parsed.payload && Array.isArray(parsed.payload.entries)) return parsed.payload.entries as string[];
+        if (parsed && parsed.payload && Array.isArray(parsed.payload.files)) return parsed.payload.files as string[];
         // Переходный вариант: { entries: [...] }
+        if (parsed && parsed.payload && Array.isArray(parsed.payload.entries)) return parsed.payload.entries as string[];
+        // Легаси: { entries: [...] }
         if (parsed && Array.isArray(parsed.entries)) return parsed.entries as string[];
         // Легаси: строки, разделённые переносами
         if (typeof raw === 'string' && !isErrorText()) {
