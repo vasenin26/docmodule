@@ -29,6 +29,10 @@ prod-logs:
 
 .PHONY: bump-patch
 bump-patch:
+	@if [ "$$(git branch --show-current)" != "main" ]; then \
+		echo "Ошибка: Создание патч-версии возможно только на ветке main"; \
+		exit 1; \
+	fi
 	$(eval LATEST_TAG := $(shell git describe --tags --abbrev=0))
 
 	$(eval MAJOR := $(word 1,$(subst ., ,$(LATEST_TAG:v%=%))))
@@ -46,6 +50,10 @@ bump-patch:
 
 .PHONY: bump-minor
 bump-minor:
+	@if [ "$$(git branch --show-current)" != "main" ]; then \
+		echo "Ошибка: Создание минор-версии возможно только на ветке main"; \
+		exit 1; \
+	fi
 	$(eval LATEST_TAG := $(shell git describe --tags --abbrev=0))
 
 	$(eval MAJOR := $(word 1,$(subst ., ,$(LATEST_TAG:v%=%))))
