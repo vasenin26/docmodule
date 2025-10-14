@@ -250,10 +250,11 @@ class PageController extends Controller
             'page' => $page,
             'is_current_version' => $page->checkCurrentVersion($version->id),
             // Передаем актуализацию: активную, иначе последнюю завершенную (для просмотра чата)
-            'actualization' => [
+            'actualization' => $actualization ?
+            [
                 ...$actualization->toArray(),
                 'generating' => $actualization->isGenerating()
-            ],
+            ] : null,
             'errors' => (object)[],
         ]);
     }
