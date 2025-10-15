@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\ProjectGenerationModel;
+use App\Models\GenerationModel;
 
 class Project extends Model
 {
@@ -63,6 +65,25 @@ class Project extends Model
     public function agents(): HasMany
     {
         return $this->hasMany(Agent::class);
+    }
+
+    public function generationModelMappings(): HasMany
+    {
+        return $this->hasMany(ProjectGenerationModel::class);
+    }
+
+    public function getGenerationModelForType(string $type): ?GenerationModel
+    {
+        $mapping = $this->generationModelMappings()
+            ->where('generation_type', $type)
+            ->with('model')
+            ->first();
+        return $mapping ? $mapping->model : null;
+    }
+
+    public function getGenerationModelNameForType(string $type): ?string
+    {
+        return $this->getGenerationModelForType($type)?->name ?? null;
     }
 
     /**

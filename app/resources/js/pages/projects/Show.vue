@@ -30,6 +30,12 @@
                                     Настроить промпты
                                 </Link>
                             </DropdownMenuItem>
+                            <DropdownMenuItem as-child>
+                                <Link :href="route('projects.generation-models.index', project.id)" class="flex items-center">
+                                    <Icon name="sliders" class="mr-2 h-4 w-4" />
+                                    Настройки генерации
+                                </Link>
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem class="flex items-center text-destructive" @click="deleteProject">
                                 <Icon name="trash-2" class="mr-2 h-4 w-4" />

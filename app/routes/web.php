@@ -9,6 +9,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectPagesController;
 use App\Http\Controllers\ProjectPromptController;
 use App\Http\Controllers\ProjectSettingsController;
+use App\Http\Controllers\ProjectGenerationModelController;
 use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskAttachmentController;
@@ -158,6 +159,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('projects.prompts.destroy');
     Route::post('projects/{project}/prompts/preview', [ProjectPromptController::class, 'preview'])
         ->name('projects.prompts.preview');
+
+    Route::get('projects/{project}/generation-models', [ProjectGenerationModelController::class, 'index'])
+        ->name('projects.generation-models.index');
+    Route::get('projects/{project}/generation-models/{type}', [ProjectGenerationModelController::class, 'show'])
+        ->name('projects.generation-models.show');
+    Route::post('projects/{project}/generation-models', [ProjectGenerationModelController::class, 'store'])
+        ->name('projects.generation-models.store');
+    Route::delete('projects/{project}/generation-models/{type}', [ProjectGenerationModelController::class, 'destroy'])
+        ->name('projects.generation-models.destroy');
 
     // API маршрут для получения проекта
     Route::get('/api/projects/{project}', [ProjectController::class, 'apiShow'])->name('api.projects.show');
