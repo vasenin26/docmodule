@@ -61,6 +61,7 @@ class AgentApiTest extends TestCase
                 'id',
                 'agent_uuid',
                 'project_id',
+                'agent_model',
                 'chat' => [
                     'messages'
                 ]
@@ -71,6 +72,28 @@ class AgentApiTest extends TestCase
         $this->assertEquals($agentUuid, $task->agent_uuid);
         $this->assertEquals($this->agent->id, $task->agent_id);
         $this->assertEquals(AgentTask::STATUS_PROCESSING, $task->status);
+    }
+
+    #[Test] public function agent_get_task_returns_preset_agent_model_when_available()
+    {
+        // Создаем задачу с предустановленной моделью
+        $presetModel = 'gpt-4o';
+        $task = AgentTask::factory()->create([
+            'project_id' => $this->project->id,
+            'status' => AgentTask::STATUS_WAIT,
+            'agent_model' => $presetModel,
+        ]);
+
+        $agentUuid = '550e8400-e29b-41d4-a716-446655440000';
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->jwtToken,
+        ])->postJson('/api/agent/task', [
+            'agent_uuid' => $agentUuid,
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('agent_model', $presetModel);
     }
 
     #[Test] public function agent_cannot_get_task_without_jwt_token()

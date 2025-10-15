@@ -43,6 +43,7 @@ class OrchestratorTaskService
                         'agent_id' => $agent->id,
                         'project_id' => $task->project_id,
                         'has_cross_project_access' => $agent->has_cross_project_access,
+                        'agent_model' => $task->agent_model,
                     ]);
                 }
 

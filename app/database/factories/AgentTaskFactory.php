@@ -27,6 +27,7 @@ class AgentTaskFactory extends Factory
             'status' => \App\Models\AgentTask::STATUS_WAIT,
             'agent_uuid' => null,
             'agent_id' => null,
+            'agent_model' => null,
             'result_required' => false,
         ];
     }

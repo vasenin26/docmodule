@@ -22,6 +22,7 @@ class AgentTask extends Model
         'status',
         'agent_uuid',
         'agent_id',
+        'agent_model',
         'result_required',
         'context_id',
         'timeout',

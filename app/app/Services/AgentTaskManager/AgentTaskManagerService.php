@@ -8,6 +8,7 @@ use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\Agent;
 use App\Models\AgentTask;
+use App\Models\Project;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +29,8 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
         AgentTaskType $type = AgentTaskType::TEXT
     ): int {
         try {
+            $project = Project::find($projectId);
+            $preferredModel = $project?->getGenerationModelNameForType($type->value);
             $task = AgentTask::create([
                 'type' => $type,
                 'handler' => $handler::class,
@@ -37,6 +40,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
                 'chat_id' => $chatId,
                 'status' => AgentTask::STATUS_WAIT,
                 'result_required' => $resultRequired,
+                'agent_model' => $preferredModel,
             ]);
 
             Log::info('Agent task created', [
@@ -47,6 +51,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
                 'chat_id' => $chatId,
                 'created_by' => $creatorId,
                 'result_required' => $resultRequired,
+                'agent_model' => $preferredModel,
             ]);
 
             return $task->id;

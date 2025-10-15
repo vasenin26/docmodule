@@ -12,6 +12,7 @@ readonly class OrchestratorTaskDTO
         public ?string $context_id = null,
         public ?int $timeout = null,
         public ?string $public_key = null,
+        public ?string $agent_model = null,
     ) {}
     
     /**
@@ -25,6 +26,7 @@ readonly class OrchestratorTaskDTO
             context_id: $task->context_id,
             timeout: $task->timeout,
             public_key: $task->project->public_key ?? null,
+            agent_model: $task->agent_model,
         );
     }
     
@@ -39,6 +41,7 @@ readonly class OrchestratorTaskDTO
             'context_id' => $this->context_id,
             'timeout' => $this->timeout,
             'public_key' => $this->public_key,
+            'agent_model' => $this->agent_model,
         ];
     }
 }
