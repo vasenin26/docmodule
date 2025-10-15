@@ -1,11 +1,34 @@
 services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./certs:/etc/nginx/certs:rw
+      - ./vhost.d:/etc/nginx/vhost.d:rw
+      - ./html:/usr/share/nginx/html:rw
+
+  letsencrypt:
+    image: nginxproxy/acme-companion
+    container_name: nginx-letsencrypt
+    environment:
+      NGINX_PROXY_CONTAINER: nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/etc/nginx/certs:rw
+      - ./vhost.d:/etc/nginx/vhost.d:rw
+      - ./html:/usr/share/nginx/html:rw
+
   app:
     image: ghcr.io/vasenin26/docmodule:latest
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
-      - APP_URL=http://docsmodule.ru
-      - API_URL=http://docsmodule.ru/api
+      - APP_URL=https://docsmodule.ru
+      - API_URL=https://docsmodule.ru/api
       - AGENT_SERVER=agent-svc
       - DB_CONNECTION=pgsql
       - DB_HOST=db
@@ -13,13 +36,13 @@ services:
       - DB_DATABASE=laravel
       - DB_USERNAME=laravel
       - DB_PASSWORD=laravel
+      - VIRTUAL_HOST=docsmodule.ru
+      - LETSENCRYPT_HOST=docsmodule.ru
+      - LETSENCRYPT_EMAIL=admin@docsmodule.ru
     env_file:
       - .env
     depends_on:
       - db
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
       - repos:/var/repos:ro
 
