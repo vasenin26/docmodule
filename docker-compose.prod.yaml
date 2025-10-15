@@ -29,6 +29,8 @@ services:
       - APP_DEBUG=false
       - APP_URL=https://docsmodule.ru
       - API_URL=https://docsmodule.ru/api
+      - ASSET_URL=https://docsmodule.ru
+      - SESSION_SECURE_COOKIE=true
       - AGENT_SERVER=agent-svc
       - DB_CONNECTION=pgsql
       - DB_HOST=db
