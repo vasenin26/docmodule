@@ -11,7 +11,6 @@ use Exception;
 class ActualizationResultHandler implements AgentResultHandlerInterface
 {
     const OPTION_ACTUALIZATION_ID = 'actualization_id';
-    const PAYLOAD_CONTENT_FILED = 'content';
 
     public function __construct(private Actualization $actualization)
     {
@@ -27,14 +26,8 @@ class ActualizationResultHandler implements AgentResultHandlerInterface
     public function handleResult(?string $result): void
     {
         if($result !== null) {
-            $data = json_decode($result, true);
 
-            if(is_array($data) && array_key_exists(self::PAYLOAD_CONTENT_FILED, $data)) {
-                $draft = $this->actualization->pageVersion;
-                $draft->update(['content' => $data[self::PAYLOAD_CONTENT_FILED]]);
-            }
-
-            // Обновляем статус актуализации
+            $this->actualization?->pageVersion?->update(['content' => $result]);
             $this->actualization->update(['status' => Actualization::STATUS_COMPLETED]);
 
             Log::info('Actualization completed', [
