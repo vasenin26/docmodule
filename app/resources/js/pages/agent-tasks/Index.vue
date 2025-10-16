@@ -33,7 +33,20 @@ import { Link } from '@inertiajs/vue3';
 
 interface Props {
     tasks: {
-        data: Array<{ id: number }>;
+        data: Array<{
+            id: number;
+            type: string;
+            creator?: { id: number; name: string } | null;
+            chat_id?: number | null;
+            context_id?: string | null;
+            agent_model?: string | null;
+            agent_assigned: boolean;
+            reserved_at?: string | null;
+            reserved_until?: string | null;
+            reserved_seconds?: number | null;
+            status: string;
+            updated_at: string;
+        }>;
         links: Array<{
             url: string | null;
             label: string;

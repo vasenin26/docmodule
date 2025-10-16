@@ -29,20 +29,13 @@
                             <tr>
                                 <th class="p-4 text-left font-medium">ID</th>
                                 <th class="p-4 text-left font-medium">Тип</th>
-                                <th class="p-4 text-left font-medium">Handler</th>
-                                <th class="p-4 text-left font-medium">Опции</th>
-                                <th class="p-4 text-left font-medium">Проект</th>
                                 <th class="p-4 text-left font-medium">Создатель</th>
                                 <th class="p-4 text-left font-medium">Чат</th>
-                                <th class="p-4 text-left font-medium">Агент</th>
-                                <th class="p-4 text-left font-medium">UUID</th>
-                                <th class="p-4 text-left font-medium">Модель</th>
-                                <th class="p-4 text-left font-medium">Требует результат</th>
                                 <th class="p-4 text-left font-medium">Контекст</th>
-                                <th class="p-4 text-left font-medium">Timeout</th>
+                                <th class="p-4 text-left font-medium">Модель</th>
+                                <th class="p-4 text-left font-medium">Агент назначен</th>
                                 <th class="p-4 text-left font-medium">Резервирование</th>
                                 <th class="p-4 text-left font-medium">Статус</th>
-                                <th class="p-4 text-left font-medium">Создано</th>
                                 <th class="p-4 text-left font-medium">Обновлено</th>
                             </tr>
                         </thead>
@@ -50,17 +43,11 @@
                             <tr v-for="task in tasks.data" :key="task.id" class="border-b">
                                 <td class="p-4">#{{ task.id }}</td>
                                 <td class="p-4">{{ task.type }}</td>
-                                <td class="p-4 text-xs break-all">{{ task.handler }}</td>
-                                <td class="p-4 text-xs text-muted-foreground">{{ shortJson(task.handler_options) }}</td>
-                                <td class="p-4">{{ task.project?.title ?? '—' }}</td>
                                 <td class="p-4">{{ task.creator?.name ?? '—' }}</td>
                                 <td class="p-4">{{ task.chat_id ?? '—' }}</td>
-                                <td class="p-4">{{ task.agent_id ?? '—' }}</td>
-                                <td class="p-4">{{ task.agent_uuid ?? '—' }}</td>
-                                <td class="p-4">{{ task.agent_model ?? '—' }}</td>
-                                <td class="p-4">{{ task.result_required ? 'Да' : 'Нет' }}</td>
                                 <td class="p-4">{{ task.context_id ?? '—' }}</td>
-                                <td class="p-4">{{ task.timeout ?? '—' }}</td>
+                                <td class="p-4">{{ task.agent_model ?? '—' }}</td>
+                                <td class="p-4">{{ task.agent_assigned ? 'Да' : 'Нет' }}</td>
                                 <td class="p-4 text-sm text-muted-foreground">
                                     <div>at: {{ formatDateTime(task.reserved_at) || '—' }}</div>
                                     <div>until: {{ formatDateTime(task.reserved_until) || '—' }}</div>
@@ -69,11 +56,10 @@
                                 <td class="p-4">
                                     <AgentTaskStatusBadge :status="task.status" />
                                 </td>
-                                <td class="p-4 text-sm text-muted-foreground">{{ formatDateTime(task.created_at) }}</td>
                                 <td class="p-4 text-sm text-muted-foreground">{{ formatDateTime(task.updated_at) }}</td>
                             </tr>
                             <tr v-if="tasks.data.length === 0">
-                                <td colspan="17" class="p-8 text-center text-muted-foreground">
+                                <td colspan="10" class="p-8 text-center text-muted-foreground">
                                     <div v-if="searchQuery || statusFilter">Задачи не найдены по заданным критериям</div>
                                     <div v-else>Задачи не найдены</div>
                                 </td>
@@ -90,7 +76,7 @@
                 <Link
                     v-for="link in tasks.links"
                     :key="link.label"
-                    :href="link.url"
+                    :href="link.url ?? ''"
                     :class="[
                         'rounded-md px-3 py-2 text-sm',
                         link.active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
@@ -107,30 +93,22 @@ import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
 import Input from '@/components/ui/input/Input.vue';
-import AgentTaskStatusBadge from '@/components/Task/AgentTaskStatusBadge.vue';
+import AgentTaskStatusBadge from './AgentTaskStatusBadge.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 interface AgentTaskListItem {
     id: number;
     type: string;
-    handler: string;
-    handler_options: Record<string, unknown> | null;
-    project?: { id: number; title: string } | null;
     creator?: { id: number; name: string } | null;
     chat_id?: number | null;
-    llm_chat?: { id: number } | null;
-    status: string;
-    agent_id?: number | null;
-    agent_uuid?: string | null;
-    agent_model?: string | null;
-    result_required: boolean;
     context_id?: string | null;
-    timeout?: number | null;
+    agent_model?: string | null;
+    agent_assigned: boolean;
     reserved_at?: string | null;
     reserved_until?: string | null;
     reserved_seconds?: number | null;
-    created_at: string;
+    status: string;
     updated_at: string;
 }
 
@@ -159,6 +137,7 @@ const formatDateTime = (date: string | null | undefined) => {
     return d.toLocaleString('ru-RU');
 };
 
+// shortJson no longer used in the table but kept if needed elsewhere
 const shortJson = (value: unknown) => {
     try {
         const json = JSON.stringify(value ?? {}, null, 0);

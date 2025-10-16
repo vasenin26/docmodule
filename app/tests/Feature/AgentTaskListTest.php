@@ -38,6 +38,21 @@ class AgentTaskListTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->component('agent-tasks/Index')
             ->has('tasks')
+            ->has('tasks.data', 3)
+            ->has('tasks.data.0', function ($task) {
+                $task->has('id')
+                     ->has('type')
+                     ->has('creator')
+                     ->has('chat_id')
+                     ->has('context_id')
+                     ->has('agent_model')
+                     ->has('agent_assigned')
+                     ->has('reserved_at')
+                     ->has('reserved_until')
+                     ->has('reserved_seconds')
+                     ->has('status')
+                     ->has('updated_at');
+            })
             ->has('project')
             ->where('project.id', $project->id)
         );

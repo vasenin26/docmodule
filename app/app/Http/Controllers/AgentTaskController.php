@@ -28,7 +28,9 @@ class AgentTaskController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('handler', 'like', "%{$search}%")
                   ->orWhere('agent_uuid', 'like', "%{$search}%")
-                  ->orWhere('agent_model', 'like', "%{$search}%");
+                  ->orWhere('agent_model', 'like', "%{$search}%")
+                  ->orWhere('chat_id', 'like', "%{$search}%")
+                  ->orWhere('context_id', 'like', "%{$search}%");
 
                 // точное совпадение по id, если число
                 if (is_numeric($search)) {
