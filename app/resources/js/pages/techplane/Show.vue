@@ -13,20 +13,6 @@
                         <span v-if="isRestartingGeneration">Перезапуск...</span>
                         <span v-else>Перезапустить генерацию</span>
                     </Button>
-                    <!-- Бургер-меню с экспортом -->
-                    <DropdownMenu>
-                        <DropdownMenuTrigger as-child>
-                            <Button variant="outline" size="sm">
-                                <Icon name="more-horizontal" class="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem as-child>
-                                <TechplaneExportButton :techplaneId="props.techplane.id" />
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <!-- Кнопка выполнения техплана -->
                     <Button
                         v-if="canExecuteTechplane"
                         @click="executeTechplane"
@@ -54,6 +40,21 @@
                     <Button as-child variant="outline">
                         <Link :href="route('tasks.show', techplane.task.id)"> К задаче </Link>
                     </Button>
+
+                    <!-- Бургер-меню с экспортом -->
+                    <DropdownMenu>
+                        <DropdownMenuTrigger as-child>
+                            <Button variant="outline" size="sm">
+                                <Icon name="more-horizontal" class="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem as-child>
+                                <TechplaneExportButton :techplaneId="props.techplane.id" />
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <!-- Кнопка выполнения техплана -->
                 </div>
             </div>
 
