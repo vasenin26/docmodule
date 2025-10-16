@@ -7,11 +7,16 @@ use App\Models\AgentTask;
 use App\Models\Project;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class AgentTaskController extends Controller
 {
     public function index(Request $request, ?Project $project = null)
     {
+        if ($project && !$project->canAccess(Auth::user())) {
+            abort(403);
+        }
+
         $query = AgentTask::with(['project', 'creator', 'llmChat', 'agent'])
             ->orderBy('created_at', 'desc');
 

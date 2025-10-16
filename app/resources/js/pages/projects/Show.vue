@@ -31,6 +31,12 @@
                                 </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem as-child>
+                                <Link :href="route('projects.agent-tasks.index', project.id)" class="flex items-center">
+                                    <Icon name="play" class="mr-2 h-4 w-4" />
+                                    Задачи агентов
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem as-child>
                                 <Link :href="route('projects.generation-models.index', project.id)" class="flex items-center">
                                     <Icon name="sliders" class="mr-2 h-4 w-4" />
                                     Настройки генерации

@@ -23,7 +23,7 @@ class AgentTaskListTest extends TestCase
     public function test_project_scoped_agent_tasks_index_renders_with_pagination(): void
     {
         $user = User::factory()->create();
-        $project = Project::factory()->create();
+        $project = Project::factory()->create(['owner_id' => $user->id]);
 
         $this->actingAs($user);
 
@@ -56,6 +56,18 @@ class AgentTaskListTest extends TestCase
             ->has('project')
             ->where('project.id', $project->id)
         );
+    }
+
+    public function test_non_owner_cannot_view_project_agent_tasks(): void
+    {
+        $owner = User::factory()->create();
+        $project = Project::factory()->create(['owner_id' => $owner->id]);
+
+        $other = User::factory()->create();
+        $this->actingAs($other);
+
+        $response = $this->get(route('projects.agent-tasks.index', $project->id));
+        $response->assertStatus(403);
     }
 }
 
