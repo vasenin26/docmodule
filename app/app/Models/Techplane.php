@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Common\Enums\GenerationStatus;
 use App\Models\Implementation;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 
 class Techplane extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'task_id',
         'content',
@@ -129,5 +131,13 @@ class Techplane extends Model
         $this->update([
             'generation_status' => self::STATUS_PENDING
         ]);
+    }
+
+    /**
+     * Экспорт техплана в Markdown формат (строка)
+     */
+    public function exportAsMarkdown(): string
+    {
+        return (string) ($this->content ?? '');
     }
 }

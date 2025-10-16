@@ -230,4 +230,21 @@ class TechplaneController extends Controller
             'success' => true
         ]);
     }
+
+    /**
+     * Скачать техплан в формате Markdown
+     */
+    public function downloadMarkdown(Techplane $techplane)
+    {
+        // Авторизация совпадает с логикой просмотра (текущий контроллер использует middleware auth/verified)
+        // При необходимости здесь можно добавить $this->authorize('view', $techplane);
+
+        $content = $techplane->exportAsMarkdown();
+        $filename = sprintf('techplane-%d.md', $techplane->id);
+
+        return response($content ?? '', 200, [
+            'Content-Type' => 'text/markdown; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
 }

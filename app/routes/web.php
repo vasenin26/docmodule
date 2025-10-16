@@ -129,6 +129,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('techplanes/{techplane}/stop-generating', [TechplaneController::class, 'stopGenerating'])
         ->name('techplanes.stop-generating');
 
+    // Скачать техплан в формате Markdown
+    Route::get('techplanes/{techplane}/download-markdown', [TechplaneController::class, 'downloadMarkdown'])
+        ->name('techplanes.download-markdown');
+
     // Маршруты для реализаций
     Route::get('implementations/{implementation}', [ImplementationController::class, 'show'])
         ->name('implementations.show');

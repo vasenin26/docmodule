@@ -13,8 +13,19 @@
                         <span v-if="isRestartingGeneration">Перезапуск...</span>
                         <span v-else>Перезапустить генерацию</span>
                     </Button>
-                    <!-- Кнопка экспорта (заглушка) -->
-                    <Button variant="outline" disabled> Экспортировать </Button>
+                    <!-- Бургер-меню с экспортом -->
+                    <DropdownMenu>
+                        <DropdownMenuTrigger as-child>
+                            <Button variant="outline" size="sm">
+                                <Icon name="more-horizontal" class="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem as-child>
+                                <TechplaneExportButton :techplaneId="props.techplane.id" />
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <!-- Кнопка выполнения техплана -->
                     <Button
                         v-if="canExecuteTechplane"
@@ -118,9 +129,12 @@
 
 <script setup lang="ts">
 import AgentChat from '@/components/AgentChat/AgentChat.vue';
+import TechplaneExportButton from '@/components/techplane/TechplaneExportButton.vue';
+import Icon from '@/components/Icon.vue';
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Link } from '@inertiajs/vue3';
