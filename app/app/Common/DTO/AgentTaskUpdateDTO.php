@@ -11,7 +11,8 @@ class AgentTaskUpdateDTO
         public array $chat,
         public LLMResultDTO $stats,
         public ?string $result = null,
-        public ?float $context_fill = null
+        public ?float $context_fill = null,
+        public ?string $model = null,
     ) {}
 
     /**
@@ -46,6 +47,7 @@ class AgentTaskUpdateDTO
             stats: $stats,
             result: $data['result'] ?? null,
             context_fill: self::clamp(isset($data['context_fill']) ? (is_numeric($data['context_fill']) ? (float)$data['context_fill'] : null) : null),
+            model: $data['model'] ?? null,
         );
     }
 
@@ -109,7 +111,13 @@ class AgentTaskUpdateDTO
             'has_result' => $this->isFinal(),
             'result_length' => $this->result ? strlen($this->result) : 0,
             'context_fill' => $this->context_fill,
+            'model' => $this->model,
         ];
+    }
+
+    public function getModel(): ?string
+    {
+        return $this->model;
     }
 
     public function hasContextFill(): bool

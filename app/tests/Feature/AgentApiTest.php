@@ -40,6 +40,62 @@ class AgentApiTest extends TestCase
         $this->agent->update(['token' => $this->jwtToken]);
     }
 
+    #[Test] public function agent_update_without_model_does_not_change_agent_model()
+    {
+        $agentUuid = '550e8400-e29b-41d4-a716-446655440000';
+        $task = AgentTask::factory()->create([
+            'project_id' => $this->project->id,
+            'agent_id' => $this->agent->id,
+            'agent_uuid' => $agentUuid,
+            'status' => AgentTask::STATUS_PROCESSING,
+            'agent_model' => null,
+        ]);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->jwtToken,
+        ])->putJson("/api/agent/task/{$task->id}", [
+            'agent_uuid' => $agentUuid,
+            'stats' => [
+                'prompt_tokens' => 0,
+                'completion_tokens' => 0,
+                'total_tokens' => 0,
+            ],
+            'completed' => false,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertNull($task->refresh()->agent_model);
+    }
+
+    #[Test] public function agent_update_with_model_too_long_returns_422()
+    {
+        $agentUuid = '550e8400-e29b-41d4-a716-446655440000';
+        $task = AgentTask::factory()->create([
+            'project_id' => $this->project->id,
+            'agent_id' => $this->agent->id,
+            'agent_uuid' => $agentUuid,
+            'status' => AgentTask::STATUS_PROCESSING,
+        ]);
+
+        $tooLong = str_repeat('a', 256);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->jwtToken,
+        ])->putJson("/api/agent/task/{$task->id}", [
+            'agent_uuid' => $agentUuid,
+            'stats' => [
+                'prompt_tokens' => 0,
+                'completion_tokens' => 0,
+                'total_tokens' => 0,
+            ],
+            'model' => $tooLong,
+            'completed' => false,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['model']);
+    }
+
     #[Test] public function agent_can_get_task_with_valid_jwt_and_uuid()
     {
         // Создаем задачу для агента
@@ -162,6 +218,7 @@ class AgentApiTest extends TestCase
             ],
             'result' => 'Task completed successfully',
             'completed' => true,
+            'model' => 'gpt-4o',
         ]);
 
         $response->assertStatus(200)
@@ -173,6 +230,7 @@ class AgentApiTest extends TestCase
         // Проверяем, что задача была обновлена
         $task->refresh();
         $this->assertEquals(AgentTask::STATUS_SUCCESS, $task->status);
+        $this->assertEquals('gpt-4o', $task->agent_model);
     }
 
     #[Test] public function agent_cannot_update_task_with_wrong_uuid()

@@ -67,6 +67,11 @@ class UpdateTaskRequest extends FormRequest
                 'nullable',
                 'numeric',
             ],
+            'model' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
         ];
     }
 
@@ -92,6 +97,7 @@ class UpdateTaskRequest extends FormRequest
             'stats.*.min' => 'Token count cannot be negative',
             'stats.*.max' => 'Token count is too large',
             'result.max' => 'Result is too long (max: 16MB)',
+            'model.max' => 'Model name is too long (max: 255 characters)',
         ];
     }
 

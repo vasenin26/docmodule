@@ -68,20 +68,20 @@ class TaskController extends Controller
             ], 503);
         }
 
-            $task->loadMissing(['project', 'llmChat']);
-            return response()->json([
-                'id' => $task->id,
-                'type' => $task->type->value,
-                'agent_uuid' => $task->agent_uuid,
-                'project_id' => $task->project_id,
-                'result_required' => $task->result_required,
-                'agent_model' => $task->agent_model,
-                'chat' => [
-                    'id' => $task->llmChat->id,
-                    'messages' => $task->llmChat->messages ?? [],
-                    'context_fill' => $task->llmChat->context_fill,
-                ]
-            ]);
+        $task->loadMissing(['project', 'llmChat']);
+        return response()->json([
+            'id' => $task->id,
+            'type' => $task->type->value,
+            'agent_uuid' => $task->agent_uuid,
+            'project_id' => $task->project_id,
+            'result_required' => $task->result_required,
+            'agent_model' => $task->agent_model,
+            'chat' => [
+                'id' => $task->llmChat->id,
+                'messages' => $task->llmChat->messages ?? [],
+                'context_fill' => $task->llmChat->context_fill,
+            ]
+        ]);
     }
 
     /**
@@ -111,7 +111,7 @@ class TaskController extends Controller
                 ], 404);
             }
 
-            if($agentTask->status === AgentTask::STATUS_SUCCESS) {
+            if ($agentTask->status === AgentTask::STATUS_SUCCESS) {
                 return response()->json([
                     'status' => 'stopped',
                     'message' => 'Task was already stopped'
@@ -123,6 +123,7 @@ class TaskController extends Controller
                 'stats' => $request->getTokenStats(),
                 'result' => $request->getResult(),
                 'context_fill' => $request->getContextFill(),
+                'model' => $request->input('model') ?? null,
             ]);
 
             $chat = $agentTask->llmChat;
@@ -134,11 +135,21 @@ class TaskController extends Controller
                 'context_fill' => $updateData->context_fill ?? $chat->context_fill,
             ]);
 
+            $handlerFactory->createTaskHandler($agentTask)?->handleResult($updateData->result);
+
+            $taskUpdates = [];
+
             if ($request->isCompleted()) {
-                $agentTask->update(['status' => AgentTask::STATUS_SUCCESS]);
+                $taskUpdates['status'] = AgentTask::STATUS_SUCCESS;
             }
 
-            $handlerFactory->createTaskHandler($agentTask)?->handleResult($updateData->result);
+            if ($updateData->model !== null) {
+                $taskUpdates['agent_model'] = $updateData->model;
+            }
+
+            if (!empty($taskUpdates)) {
+                $agentTask->update($taskUpdates);
+            }
 
             return response()->json([
                 'status' => 'updated',
