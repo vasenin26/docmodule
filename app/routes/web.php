@@ -13,6 +13,7 @@ use App\Http\Controllers\ProjectGenerationModelController;
 use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskAttachmentController;
+use App\Http\Controllers\AgentTaskController;
 use App\Http\Controllers\PageSearchController;
 use App\Http\Controllers\TechplaneController;
 use Illuminate\Http\Request;
@@ -146,6 +147,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/tasks/create', [TaskController::class, 'create'])->name('projects.tasks.create');
         Route::post('/tasks', [TaskController::class, 'store'])->name('projects.tasks.store');
         Route::delete('/tasks/{projectTask}', [TaskController::class, 'destroy'])->name('projects.tasks.destroy');
+
+        // Agent tasks (project scoped)
+        Route::get('/agent-tasks', [AgentTaskController::class, 'index'])
+            ->name('projects.agent-tasks.index');
     });
 
     // Маршруты для промптов проекта
