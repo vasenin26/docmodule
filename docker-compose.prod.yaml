@@ -31,6 +31,8 @@ services:
       - API_URL=https://docsmodule.ru/api
       - ASSET_URL=https://docsmodule.ru
       - SESSION_SECURE_COOKIE=true
+      - INERTIA_SSR=true
+      - INERTIA_SSR_URL=http://ssr:13714
       - AGENT_SERVER=agent-svc
       - DB_CONNECTION=pgsql
       - DB_HOST=db
@@ -45,8 +47,16 @@ services:
       - .env
     depends_on:
       - db
+      - ssr
     volumes:
       - repos:/var/repos:ro
+
+  ssr:
+    image: ghcr.io/vasenin26/docmodule:latest
+    container_name: ssr
+    command: php artisan inertia:start-ssr --port=13714 --host=0.0.0.0
+    depends_on:
+      - app
 
   db:
     image: postgres:16
