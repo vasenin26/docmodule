@@ -47,7 +47,6 @@ services:
       - .env
     depends_on:
       - db
-      - ssr
     volumes:
       - repos:/var/repos:ro
 
@@ -55,8 +54,6 @@ services:
     image: ghcr.io/vasenin26/docmodule:latest
     container_name: ssr
     command: php artisan inertia:start-ssr --port=13714 --host=0.0.0.0
-    depends_on:
-      - app
 
   db:
     image: postgres:16
