@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Http\Resources\AgentTaskResource;
+use App\Models\Agent;
 use App\Models\AgentTask;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -13,8 +14,9 @@ class AgentTaskResourceTest extends TestCase
 
     public function test_agent_assigned_true_when_both_agent_id_and_agent_uuid_present(): void
     {
+        $agent = Agent::factory()->create();
         $task = AgentTask::factory()->create([
-            'agent_id' => 123,
+            'agent_id' => $agent->id,
             'agent_uuid' => 'uuid-1',
         ]);
 
@@ -38,8 +40,9 @@ class AgentTaskResourceTest extends TestCase
         $this->assertArrayHasKey('agent_assigned', $data);
         $this->assertFalse($data['agent_assigned']);
 
+        $agent = Agent::factory()->create();
         $task2 = AgentTask::factory()->create([
-            'agent_id' => 2,
+            'agent_id' => $agent->id,
             'agent_uuid' => null,
         ]);
 
