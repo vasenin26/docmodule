@@ -82,11 +82,8 @@ class ProjectController extends Controller
                 'creator',
                 'parent',
                 'currentVersion',
-                // Отдаем только дочерние страницы с активной версией
-                'children' => function ($q) {
-                    $q->whereNotNull('version_id')
-                        ->with('currentVersion');
-                },
+                // Для дерева на фронтенде: отдаем детей (фильтрация на фронте уже есть)
+                'children.currentVersion',
             ])
             ->paginate();
 
