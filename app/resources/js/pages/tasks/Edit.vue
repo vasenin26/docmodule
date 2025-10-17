@@ -1,17 +1,9 @@
 <template>
     <AppLayout :title="task.pageVersion?.page ? `Редактирование задачи: ${task.pageVersion.page.title}` : 'Редактирование задачи'">
-        <template #header>
-            <div class="flex items-center justify-between">
-                <div>
-                    <Heading :title="task.pageVersion?.page ? `Редактирование задачи для страницы: ${task.pageVersion.page.title}` : 'Редактирование задачи'" />
-                    <p class="mt-1 text-sm text-muted-foreground">Создана {{ formatDate(task.created_at) }} пользователем {{ task.creator?.name }}</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <Button as-child variant="outline">
-                        <Link :href="route('tasks.show', task.id)">Назад к задаче</Link>
-                    </Button>
-                </div>
-            </div>
+        <template #context-actions>
+            <Button as-child variant="outline">
+                <Link :href="route('tasks.show', task.id)">Назад к задаче</Link>
+            </Button>
         </template>
 
         <form @submit.prevent="submitForm" class="space-y-6">
@@ -102,7 +94,6 @@
 
 <script setup lang="ts">
 import DiffViewer from '@/components/DiffViewer.vue';
-import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';

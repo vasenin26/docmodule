@@ -1,9 +1,6 @@
 <template>
     <AppLayout :title="task.pageVersion?.page ? `Задача: ${task.pageVersion.page.title}` : 'Задача'">
         <template #context-actions>
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <!-- Кнопка редактирования -->
                     <Button as-child variant="outline" size="sm">
                         <Link :href="route('tasks.edit', task.id)">Редактировать задачу</Link>
                     </Button>
@@ -21,8 +18,6 @@
                     <Button v-if="task.pageVersion?.page" as-child variant="outline" size="sm">
                         <Link :href="route('pages.show', task.pageVersion.page.id)"> К странице</Link>
                     </Button>
-                </div>
-            </div>
         </template>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -182,7 +177,6 @@
 <script setup lang="ts">
 import AgentChat from '@/components/AgentChat/AgentChat.vue';
 import DiffViewer from '@/components/DiffViewer.vue';
-import Heading from '@/components/Heading.vue';
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
 import TaskExportButton from '@/components/TaskExportButton.vue';
 import TechplanCard from '@/components/TechplanCard.vue';

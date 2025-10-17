@@ -1,20 +1,12 @@
 <template>
     <AppLayout :title="pageTitle">
-        <template #header>
-            <div class="flex items-center justify-between">
-                <div>
-                    <Heading :title="pageTitle" />
-                    <p v-if="project" class="mt-1 text-sm text-muted-foreground">Проект #{{ project.id }}</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <Button v-if="project" as-child variant="outline">
-                        <Link :href="route('projects.show', project.id)"> К проекту </Link>
-                    </Button>
-                    <Button v-if="project" as-child>
-                        <Link :href="route('projects.tasks.create', project.id)">Создать</Link>
-                    </Button>
-                </div>
-            </div>
+        <template #context-actions>
+            <Button v-if="project" as-child variant="outline">
+                <Link :href="route('projects.show', project.id)"> К проекту</Link>
+            </Button>
+            <Button v-if="project" as-child>
+                <Link :href="route('projects.tasks.create', project.id)">Создать</Link>
+            </Button>
         </template>
 
         <TaskList
@@ -27,7 +19,6 @@
 
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import Heading from '@/components/Heading.vue';
 import TaskList from '@/components/Task/TaskList.vue';
 import { computed } from 'vue';
 import Button from '../../components/ui/button/Button.vue';

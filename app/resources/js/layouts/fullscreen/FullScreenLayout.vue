@@ -14,7 +14,7 @@ import ProjectMenu from '@/components/ProjectMenu.vue';
             <div class="project-menu">
                 <ProjectMenu/>
             </div>
-            <div class="context-actions">
+            <div class="context-actions flex items-center gap-2">
                 <slot name="context-actions" />
             </div>
             <div class="profile">
