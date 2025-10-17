@@ -61,7 +61,7 @@ defineProps<
                         <DropdownMenu>
                             <DropdownMenuTrigger as-child>
                                 <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click.stop>
-                                    <Icon name="more-horizontal" class="h-4 w-4" />
+                                    <Icon name="MoreHorizontal" class="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">

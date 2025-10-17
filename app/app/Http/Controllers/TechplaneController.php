@@ -52,6 +52,7 @@ class TechplaneController extends Controller
                     'updated_at' => $techplane->llmChat->updated_at,
                 ] : null,
             ],
+            'project_id' => $techplane->task->project_id,
         ]);
     }
 

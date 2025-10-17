@@ -1,5 +1,8 @@
 <template>
     <AppLayout :title="`Настройки генерации • ${project.title}`">
+        <template #context-actions>
+            <ProjectDropdownMenu :project-id="project.id" :project-title="project.title" />
+        </template>
         <div class="space-y-6">
             <div class="flex items-center justify-between">
                 <div>
@@ -55,6 +58,7 @@ import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import Heading from '@/components/Heading.vue';
 import Icon from '@/components/Icon.vue';
+import ProjectDropdownMenu from '@/components/ProjectDropdownMenu.vue';
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';

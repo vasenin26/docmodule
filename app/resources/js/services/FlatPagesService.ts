@@ -1,4 +1,6 @@
 import type { FlatPage } from '@/types';
+import { createApi } from '@/service/api/Api';
+import { FlatPagesRequest } from '@/service/api/request/Project/FlatPagesRequest';
 
 /**
  * Сервис для предзагрузки плоских страниц проекта
@@ -56,20 +58,9 @@ export class FlatPagesService {
      */
     private static async fetchFlatPagesFromServer(projectId: number): Promise<FlatPage[]> {
         try {
-            const response = await fetch(`/api/projects/${projectId}/flat-pages`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
+            const api = createApi();
+            const request = new FlatPagesRequest(projectId);
+            const data = await request.call(api);
             return data.pages || [];
         } catch (error) {
             console.error('Error fetching flat pages:', error);

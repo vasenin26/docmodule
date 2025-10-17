@@ -1,5 +1,8 @@
 <template>
     <AppLayout :title="`Редактировать ${project.title}`">
+        <template #context-actions>
+            <ProjectDropdownMenu :project-id="project.id" :project-title="project.title" />
+        </template>
         <div class="mx-auto max-w-2xl">
             <div class="mb-6">
                 <Heading title="Параметры проекта"></Heading>
@@ -83,11 +86,11 @@
                             class="flex items-center justify-between rounded-lg border p-3"
                         >
                             <div class="flex items-center space-x-3">
-                                <Icon name="git-branch" class="h-4 w-4 text-muted-foreground" />
+                                <Icon name="GitBranch" class="h-4 w-4 text-muted-foreground" />
                                 <a :href="repository.url" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
                                     {{ repository.url }}
                                 </a>
-                                <Icon name="external-link" class="h-3 w-3 text-muted-foreground" />
+                                <Icon name="ExternalLink" class="h-3 w-3 text-muted-foreground" />
                             </div>
                             <Button variant="destructive" size="sm" @click="removeRepository(repository.id)" :disabled="repositoryProcessing.value">
                                 <Icon v-if="repositoryProcessing.value" name="loader-2" class="mr-2 h-3 w-3 animate-spin" />
@@ -98,7 +101,7 @@
 
                     <!-- Сообщение, если репозиториев нет -->
                     <div v-else class="py-8 text-center text-muted-foreground">
-                        <Icon name="git-branch" class="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
+                        <Icon name="GitBranch" class="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
                         <p>Репозитории не добавлены</p>
                     </div>
 
@@ -136,6 +139,7 @@
 import Heading from '@/components/Heading.vue';
 import Icon from '@/components/Icon.vue';
 import InputError from '@/components/InputError.vue';
+import ProjectDropdownMenu from '@/components/ProjectDropdownMenu.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

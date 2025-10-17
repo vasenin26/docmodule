@@ -20,7 +20,7 @@ export const useProjectStore = defineStore('project', () => {
     // Получаем текущую страницу от Inertia
     const page = usePage();
 
-    // Проект определяется из URL, но сохраняется глобально
+    // Проект определяется из URL или из пропсов страницы
     const selectedProject = computed(() => {
         const path = page.url;
         const match = path.match(/^\/projects\/(\d+)/);
@@ -36,7 +36,21 @@ export const useProjectStore = defineStore('project', () => {
                 return currentProject.value; // Возвращаем текущий проект пока загружается новый
             }
         } else {
-            // URL не содержит проект, но возвращаем сохраненный проект
+            // Проверяем, есть ли project_id в пропсах страницы
+            const pageProps = page.props as any;
+            if (pageProps?.project_id) {
+                const projectId = pageProps.project_id;
+                const cached = projectsCache.value.get(projectId);
+                if (cached) {
+                    currentProject.value = cached;
+                    return cached;
+                } else {
+                    // Загружаем проект асинхронно
+                    getProjectById(projectId);
+                    return currentProject.value; // Возвращаем текущий проект пока загружается новый
+                }
+            }
+            // URL не содержит проект и нет project_id в пропсах, возвращаем сохраненный проект
             return currentProject.value;
         }
     });
@@ -112,13 +126,23 @@ export const useProjectStore = defineStore('project', () => {
         }
     };
 
-    // Отслеживаем изменения URL через Inertia и загружаем проект
-    watch(() => page.url, async (newPath) => {
-        const match = newPath.match(/^\/projects\/(\d+)/);
+    // Отслеживаем изменения URL и пропсов через Inertia и загружаем проект
+    watch(() => [page.url, page.props], async ([newPath, newProps]) => {
+        const path = newPath as string;
+        const match = path.match(/^\/projects\/(\d+)/);
         if (match) {
             const projectId = parseInt(match[1]);
             if (!projectsCache.value.has(projectId)) {
                 await getProjectById(projectId);
+            }
+        } else {
+            // Проверяем project_id в пропсах
+            const props = newProps as any;
+            if (props?.project_id) {
+                const projectId = props.project_id;
+                if (!projectsCache.value.has(projectId)) {
+                    await getProjectById(projectId);
+                }
             }
         }
     }, { immediate: true });

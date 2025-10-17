@@ -7,7 +7,7 @@ import ProjectMenu from '@/components/ProjectMenu.vue';
 
 <template>
     <div class="app-fullscreen">
-        <div class="header bg-card shadow-sm">
+        <div class="header bg-card shadow-sm gap-2">
             <div class="title">
                 <ProjectToggle/>
             </div>

@@ -15,6 +15,7 @@ use App\Services\ActualizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
@@ -219,6 +220,7 @@ class PageController extends Controller
                 'id' => $page->currentVersion->previousVersion->id,
                 'created_at' => $page->currentVersion->previousVersion->created_at->toISOString(),
             ] : null,
+            'project_id' => $page->project_id,
         ]);
     }
 
@@ -231,6 +233,7 @@ class PageController extends Controller
             'pageVersion' => $page->currentVersion,
             'is_current_version' => true,
             'errors' => (object)[],
+            'project_id' => $page->project_id,
         ]);
     }
 
@@ -256,6 +259,7 @@ class PageController extends Controller
                 'generating' => $actualization->isGenerating()
             ] : null,
             'errors' => (object)[],
+            'project_id' => $page->project_id,
         ]);
     }
 
@@ -375,13 +379,23 @@ class PageController extends Controller
         $page->version_id = $version->id;
         $page->is_current_version = $page->version_id === $version->id;
 
-        // Получаем DTO через DocumentationControl
-        $pageDetailDTO = $this->documentationControl->getPageDetailDTO($page);
-
         return Inertia::render('pages/Show', [
-            'page' => array_merge($pageDetailDTO->toArray(), [
+            'page' => [
+                'id' => $page->id,
+                'title' => $version->title,
+                'content' => $version->content,
                 'project_files' => $version->projectFiles()->get(['id', 'url', 'description']),
-            ]),
+                'hasActiveDraft' => $page->hasActiveDraft(Auth::id()),
+                'currentDraft' => $page->getCurrentDraft(Auth::id()),
+                'version_id' => $version->id,
+                'created_at' => $version->created_at,
+                'approved_at' => $page->updated_at,
+                'creator' => $page->creator,
+                'diffDescriptions' => $attachedTasks,
+                'project' => $page->project,
+                'children' => $page->children,
+                'parent' => $page->parent
+            ],
             'version' => [
                 'id' => $version->id,
                 'title' => $version->title,
@@ -392,6 +406,7 @@ class PageController extends Controller
             ],
             // Для обратной совместимости с фронтом, который ожидает diffDescriptions на странице
             'diffDescriptions' => $attachedTasks,
+            'project_id' => $page->project_id,
         ]);
     }
 
@@ -412,7 +427,7 @@ class PageController extends Controller
         } else {
             $attachmentsInput = $validated['project_files'] ?? [];
             unset($validated['project_files']);
-            \DB::transaction(function () use ($version, $page, $validated, $attachmentsInput) {
+            DB::transaction(function () use ($version, $page, $validated, $attachmentsInput) {
                 $version->update($validated);
                 if (!empty($attachmentsInput)) {
                     $version->syncProjectFilesByUrls($attachmentsInput, (int)$page->project_id);
@@ -458,6 +473,7 @@ class PageController extends Controller
         return Inertia::render('pages/Versions', [
             'page' => $page,
             'versions' => $versions,
+            'project_id' => $page->project_id,
         ]);
     }
 

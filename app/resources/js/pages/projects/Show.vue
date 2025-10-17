@@ -5,51 +5,13 @@
                 <Icon name="plus" class="mr-2 h-4 w-4" />
                 Новая страница
             </Button>
-            <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                    <Button variant="outline" size="sm">
-                        <Icon name="more-horizontal" class="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem as-child>
-                        <Link :href="route('projects.edit', project.id)" class="flex items-center">
-                            <Icon name="edit" class="mr-2 h-4 w-4" />
-                            Редактировать
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem as-child>
-                        <Link :href="route('projects.prompts.index', project.id)" class="flex items-center">
-                            <Icon name="message-square" class="mr-2 h-4 w-4" />
-                            Настроить промпты
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem as-child>
-                        <Link :href="route('projects.agent-tasks.index', project.id)" class="flex items-center">
-                            <Icon name="play" class="mr-2 h-4 w-4" />
-                            Задачи агентов
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem as-child>
-                        <Link :href="route('projects.generation-models.index', project.id)" class="flex items-center">
-                            <Icon name="sliders" class="mr-2 h-4 w-4" />
-                            Настройки генерации
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem class="flex items-center text-destructive" @click="deleteProject">
-                        <Icon name="trash-2" class="mr-2 h-4 w-4" />
-                        Удалить проект
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <ProjectDropdownMenu :project-id="project.id" :project-title="project.title" />
         </template>
 
         <div class="space-y-6">
             <div>
-                <Heading>{{ project.title }}</Heading>
                 <p class="mt-1 text-muted-foreground">Проект #{{ project.id }} • Создан {{ formatDate(project.created_at) }}</p>
-            </div>
+            </div>  
 
             <div class="grid gap-4 md:grid-cols-4">
                 <Card>
@@ -107,7 +69,7 @@
                     <Card>
                         <CardContent class="py-12 text-center">
                             <div class="mx-auto mb-4 h-12 w-12 text-muted-foreground">
-                                <Icon name="file-text" class="h-full w-full" />
+                                <Icon name="FileText" class="h-full w-full" />
                             </div>
                             <h4 class="mb-2 text-lg font-semibold">Нет страниц</h4>
                             <p class="mb-4 text-muted-foreground">Создайте первую страницу для этого проекта</p>
@@ -136,7 +98,7 @@
                     <Card>
                         <CardContent class="py-12 text-center">
                             <div class="mx-auto mb-4 h-12 w-12 text-muted-foreground">
-                                <Icon name="git-branch" class="h-full w-full" />
+                                <Icon name="GitBranch" class="h-full w-full" />
                             </div>
                             <h4 class="mb-2 text-lg font-semibold">Нет репозиториев</h4>
                             <p class="mb-4 text-muted-foreground">Добавьте репозитории для этого проекта</p>
@@ -152,7 +114,7 @@
                     <Card v-for="repository in project.repositories" :key="repository.id" class="transition-shadow hover:shadow-md">
                         <CardHeader>
                             <CardTitle class="flex items-center text-base">
-                                <Icon name="git-branch" class="mr-2 h-4 w-4 text-muted-foreground" />
+                                <Icon name="GitBranch" class="mr-2 h-4 w-4 text-muted-foreground" />
                                 Репозиторий
                             </CardTitle>
                         </CardHeader>
@@ -165,7 +127,7 @@
                                     class="flex items-center text-sm break-all text-primary hover:underline"
                                 >
                                     {{ repository.url }}
-                                    <Icon name="external-link" class="ml-1 h-3 w-3 flex-shrink-0" />
+                                    <Icon name="ExternalLink" class="ml-1 h-3 w-3 flex-shrink-0" />
                                 </a>
                                 <div class="text-xs text-muted-foreground">Добавлен {{ formatDate(repository.created_at) }}</div>
                             </div>
@@ -181,9 +143,9 @@
 import Heading from '@/components/Heading.vue';
 import Icon from '@/components/Icon.vue';
 import PageList from '@/components/PageList.vue';
+import ProjectDropdownMenu from '@/components/ProjectDropdownMenu.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { PagesData, Project } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
@@ -202,9 +164,4 @@ const formatDate = (dateString: string) => {
     });
 };
 
-const deleteProject = () => {
-    if (confirm(`Вы уверены, что хотите удалить проект? Все страницы проекта также будут удалены.`)) {
-        router.delete(route('projects.destroy', props.project.id));
-    }
-};
 </script>

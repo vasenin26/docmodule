@@ -38,7 +38,7 @@
             <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                     <Button variant="outline" size="sm">
-                        <Icon name="more-horizontal" class="h-4 w-4" />
+                        <Icon name="MoreHorizontal" class="h-4 w-4" />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

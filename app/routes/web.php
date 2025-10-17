@@ -182,6 +182,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/api/projects', [ProjectController::class, 'apiIndex'])->name('api.projects.index');
     // API маршрут для получения проекта
     Route::get('/api/projects/{project}', [ProjectController::class, 'apiShow'])->name('api.projects.show');
+    
+    // API маршрут для получения плоских страниц проекта
+    Route::get('/api/projects/{projectId}/flat-pages', [\App\Http\Controllers\Api\PageController::class, 'getFlatPages'])
+        ->name('api.projects.flat-pages');
 
     // Маршруты для агентов проекта
     Route::get('projects/{project}/agents', [AgentController::class, 'index'])

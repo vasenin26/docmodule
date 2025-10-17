@@ -152,7 +152,8 @@ class TaskController extends Controller implements HasMiddleware
                         'version' => $this->computeVersionNumber($pv),
                     ];
                 }),
-            ]
+            ],
+            'project_id' => $task->project_id,
         ]);
     }
 
@@ -224,7 +225,8 @@ class TaskController extends Controller implements HasMiddleware
                         'version' => $this->computeVersionNumber($pv),
                     ];
                 }),
-            ]
+            ],
+            'project_id' => $task->project_id,
         ]);
 
     }
