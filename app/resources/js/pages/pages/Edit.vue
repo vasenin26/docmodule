@@ -374,6 +374,9 @@ const fetchActualizationStatus = async () => {
             requestCount.value++;
             actualizationProcessStatus.value = data.data.status;
             hasActiveAgentTask.value = !!data.data.has_active_agent_task;
+            
+            // Отладочная информация
+            console.log('Статус актуализации:', data.data.status, 'Содержимое:', data.data.content ? 'есть' : 'нет');
             if (data.data.chat) {
                 if (!chat.value) {
                     chat.value = {
@@ -390,14 +393,14 @@ const fetchActualizationStatus = async () => {
             }
             
             // Обновляем содержимое черновика при завершении актуализации
-            if (data.data.status === 'completed' && data.data.content && !contentUpdated.value) {
+            if (data.data.status === 'success' && data.data.content && !contentUpdated.value) {
                 form.content = data.data.content;
                 contentUpdated.value = true;
                 // Показываем уведомление пользователю
                 console.log('Содержимое черновика обновлено после актуализации');
             }
             
-            if (['completed', 'failed'].includes(actualizationProcessStatus.value)) {
+            if (['success', 'failed'].includes(actualizationProcessStatus.value)) {
                 stopPolling();
             }
         }
