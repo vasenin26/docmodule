@@ -228,6 +228,7 @@ const isPolling = ref<boolean>(false);
 const pollInterval = ref<number | null>(null);
 const requestCount = ref<number>(0);
 const hasActiveAgentTask = ref<boolean>(false);
+const contentUpdated = ref<boolean>(false);
 
 // API и composable для чата
 const api = createApi();
@@ -327,6 +328,7 @@ const confirmActualizeDraft = () => {
             if (result?.success) {
                 // Мгновенно переключаем UI в состояние ожидания и запускаем опрос
                 actualizationProcessStatus.value = 'pending';
+                contentUpdated.value = false; // Сбрасываем флаг обновления содержимого
                 startPolling();
             } else {
                 console.error('Ошибка актуализации:', result?.message);
@@ -386,6 +388,15 @@ const fetchActualizationStatus = async () => {
                 // Прокидываем context_fill из API
                 (chat.value as any).context_fill = (data.data.chat as any).context_fill ?? (chat.value as any)?.context_fill ?? 0;
             }
+            
+            // Обновляем содержимое черновика при завершении актуализации
+            if (data.data.status === 'completed' && data.data.content && !contentUpdated.value) {
+                form.content = data.data.content;
+                contentUpdated.value = true;
+                // Показываем уведомление пользователю
+                console.log('Содержимое черновика обновлено после актуализации');
+            }
+            
             if (['completed', 'failed'].includes(actualizationProcessStatus.value)) {
                 stopPolling();
             }

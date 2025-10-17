@@ -26,16 +26,16 @@ class ActualizationResultHandler implements AgentResultHandlerInterface
     public function handleResult(?string $result): void
     {
         if($result !== null) {
-
             $this->actualization?->pageVersion?->update(['content' => $result]);
-            $this->actualization->update(['status' => Actualization::STATUS_COMPLETED]);
-
-            Log::info('Actualization completed', [
-                'actualization_id' => $this->actualization->id,
-                'page_id' => $this->actualization->page_id,
-                'page_version_id' => $this->actualization->page_version_id
-            ]);
         }
+
+        Log::info('Actualization completed', [
+            'actualization_id' => $this->actualization->id,
+            'page_id' => $this->actualization->page_id,
+            'page_version_id' => $this->actualization->page_version_id
+        ]);
+        
+        $this->actualization->update(['status' => Actualization::STATUS_COMPLETED]);
     }
 
     public static function createFromTask(AgentTask $task): static

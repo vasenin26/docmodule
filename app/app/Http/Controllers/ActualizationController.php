@@ -267,6 +267,8 @@ class ActualizationController extends Controller
     {
         $stoppedTasks = AgentTask::stopGeneratingForChat((int)$actualization->llm_chat_id, $agentTaskManager);
 
+        $actualization->update(['status' => Actualization::STATUS_COMPLETED]);
+
         return response()->json([
             'actualization_id' => $actualization->id,
             'agent_task_id' => $stoppedTasks,
