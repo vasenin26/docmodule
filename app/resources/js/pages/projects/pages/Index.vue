@@ -25,7 +25,7 @@
 import Heading from '@/components/Heading.vue';
 import PageList from '@/components/PageList.vue';
 import { Button } from '@/components/ui/button';
-import AppLayout from '@/layouts/app/AppSidebarLayout.vue';
+import AppLayout from '@/layouts/AppLayout.vue';
 import type { PagesData, Project } from '@/types';
 import { Link } from '@inertiajs/vue3';
 

@@ -2,6 +2,7 @@
 
 import ProfileInfo from '@/components/ProfileInfo.vue';
 import ProjectToggle from '@/components/ProjectToggle.vue';
+import ProjectMenu from '@/components/ProjectMenu.vue';
 </script>
 
 <template>
@@ -10,8 +11,11 @@ import ProjectToggle from '@/components/ProjectToggle.vue';
             <div class="title">
                 <ProjectToggle/>
             </div>
+            <div class="project-menu">
+                <ProjectMenu/>
+            </div>
             <div class="context-actions">
-                <slot name="header" />
+                <slot name="context-actions" />
             </div>
             <div class="profile">
                 <ProfileInfo />
@@ -40,6 +44,11 @@ import ProjectToggle from '@/components/ProjectToggle.vue';
         right: 0;
         padding-right: $main-padding;
         padding-left: $main-padding;
+        .profile {
+            flex-grow: 1;
+            display: flex;
+            justify-content: end;
+        }
     }
 
     .app-fullscreen {
