@@ -1,34 +1,34 @@
 <template>
-    <AppLayout title="Редактировать страницу">
-        <template #header>
-            <div class="flex items-center justify-between">
-                <Heading title="Редактировать страницу" />
-                <div class="flex items-center gap-2">
-                    <!-- Кнопка актуализации только для черновиков -->
-                    <Button
-                        type="button"
-                        @click="showActualizeDialog"
-                        variant="outline"
-                        :disabled="actualizationButtonDisabled"
-                    >
-                        Актуализировать
-                    </Button>
-                    <Button
-                        v-if="actualization && actualization.llm_chat"
-                        @click="openChatModal"
-                        variant="default"
-                        size="sm"
-                    >
-                        Чат
-                    </Button>
+    <PagesLayout>
+        <template #context-actions>
+            <div class="flex items-center gap-2">
+                <Button
+                    type="button"
+                    @click="showActualizeDialog"
+                    variant="outline"
+                    :disabled="actualizationButtonDisabled"
+                >
+                    Актуализировать
+                </Button>
+                <Button
+                    v-if="actualization && actualization.llm_chat"
+                    @click="openChatModal"
+                    variant="default"
+                    size="sm"
+                >
+                    Чат
+                </Button>
 
-                    <Button as-child variant="outline">
-                        <Link :href="route('pages.show', pageVersion?.page_id)"> Просмотр</Link>
-                    </Button>
-                    <PageListButton :page="page" />
-                </div>
+                <Button as-child variant="outline">
+                    <Link :href="route('pages.show', pageVersion?.page_id)"> Просмотр</Link>
+                </Button>
+                <PageListButton :page="page" />
             </div>
         </template>
+
+        <div class="space-y-2">
+            <Heading title="Редактировать страницу" />
+        </div>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <!-- Основное содержимое -->
@@ -146,7 +146,7 @@
                 @stop="sendStopGenerating"
             />
         </SidePanel>
-    </AppLayout>
+    </PagesLayout>
 </template>
 
 
@@ -166,7 +166,7 @@ import Checkbox from '@/components/ui/checkbox/Checkbox.vue';
 import { ConfirmDialog } from '@/components/ui/dialog';
 import Input from '@/components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
+import PagesLayout from '@/layouts/pages/PagesLayout.vue';
 import { Actualization, Page } from '@/types/index';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted } from 'vue';

@@ -1,46 +1,44 @@
 <template>
-    <AppLayout :title="page.title || 'Без названия'">
-        <template #header>
-            <div class="flex items-center justify-between">
-                <div>
-                    <Heading :title="page.title || 'Без названия'" />
-                    <p class="mt-1 text-sm text-muted-foreground">Создано {{ formatDate(page.created_at) }}
-                        пользователем {{ page.creator?.name }}</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <Button v-if="canCreateTask" @click="createTask" variant="default"> Создать задачу</Button>
+    <PagesLayout>
+        <template #context-actions>
+            <div class="flex items-center gap-2">
+                <Button v-if="canCreateTask" @click="createTask" variant="default"> Создать задачу</Button>
 
-                    <Button>
-                        <Link :href="route('pages.edit', page.id)">
-                            Редактировать
-                        </Link>
-                    </Button>
+                <Button>
+                    <Link :href="route('pages.edit', page.id)">
+                        Редактировать
+                    </Link>
+                </Button>
 
-                    <ActualizationButton
-                        :page-id="page.id"
-                        :can-actualize="canActualize"
-                    />
+                <ActualizationButton
+                    :page-id="page.id"
+                    :can-actualize="canActualize"
+                />
 
-                    <Button as-child variant="outline">
-                        <Link :href="route('pages.versions', page.id)"> Версии</Link>
-                    </Button>
-                    <PageListButton :page="page" />
-                </div>
+                <Button as-child variant="outline">
+                    <Link :href="route('pages.versions', page.id)"> Версии</Link>
+                </Button>
+                <PageListButton :page="pageForPageListButton" />
             </div>
         </template>
 
+        <div class="space-y-2">
+            <Heading :title="page.title || 'Без названия'" />
+            <p class="mt-1 text-sm text-muted-foreground">Создано {{ formatDate(page.created_at) }}
+                пользователем {{ page.creator?.name }}</p>
+        </div>
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-4">
             <!-- Основное содержимое -->
             <div class="space-y-6 lg:col-span-1">
                 <!-- Информация о черновике -->
                 <DraftInfo v-if="page.currentDraft" :draft="page.currentDraft" :page-id="page.id" />
 
                 <!-- Статус актуализации -->
-                <ActualizationStatus
+                <ActualizationStatusAny
                     v-if="actualizationStatus"
                     :actualization-status="actualizationStatus"
-                    :has-active-actualization="hasActiveActualization"
+                    :has-active-actualization="hasActiveActualization ?? false"
                     :status-text="statusText"
                     :status-color="statusColor"
                     :can-cancel-actualization="canCancelActualization"
@@ -51,7 +49,7 @@
                 <div v-if="page.parent" class="rounded-lg bg-muted/50 p-4">
                     <p class="mb-2 text-sm text-muted-foreground">Родительская страница:</p>
                     <Link :href="route('pages.show', page.parent.id)" class="font-medium hover:underline">
-                        {{ page.parent.current_version.title }}
+                        {{ page.parent?.current_version?.title }}
                     </Link>
                 </div>
 
@@ -190,7 +188,7 @@
                 </Card>
             </div>
         </div>
-    </AppLayout>
+    </PagesLayout>
 </template>
 
 <script setup lang="ts">
@@ -206,7 +204,7 @@ import CardContent from '@/components/ui/card/CardContent.vue';
 import CardDescription from '@/components/ui/card/CardDescription.vue';
 import CardHeader from '@/components/ui/card/CardHeader.vue';
 import CardTitle from '@/components/ui/card/CardTitle.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
+import PagesLayout from '@/layouts/pages/PagesLayout.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { computed, onMounted } from 'vue';
 
@@ -234,7 +232,7 @@ interface Draft {
     updated_at: string;
 }
 
-interface Page {
+interface PageData {
     id: number;
     title: string;
     content: string;
@@ -242,7 +240,7 @@ interface Page {
     created_at: string;
     approved_at: string;
     creator: Creator;
-    parent?: Page;
+    parent?: PageData & { current_version?: { title: string } };
     project?: Project;
     children: ChildPage[];
     previous_version_id?: number;
@@ -252,6 +250,7 @@ interface Page {
     diffDescriptions?: TaskDescription[];
     hasActiveActualization?: boolean;
     isActualized?: boolean;
+    created_by: any;
 }
 
 interface PreviousVersion {
@@ -260,14 +259,14 @@ interface PreviousVersion {
 }
 
 const props = defineProps<{
-    page: Page;
+    page: PageData;
     previousVersion?: PreviousVersion;
 }>();
 
 const canCreateTask = computed(() => {
     return (
         props.previousVersion &&
-        (!props.page.diff_descriptions || props.page.diff_descriptions.length === 0)
+        (!props.page.diffDescriptions || props.page.diffDescriptions.length === 0)
     );
 });
 
@@ -279,7 +278,8 @@ const {
     canStartActualization,
     canCancelActualization,
     cancelActualization,
-    checkStatus
+    checkStatus,
+    hasActiveActualization
 } = usePageActualization(props.page.id);
 
 // Проверяем статус при загрузке компонента
@@ -299,6 +299,7 @@ const createTask = () => {
     router.post(route('pages.create-task', props.page.id));
 };
 
+const ActualizationStatusAny = ActualizationStatus as any;
 const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('ru-RU', {
         year: 'numeric',
@@ -328,4 +329,7 @@ const getFileName = (url: string): string => {
         return 'Файл';
     }
 };
+
+// Совместимость типов с PageListButton (ожидает тип из '@/types')
+const pageForPageListButton = computed(() => props.page as any);
 </script>

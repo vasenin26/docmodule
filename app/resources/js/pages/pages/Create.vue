@@ -1,17 +1,18 @@
 <template>
-    <AppLayout title="Создать страницу">
-        <template #header>
-            <div class="flex items-center justify-between">
-                <Heading title="Создать страницу" />
-                <Button as-child variant="outline">
-                    <Link :href="project ? route('projects.show', project.id) : route('pages.index')">
-                        {{ project ? 'Назад к проекту' : 'Назад к списку' }}
-                    </Link>
-                </Button>
-            </div>
+    <PagesLayout>
+        <template #context-actions>
+            <Button as-child variant="outline">
+                <Link :href="project ? route('projects.show', project.id) : route('pages.index')">
+                    {{ project ? 'Назад к проекту' : 'Назад к списку' }}
+                </Link>
+            </Button>
         </template>
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div class="space-y-2">
+            <Heading title="Создать страницу" />
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-4">
             <!-- Основное содержимое -->
             <div class="space-y-6 lg:col-span-1">
             <Card>
@@ -104,7 +105,7 @@
                 <MarkdownPreview :content="form.content" />
             </div>
         </div>
-    </AppLayout>
+    </PagesLayout>
 </template>
 
 <script setup lang="ts">
@@ -120,7 +121,7 @@ import CardHeader from '@/components/ui/card/CardHeader.vue';
 import CardTitle from '@/components/ui/card/CardTitle.vue';
 import Input from '@/components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
+import PagesLayout from '@/layouts/pages/PagesLayout.vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 

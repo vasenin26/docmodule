@@ -1,25 +1,24 @@
 <template>
-    <AppLayout title="Версии страницы">
-        <template #header>
-            <div class="flex items-center justify-between">
-                <div>
-                    <Heading title="Версии страницы" />
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        {{ page.title }}
-                    </p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <Button as-child variant="outline">
-                        <Link :href="route('pages.show', page.id)"> Просмотр страницы </Link>
-                    </Button>
-                    <Button as-child variant="outline">
-                        <Link :href="route('pages.index')"> Назад к списку </Link>
-                    </Button>
-                </div>
+    <PagesLayout>
+        <template #context-actions>
+            <div class="flex items-center gap-2">
+                <Button as-child variant="outline">
+                    <Link :href="route('pages.show', page.id)"> Просмотр страницы </Link>
+                </Button>
+                <Button as-child variant="outline">
+                    <Link :href="route('pages.index')"> Назад к списку </Link>
+                </Button>
             </div>
         </template>
 
-        <div class="max-w-4xl space-y-6">
+        <div class="space-y-2">
+            <Heading title="Версии страницы" />
+            <p class="mt-1 text-sm text-muted-foreground">
+                {{ page.title }}
+            </p>
+        </div>
+
+        <div class="max-w-4xl space-y-6 mt-4">
             <!-- Текущая версия -->
             <Card>
                 <CardHeader>
@@ -105,7 +104,7 @@
                 </CardContent>
             </Card>
         </div>
-    </AppLayout>
+    </PagesLayout>
 </template>
 
 <script setup lang="ts">
@@ -116,7 +115,7 @@ import CardContent from '@/components/ui/card/CardContent.vue';
 import CardDescription from '@/components/ui/card/CardDescription.vue';
 import CardHeader from '@/components/ui/card/CardHeader.vue';
 import CardTitle from '@/components/ui/card/CardTitle.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
+import PagesLayout from '@/layouts/pages/PagesLayout.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
