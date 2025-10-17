@@ -1,11 +1,7 @@
 <template>
     <AppLayout :title="task.pageVersion?.page ? `Задача: ${task.pageVersion.page.title}` : 'Задача'">
-        <template #header>
+        <template #context-actions>
             <div class="flex items-center justify-between">
-                <div>
-                    <Heading :title="task.pageVersion?.page ? `Задача для версии: ${task.pageVersion.title}` : 'Задача'" />
-                    <p class="mt-1 text-sm text-muted-foreground">Создана {{ formatDate(task.created_at) }} пользователем {{ task.creator?.name }}</p>
-                </div>
                 <div class="flex items-center gap-2">
                     <!-- Кнопка редактирования -->
                     <Button as-child variant="outline" size="sm">
@@ -22,7 +18,7 @@
                     <Button v-if="task.llm_chat" @click="openChatModal" variant="outline" size="sm"> Чат</Button>
 
                     <TaskExportButton />
-                    <Button v-if="task.pageVersion?.page" as-child variant="outline">
+                    <Button v-if="task.pageVersion?.page" as-child variant="outline" size="sm">
                         <Link :href="route('pages.show', task.pageVersion.page.id)"> К странице</Link>
                     </Button>
                 </div>
@@ -202,6 +198,7 @@ import { useTaskChat } from '@/composables/useTaskChat';
 import { createApi } from '@/service/api/Api';
 import { TaskStatusRequest } from '@/service/api/request/Task/TaskStatusRequest';
 import { TaskRestartGenerationRequest } from '@/service/api/request/Task/TaskRestartGenerationRequest';
+import PagesLayout from '@/layouts/pages/PagesLayout.vue';
 
 interface TechplaneData {
     id: number;
