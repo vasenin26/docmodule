@@ -1,28 +1,32 @@
 <script setup lang="ts">
 import type { Page } from '@/types';
 import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 defineOptions({ name: 'ProjectPagesSubtree' });
 
-const props = defineProps<{ nodes: Page[] }>();
+const { nodes } = defineProps<{ nodes: Page[] }>();
+
+const filteredNodes = computed(() => (nodes || []).filter((n) => !!n.current_version));
 
 function pageTitle(p: Page): string {
-    return p.current_version?.title || `Страница #${p.id}`;
+    return p.current_version?.title || (p as any).title || `Страница #${p.id}`;
 }
 </script>
 
 <template>
     <ul class="tree">
-        <li v-for="child in props.nodes" :key="child.id">
+        <li v-for="node in filteredNodes" :key="node.id">
             <div class="node">
-                <Link :href="route('pages.show', child.id)">{{ pageTitle(child) }}</Link>
+                <Link :href="route('pages.show', node.id)">{{ pageTitle(node) }}</Link>
             </div>
             <ProjectPagesSubtree
-                v-if="child.children && child.children.length"
-                :nodes="child.children"
+                v-if="node.children && node.children.length"
+                :nodes="(node.children || []).filter((c:any) => !!c.current_version)"
             />
         </li>
     </ul>
+    
 </template>
 
 <style scoped lang="scss">

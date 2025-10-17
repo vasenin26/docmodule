@@ -177,8 +177,10 @@ class PageController extends Controller
     {
         $page->load([
             'creator',
-            'children.creator',
-            'children.currentVersion',
+            // Отдаем только дочерние страницы с активной версией
+            'children' => function ($q) {
+                $q->whereNotNull('version_id')->with('creator', 'currentVersion');
+            },
             'parent',
             'parent.currentVersion',
             'project',

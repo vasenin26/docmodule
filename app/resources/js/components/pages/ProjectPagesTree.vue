@@ -20,14 +20,17 @@ const pagesFromProps = computed<Page[] | null>(() => {
 });
 
 const pages = computed<Page[]>(() => pagesFromProps.value || project.value?.pages || []);
-const hasPages = computed(() => Array.isArray(pages.value) && pages.value.length > 0);
+const filteredPages = computed<Page[]>(() =>
+    (pages.value || []).filter((p) => !!p.current_version)
+);
+const hasPages = computed(() => Array.isArray(filteredPages.value) && filteredPages.value.length > 0);
 </script>
 
 <template>
     <div class="project-pages-tree sidebar-card">
         <div v-if="!project">Проект не выбран</div>
         <div v-else-if="!hasPages">Страницы проекта не загружены</div>
-        <ProjectPagesSubtree v-else :nodes="pages" />
+        <ProjectPagesSubtree v-else :nodes="filteredPages" />
     </div>
     
 </template>

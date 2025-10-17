@@ -76,7 +76,18 @@ class ProjectController extends Controller
         $pages = Page::where([
             'project_id' => $project->id,
             'parent_id' => null,
-        ])->with(['creator', 'parent', 'children', 'currentVersion'])
+        ])
+            ->whereNotNull('version_id')
+            ->with([
+                'creator',
+                'parent',
+                'currentVersion',
+                // Отдаем только дочерние страницы с активной версией
+                'children' => function ($q) {
+                    $q->whereNotNull('version_id')
+                        ->with('currentVersion');
+                },
+            ])
             ->paginate();
 
         return Inertia::render('projects/Show', [
