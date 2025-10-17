@@ -1,18 +1,19 @@
 <template>
   <AppLayout :title="`Агенты - ${project.title}`">
+    <template #context-actions>
+      <Button as-child>
+        <Link :href="route('projects.agents.create', project.id)">
+          <Icon name="plus" class="mr-2 h-4 w-4" />
+          Создать агента
+        </Link>
+      </Button>
+    </template>
+
     <div class="space-y-6">
-      <!-- Заголовок и действия -->
-      <div class="flex items-center justify-between">
-        <div>
-          <Heading>Агенты проекта</Heading>
-          <p class="mt-1 text-muted-foreground">{{ project.title }} • {{ agents.data?.length || 0 }} агентов</p>
-        </div>
-        <Button as-child>
-          <Link :href="route('projects.agents.create', project.id)">
-            <Icon name="plus" class="mr-2 h-4 w-4" />
-            Создать агента
-          </Link>
-        </Button>
+      <!-- Заголовок -->
+      <div>
+        <Heading>Агенты проекта</Heading>
+        <p class="mt-1 text-muted-foreground">{{ project.title }} • {{ agents.data?.length || 0 }} агентов</p>
       </div>
 
       <!-- Статистика -->

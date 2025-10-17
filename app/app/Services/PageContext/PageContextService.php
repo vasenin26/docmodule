@@ -249,4 +249,61 @@ class PageContextService implements PageContextServiceInterface
     {
         return $this->validatePageAccess($pageId);
     }
+
+    /**
+     * Получить плоский список страниц проекта для построения дерева
+     * Возвращает массив страниц в формате flat с полями id, id_current_version, title_current_version, parent_id, children
+     */
+    public function getFlatPagesForProject(): array
+    {
+        $cacheKey = "page_context_{$this->projectId}_flat_pages";
+        
+        return Cache::remember($cacheKey, 300, function () {
+            Log::debug('Getting flat pages for project', ['project_id' => $this->projectId]);
+            
+            $pages = Page::where('project_id', $this->projectId)
+                ->whereNotNull('version_id')
+                ->with(['currentVersion'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $flatPages = [];
+            $childrenMap = [];
+
+            // Сначала собираем все страницы и строим карту детей
+            foreach ($pages as $page) {
+                $flatPage = [
+                    'id' => $page->id,
+                    'id_current_version' => $page->version_id,
+                    'title_current_version' => $page->currentVersion ? $page->currentVersion->title : "Страница #{$page->id}",
+                    'parent_id' => $page->parent_id,
+                    'children' => []
+                ];
+                
+                $flatPages[] = $flatPage;
+                
+                // Строим карту детей для каждого родителя
+                if ($page->parent_id) {
+                    if (!isset($childrenMap[$page->parent_id])) {
+                        $childrenMap[$page->parent_id] = [];
+                    }
+                    $childrenMap[$page->parent_id][] = $page->id;
+                }
+            }
+
+            // Добавляем информацию о детях к каждой странице
+            foreach ($flatPages as &$flatPage) {
+                if (isset($childrenMap[$flatPage['id']])) {
+                    $flatPage['children'] = $childrenMap[$flatPage['id']];
+                }
+            }
+
+            Log::info('Flat pages prepared', [
+                'project_id' => $this->projectId,
+                'total_pages' => count($flatPages)
+            ]);
+
+            return $flatPages;
+        });
+    }
 }

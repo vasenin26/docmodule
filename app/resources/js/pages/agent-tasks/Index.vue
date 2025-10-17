@@ -1,18 +1,15 @@
 <template>
     <AppLayout :title="pageTitle">
-        <template #header>
-            <div class="flex items-center justify-between">
-                <div>
-                    <Heading :title="pageTitle" />
-                    <p v-if="project" class="mt-1 text-sm text-muted-foreground">Проект #{{ project.id }}</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <Button v-if="project" as-child variant="outline">
-                        <Link :href="route('projects.show', project.id)"> К проекту </Link>
-                    </Button>
-                </div>
-            </div>
+        <template #context-actions>
+            <Button v-if="project" as-child variant="outline">
+                <Link :href="route('projects.show', project.id)"> К проекту </Link>
+            </Button>
         </template>
+
+        <div class="space-y-2">
+            <Heading :title="pageTitle" />
+            <p v-if="project" class="mt-1 text-sm text-muted-foreground">Проект #{{ project.id }}</p>
+        </div>
 
         <AgentTaskList
             :tasks="tasks"

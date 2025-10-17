@@ -1,55 +1,54 @@
 <template>
     <AppLayout :title="project.title">
-        <div class="space-y-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <Heading>{{ project.title }}</Heading>
-                    <p class="mt-1 text-muted-foreground">Проект #{{ project.id }} • Создан {{ formatDate(project.created_at) }}</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <Button variant="outline" size="sm" @click="$inertia.visit(route('projects.pages.create', project.id))">
-                        <Icon name="plus" class="mr-2 h-4 w-4" />
-                        Новая страница
+        <template #context-actions>
+            <Button variant="outline" size="sm" @click="$inertia.visit(route('projects.pages.create', project.id))">
+                <Icon name="plus" class="mr-2 h-4 w-4" />
+                Новая страница
+            </Button>
+            <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                    <Button variant="outline" size="sm">
+                        <Icon name="more-horizontal" class="h-4 w-4" />
                     </Button>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger as-child>
-                            <Button variant="outline" size="sm">
-                                <Icon name="more-horizontal" class="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem as-child>
-                                <Link :href="route('projects.edit', project.id)" class="flex items-center">
-                                    <Icon name="edit" class="mr-2 h-4 w-4" />
-                                    Редактировать
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem as-child>
-                                <Link :href="route('projects.prompts.index', project.id)" class="flex items-center">
-                                    <Icon name="message-square" class="mr-2 h-4 w-4" />
-                                    Настроить промпты
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem as-child>
-                                <Link :href="route('projects.agent-tasks.index', project.id)" class="flex items-center">
-                                    <Icon name="play" class="mr-2 h-4 w-4" />
-                                    Задачи агентов
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem as-child>
-                                <Link :href="route('projects.generation-models.index', project.id)" class="flex items-center">
-                                    <Icon name="sliders" class="mr-2 h-4 w-4" />
-                                    Настройки генерации
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem class="flex items-center text-destructive" @click="deleteProject">
-                                <Icon name="trash-2" class="mr-2 h-4 w-4" />
-                                Удалить проект
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem as-child>
+                        <Link :href="route('projects.edit', project.id)" class="flex items-center">
+                            <Icon name="edit" class="mr-2 h-4 w-4" />
+                            Редактировать
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem as-child>
+                        <Link :href="route('projects.prompts.index', project.id)" class="flex items-center">
+                            <Icon name="message-square" class="mr-2 h-4 w-4" />
+                            Настроить промпты
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem as-child>
+                        <Link :href="route('projects.agent-tasks.index', project.id)" class="flex items-center">
+                            <Icon name="play" class="mr-2 h-4 w-4" />
+                            Задачи агентов
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem as-child>
+                        <Link :href="route('projects.generation-models.index', project.id)" class="flex items-center">
+                            <Icon name="sliders" class="mr-2 h-4 w-4" />
+                            Настройки генерации
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem class="flex items-center text-destructive" @click="deleteProject">
+                        <Icon name="trash-2" class="mr-2 h-4 w-4" />
+                        Удалить проект
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </template>
+
+        <div class="space-y-6">
+            <div>
+                <Heading>{{ project.title }}</Heading>
+                <p class="mt-1 text-muted-foreground">Проект #{{ project.id }} • Создан {{ formatDate(project.created_at) }}</p>
             </div>
 
             <div class="grid gap-4 md:grid-cols-4">

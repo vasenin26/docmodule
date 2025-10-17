@@ -1,20 +1,19 @@
 <template>
-    <AppLayout>
+    <AppLayout :title="`Реализация #${implementation.id}`">
+        <template #context-actions>
+            <!-- Кнопка чата (если есть) -->
+            <Button v-if="chat" @click="openChatModal" variant="default"> Чат </Button>
+            <!-- Кнопка возврата к техплану -->
+            <Button as-child variant="outline">
+                <Link v-if="implementation.techplane" :href="route('techplanes.show', implementation.techplane.id)"> К техплану </Link>
+            </Button>
+        </template>
+
         <div class="container mx-auto px-4 py-8">
             <!-- Заголовок -->
-            <div class="mb-6 flex items-start justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Реализация техплана</h1>
-                    <p class="mt-2 text-gray-600">Создана: {{ formatDate(implementation.created_at) }} • Автор: {{ implementation.creator?.name }}</p>
-                </div>
-                <div class="flex gap-3">
-                    <!-- Кнопка чата (если есть) -->
-                    <Button v-if="chat" @click="openChatModal" variant="default"> Чат </Button>
-                    <!-- Кнопка возврата к техплану -->
-                    <Button as-child variant="outline">
-                        <Link v-if="implementation.techplane" :href="route('techplanes.show', implementation.techplane.id)"> К техплану </Link>
-                    </Button>
-                </div>
+            <div class="mb-6">
+                <h1 class="text-3xl font-bold text-gray-900">Реализация техплана</h1>
+                <p class="mt-2 text-gray-600">Создана: {{ formatDate(implementation.created_at) }} • Автор: {{ implementation.creator?.name }}</p>
             </div>
 
             <!-- Метаинформация -->

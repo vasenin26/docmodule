@@ -417,4 +417,28 @@ class PageController extends Controller
 
         return response()->json($taskList);
     }
+
+    /**
+     * Get flat pages for project
+     */
+    public function getFlatPages(
+        Request $request,
+        int $projectId,
+        PageContextServiceFactoryInterface $pageContextServiceFactory
+    ): JsonResponse {
+        Log::info('Flat pages API request', [
+            'project_id' => $projectId,
+            'endpoint' => $request->path(),
+            'ip' => $request->ip()
+        ]);
+
+        // Создаем сервис с project_id через фабрику
+        $service = $pageContextServiceFactory->createForProject($projectId);
+
+        $flatPages = $service->getFlatPagesForProject();
+
+        return response()->json([
+            'pages' => $flatPages
+        ]);
+    }
 }

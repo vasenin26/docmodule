@@ -1,61 +1,59 @@
 <template>
-    <AppLayout>
+    <AppLayout :title="`Технический план #${techplane.id}`">
+        <template #context-actions>
+            <!-- Кнопка перегенерации -->
+            <Button v-if="canRestartGeneration" @click="restartGeneration" :disabled="isRestartingGeneration" variant="outline" size="sm">
+                <span v-if="isRestartingGeneration">Перезапуск...</span>
+                <span v-else>Перезапустить генерацию</span>
+            </Button>
+            <Button
+                v-if="canExecuteTechplane"
+                @click="executeTechplane"
+                :disabled="isExecutingTechplane"
+                variant="default"
+            >
+                <span v-if="isExecutingTechplane">Создание реализации...</span>
+                <span v-else>Выполнить</span>
+            </Button>
+
+            <!-- Кнопка Готово -->
+            <Button
+                v-if="canMarkDone"
+                @click="openDoneModal"
+                :disabled="isMarkingDone"
+                variant="outline"
+                size="sm"
+            >
+                <span v-if="isMarkingDone">Сохранение...</span>
+                <span v-else>Готово</span>
+            </Button>
+            <!-- Кнопка чата (если есть) -->
+            <Button v-if="chat" @click="openChatModal" variant="default"> Чат </Button>
+            <!-- Кнопка возврата к задаче -->
+            <Button as-child variant="outline">
+                <Link :href="route('tasks.show', techplane.task.id)"> К задаче </Link>
+            </Button>
+
+            <!-- Бургер-меню с экспортом -->
+            <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                    <Button variant="outline" size="sm">
+                        <Icon name="more-horizontal" class="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem as-child>
+                        <TechplaneExportButton :techplaneId="props.techplane.id" />
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </template>
+
         <div class="container mx-auto px-4 py-8">
             <!-- Заголовок -->
-            <div class="mb-6 flex items-start justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Технический план</h1>
-                    <p class="mt-2 text-gray-600">Создан: {{ formatDate(techplane.created_at) }} • Автор: {{ techplane.creator?.name }}</p>
-                </div>
-                <div class="flex gap-3">
-                    <!-- Кнопка перегенерации -->
-                    <Button v-if="canRestartGeneration" @click="restartGeneration" :disabled="isRestartingGeneration" variant="outline" size="sm">
-                        <span v-if="isRestartingGeneration">Перезапуск...</span>
-                        <span v-else>Перезапустить генерацию</span>
-                    </Button>
-                    <Button
-                        v-if="canExecuteTechplane"
-                        @click="executeTechplane"
-                        :disabled="isExecutingTechplane"
-                        variant="default"
-                    >
-                        <span v-if="isExecutingTechplane">Создание реализации...</span>
-                        <span v-else>Выполнить</span>
-                    </Button>
-
-                    <!-- Кнопка Готово -->
-                    <Button
-                        v-if="canMarkDone"
-                        @click="openDoneModal"
-                        :disabled="isMarkingDone"
-                        variant="outline"
-                        size="sm"
-                    >
-                        <span v-if="isMarkingDone">Сохранение...</span>
-                        <span v-else>Готово</span>
-                    </Button>
-                    <!-- Кнопка чата (если есть) -->
-                    <Button v-if="chat" @click="openChatModal" variant="default"> Чат </Button>
-                    <!-- Кнопка возврата к задаче -->
-                    <Button as-child variant="outline">
-                        <Link :href="route('tasks.show', techplane.task.id)"> К задаче </Link>
-                    </Button>
-
-                    <!-- Бургер-меню с экспортом -->
-                    <DropdownMenu>
-                        <DropdownMenuTrigger as-child>
-                            <Button variant="outline" size="sm">
-                                <Icon name="more-horizontal" class="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem as-child>
-                                <TechplaneExportButton :techplaneId="props.techplane.id" />
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <!-- Кнопка выполнения техплана -->
-                </div>
+            <div class="mb-6">
+                <h1 class="text-3xl font-bold text-gray-900">Технический план</h1>
+                <p class="mt-2 text-gray-600">Создан: {{ formatDate(techplane.created_at) }} • Автор: {{ techplane.creator?.name }}</p>
             </div>
 
             <!-- Метаинформация -->

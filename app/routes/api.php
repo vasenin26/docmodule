@@ -27,6 +27,11 @@ Route::prefix('agent')->name('agent.')->middleware(['agent.jwt'])->group(functio
     Route::get('page/{id}/tasks', [PageController::class, 'getPageTasks'])->name('page.tasks');
 });
 
+// Public API for flat pages
+Route::get('projects/{projectId}/flat-pages', [PageController::class, 'getFlatPages'])
+    ->middleware(['auth'])
+    ->name('api.projects.flat-pages');
+
 Route::prefix('admin/agent')->middleware(['auth', 'admin'])->group(function () {
 
     Route::get('stats', function () {

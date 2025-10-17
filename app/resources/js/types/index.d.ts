@@ -221,3 +221,20 @@ export interface Actualization {
     page_version?: PageVersion; // Новое поле
     llm_chat?: LLMChat;
 }
+
+export interface FlatPage {
+    id: number;
+    id_current_version: number;
+    title_current_version: string;
+    parent_id?: number | null;
+    children: number[];
+    current_version?: PageVersion;
+}
+
+export interface TreeNode {
+    id: number;
+    id_current_version: number;
+    title_current_version: string;
+    parent_id?: number | null;
+    children?: TreeNode[];
+}
