@@ -13,8 +13,8 @@ withDefaults(defineProps<Props>(), {
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <template #header>
-            <slot name="header" />
+        <template #context-actions>
+            <slot name="context-actions" />
         </template>
         <slot />
     </AppLayout>

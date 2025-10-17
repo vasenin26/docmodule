@@ -192,7 +192,6 @@ import { useTaskChat } from '@/composables/useTaskChat';
 import { createApi } from '@/service/api/Api';
 import { TaskStatusRequest } from '@/service/api/request/Task/TaskStatusRequest';
 import { TaskRestartGenerationRequest } from '@/service/api/request/Task/TaskRestartGenerationRequest';
-import PagesLayout from '@/layouts/pages/PagesLayout.vue';
 
 interface TechplaneData {
     id: number;
