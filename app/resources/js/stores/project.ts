@@ -4,6 +4,7 @@ import { usePage } from '@inertiajs/vue3';
 import type { Project } from '@/types';
 import { createApi } from '@/service/api/Api';
 import { ProjectGetByIdRequest } from '@/service/api/request/Project/ProjectGetByIdRequest';
+import { ProjectListRequest } from '@/service/api/request/Project/ProjectListRequest';
 
 export const useProjectStore = defineStore('project', () => {
     // Кеш проектов для оптимизации
@@ -11,6 +12,10 @@ export const useProjectStore = defineStore('project', () => {
 
     // Глобально сохраненный проект (не сбрасывается при навигации)
     const currentProject = ref<Project | null>(null);
+
+    // Полный список проектов
+    const projects = ref<Project[]>([]);
+    const projectsLoading = ref<boolean>(false);
 
     // Получаем текущую страницу от Inertia
     const page = usePage();
@@ -63,6 +68,28 @@ export const useProjectStore = defineStore('project', () => {
         return null;
     };
 
+    // Загрузка списка проектов
+    const loadProjects = async (): Promise<Project[]> => {
+        if (projectsLoading.value) return projects.value;
+        projectsLoading.value = true;
+        try {
+            const api = createApi();
+            const req = new ProjectListRequest();
+            const list = await req.call(api);
+            projects.value = list;
+            // Заполняем кеш для быстрого доступа по id
+            list.forEach((p) => {
+                projectsCache.value.set(p.id, p);
+            });
+            return list;
+        } catch (e) {
+            console.error('🔍 Store: load projects error:', e);
+            return [];
+        } finally {
+            projectsLoading.value = false;
+        }
+    };
+
     // Очистка кеша
     const clearCache = () => {
         projectsCache.value.clear();
@@ -100,6 +127,9 @@ export const useProjectStore = defineStore('project', () => {
         selectedProject,
         hasSelectedProject,
         getProjectById,
+        projects,
+        projectsLoading,
+        loadProjects,
         clearCache,
         clearCurrentProject,
         preloadCurrentProject

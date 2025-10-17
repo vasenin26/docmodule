@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import { useProjectStore } from '@/stores/project';
 import { computed } from 'vue';
 import { LayoutGrid, Folder } from 'lucide-vue-next';
@@ -28,9 +27,9 @@ const displayInfo = computed(() => {
 
 <template>
     <div class="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-        <component 
-            :is="displayInfo.icon" 
-            class="size-5 fill-current text-white dark:text-black" 
+        <component
+            :is="displayInfo.icon"
+            class="size-5 fill-current text-white dark:text-black"
         />
     </div>
     <div class="ml-1 grid flex-1 text-left text-sm">

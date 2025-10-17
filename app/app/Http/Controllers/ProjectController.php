@@ -150,4 +150,17 @@ class ProjectController extends Controller
 
         return response()->json($project);
     }
+
+    /**
+     * API метод: список проектов текущего пользователя
+     */
+    public function apiIndex()
+    {
+        $projects = Project::where('owner_id', Auth::id())
+            ->with(['owner'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($projects);
+    }
 }

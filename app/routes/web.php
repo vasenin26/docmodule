@@ -178,6 +178,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('projects/{project}/generation-models/{type}', [ProjectGenerationModelController::class, 'destroy'])
         ->name('projects.generation-models.destroy');
 
+    // API маршруты для проектов
+    Route::get('/api/projects', [ProjectController::class, 'apiIndex'])->name('api.projects.index');
     // API маршрут для получения проекта
     Route::get('/api/projects/{project}', [ProjectController::class, 'apiShow'])->name('api.projects.show');
 
