@@ -14,7 +14,7 @@ readonly class OrchestratorTaskDTO
         public ?string $public_key = null,
         public ?string $agent_model = null,
     ) {}
-    
+
     /**
      * Создать DTO из модели AgentTask
      */
@@ -23,13 +23,13 @@ readonly class OrchestratorTaskDTO
         return new self(
             id: (string) $task->id,
             project_id: (string) $task->project_id,
-            context_id: $task->context_id,
+            context_id: $task->getContextId(),
             timeout: $task->timeout,
             public_key: $task->project->public_key ?? null,
             agent_model: $task->agent_model,
         );
     }
-    
+
     /**
      * Преобразовать в массив для JSON ответа
      */

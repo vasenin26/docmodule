@@ -78,6 +78,7 @@ class TaskController extends Controller
             'project_id' => $task->project_id,
             'result_required' => $task->result_required,
             'agent_model' => $task->agent_model,
+            'context_id' => $task->getContextId(),
             'chat' => [
                 'id' => $task->llmChat->id,
                 'messages' => $task->llmChat->messages ?? [],
@@ -204,7 +205,7 @@ class TaskController extends Controller
             'project_id' => $task->project_id,
             'result_required' => $task->result_required,
             'agent_model' => $task->agent_model,
-            'context_id' => 'chat_' . $task->llmChat->id,
+            'context_id' => $task->getContextId(),
             'chat' => [
                 'id' => $task->llmChat->id,
                 'messages' => $task->llmChat->messages ?? [],

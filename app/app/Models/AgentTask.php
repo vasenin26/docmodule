@@ -31,6 +31,11 @@ class AgentTask extends Model
         'reserved_seconds',
     ];
 
+    public function getContextId(): string
+    {
+        return 'chat_' . $this['chat_id'];
+    }
+
     protected function casts(): array
     {
         return [
