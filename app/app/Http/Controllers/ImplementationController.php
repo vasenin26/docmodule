@@ -44,6 +44,7 @@ class ImplementationController extends Controller
                 'creator' => $implementation->creator,
                 'llm_chat' => $implementation->llmChat,
             ],
+            'project_id' => $implementation->techplane->task->project_id,
         ]);
     }
 
