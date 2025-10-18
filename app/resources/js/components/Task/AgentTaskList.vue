@@ -37,7 +37,6 @@
                                 <th class="p-4 text-left font-medium">Резервирование</th>
                                 <th class="p-4 text-left font-medium">Статус</th>
                                 <th class="p-4 text-left font-medium">Обновлено</th>
-                                <th class="p-4 text-left font-medium">Действия</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -45,7 +44,20 @@
                                 <td class="p-4">#{{ task.id }}</td>
                                 <td class="p-4">{{ task.type }}</td>
                                 <td class="p-4">{{ task.creator?.name ?? '—' }}</td>
-                                <td class="p-4">{{ task.chat_id ?? '—' }}</td>
+                                <td class="p-4">
+                                    <div v-if="task.chat_id" class="flex items-center gap-2">
+                                        <span>{{ task.chat_id }}</span>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            @click="openChatViewer(task.id, task.chat_id)"
+                                            class="h-6 w-6 p-0"
+                                        >
+                                            <MessageSquare class="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <span v-else class="text-muted-foreground">—</span>
+                                </td>
                                 <td class="p-4">{{ task.context_id ?? '—' }}</td>
                                 <td class="p-4">{{ task.agent_model ?? '—' }}</td>
                                 <td class="p-4">{{ task.agent_assigned ? 'Да' : 'Нет' }}</td>
@@ -58,20 +70,9 @@
                                     <AgentTaskStatusBadge :status="task.status" />
                                 </td>
                                 <td class="p-4 text-sm text-muted-foreground">{{ formatDateTime(task.updated_at) }}</td>
-                                <td class="p-4">
-                                    <Button 
-                                        v-if="task.chat_id" 
-                                        variant="outline" 
-                                        size="sm" 
-                                        @click="openChatViewer(task.id, task.chat_id)"
-                                    >
-                                        Чат
-                                    </Button>
-                                    <span v-else class="text-muted-foreground">—</span>
-                                </td>
                             </tr>
                             <tr v-if="tasks.data.length === 0">
-                                <td colspan="11" class="p-8 text-center text-muted-foreground">
+                                <td colspan="10" class="p-8 text-center text-muted-foreground">
                                     <div v-if="searchQuery || statusFilter">Задачи не найдены по заданным критериям</div>
                                     <div v-else>Задачи не найдены</div>
                                 </td>
@@ -117,6 +118,7 @@ import AgentTaskStatusBadge from './AgentTaskStatusBadge.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import ChatViewer from './ChatViewer.vue';
+import { MessageSquare } from 'lucide-vue-next';
 
 interface AgentTaskListItem {
     id: number;
