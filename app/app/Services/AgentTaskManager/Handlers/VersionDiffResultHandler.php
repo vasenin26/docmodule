@@ -2,6 +2,7 @@
 
 namespace App\Services\AgentTaskManager\Handlers;
 
+use App\Interfaces\DisplayableResource;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\AgentTask;
 use App\Models\VersionDiffTask;
@@ -45,5 +46,10 @@ class VersionDiffResultHandler implements AgentResultHandlerInterface
         $versionDiffTask = VersionDiffTask::findOrFail($diffId);
 
         return new static($versionDiffTask);
+    }
+
+    public function getTargetResource(): ?DisplayableResource
+    {
+        return $this->versionDiffTask;
     }
 }

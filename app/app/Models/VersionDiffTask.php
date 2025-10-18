@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Interfaces\DisplayableResource;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
 
-class VersionDiffTask extends Model
+class VersionDiffTask extends Model implements DisplayableResource
 {
     use HasFactory, SoftDeletes;
 
@@ -156,4 +157,11 @@ class VersionDiffTask extends Model
             ->withTimestamps();
     }
 
+    /**
+     * Возвращает маршрут для отображения ресурса
+     */
+    public function viewPage(): string
+    {
+        return route('tasks.show', $this->id);
+    }
 }

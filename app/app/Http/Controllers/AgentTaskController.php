@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Factory\AgentResultHandlerFactory;
 use App\Http\Resources\AgentTaskResource;
 use App\Models\AgentTask;
 use App\Models\Project;
@@ -120,6 +121,57 @@ class AgentTaskController extends Controller
 
             return response()->json([
                 'error' => 'Failed to get chat content'
+            ], 500);
+        }
+    }
+
+    /**
+     * Определить целевой ресурс для задачи агента
+     * GET /agent-tasks/{id}/target-resource
+     */
+    public function getTargetResource(Request $request, int $id): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $task = AgentTask::findOrFail($id);
+            
+            // Проверяем доступ к задаче через проект
+            if ($task->project && !$task->project->canAccess(Auth::user())) {
+                abort(403);
+            }
+
+            // Создаем хендлер через фабрику
+            $handlerFactory = app(AgentResultHandlerFactory::class);
+            $handler = $handlerFactory->createTaskHandler($task);
+            
+            if (!$handler) {
+                return response()->json(['error' => 'Handler not found'], 404);
+            }
+
+            // Получаем целевой ресурс от хендлера
+            $targetResource = $handler->getTargetResource();
+            
+            if (!$targetResource) {
+                return response()->json(['error' => 'Target resource not found'], 404);
+            }
+
+            return response()->json([
+                'type' => class_basename($targetResource),
+                'url' => $targetResource->viewPage(),
+                'title' => class_basename($targetResource) . " #{$targetResource->id}"
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Task not found'], 404);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to get target resource', [
+                'task_id' => $id,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to determine target resource: ' . $e->getMessage()
             ], 500);
         }
     }

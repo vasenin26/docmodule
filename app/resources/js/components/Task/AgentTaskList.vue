@@ -36,6 +36,7 @@
                                 <th class="p-4 text-left font-medium">Агент назначен</th>
                                 <th class="p-4 text-left font-medium">Резервирование</th>
                                 <th class="p-4 text-left font-medium">Статус</th>
+                                <th class="p-4 text-left font-medium">Целевой ресурс</th>
                                 <th class="p-4 text-left font-medium">Обновлено</th>
                             </tr>
                         </thead>
@@ -69,10 +70,23 @@
                                 <td class="p-4">
                                     <AgentTaskStatusBadge :status="task.status" />
                                 </td>
+                                <td class="p-4">
+                                    <Button 
+                                        v-if="task.has_handler"
+                                        variant="ghost" 
+                                        size="sm" 
+                                        @click="navigateToTargetResource(task.id)"
+                                        class="h-8 w-8 p-0"
+                                        :disabled="isLoadingTargetResource"
+                                    >
+                                        <ArrowRight class="h-4 w-4" />
+                                    </Button>
+                                    <span v-else class="text-muted-foreground">—</span>
+                                </td>
                                 <td class="p-4 text-sm text-muted-foreground">{{ formatDateTime(task.updated_at) }}</td>
                             </tr>
                             <tr v-if="tasks.data.length === 0">
-                                <td colspan="10" class="p-8 text-center text-muted-foreground">
+                                <td colspan="11" class="p-8 text-center text-muted-foreground">
                                     <div v-if="searchQuery || statusFilter">Задачи не найдены по заданным критериям</div>
                                     <div v-else>Задачи не найдены</div>
                                 </td>
@@ -118,7 +132,7 @@ import AgentTaskStatusBadge from './AgentTaskStatusBadge.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import ChatViewer from './ChatViewer.vue';
-import { MessageSquare } from 'lucide-vue-next';
+import { MessageSquare, ArrowRight } from 'lucide-vue-next';
 
 interface AgentTaskListItem {
     id: number;
@@ -128,6 +142,7 @@ interface AgentTaskListItem {
     context_id?: string | null;
     agent_model?: string | null;
     agent_assigned: boolean;
+    has_handler: boolean;
     reserved_at?: string | null;
     reserved_until?: string | null;
     reserved_seconds?: number | null;
@@ -157,6 +172,9 @@ const statusFilter = ref(props.filters.status || '');
 const selectedTaskId = ref<number | null>(null);
 const selectedChatId = ref<number | null>(null);
 const showChatViewer = ref(false);
+
+// Состояние для загрузки целевого ресурса
+const isLoadingTargetResource = ref(false);
 
 const formatDateTime = (date: string | null | undefined) => {
     if (!date) return '';
@@ -224,6 +242,30 @@ const closeChatViewer = () => {
     showChatViewer.value = false;
     selectedTaskId.value = null;
     selectedChatId.value = null;
+};
+
+const navigateToTargetResource = async (taskId: number) => {
+    if (isLoadingTargetResource.value) return;
+    
+    isLoadingTargetResource.value = true;
+    
+    try {
+        const response = await fetch(`/agent-tasks/${taskId}/target-resource`);
+        const data = await response.json();
+        
+        if (response.ok && data.url) {
+            // Перенаправляем на целевую страницу
+            window.location.href = data.url;
+        } else {
+            // Показываем ошибку
+            alert(data.error || 'Ресурс не найден');
+        }
+    } catch (error) {
+        console.error('Error fetching target resource:', error);
+        alert('Ошибка при определении целевого ресурса');
+    } finally {
+        isLoadingTargetResource.value = false;
+    }
 };
 </script>
 

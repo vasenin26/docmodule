@@ -3,6 +3,7 @@
 namespace App\Services\AgentTaskManager\Handlers;
 
 use App\Common\Enums\GenerationStatus;
+use App\Interfaces\DisplayableResource;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\AgentTask;
 use App\Models\Implementation;
@@ -50,5 +51,10 @@ class ImplementationResultHandler implements AgentResultHandlerInterface
         $implementation = Implementation::findOrFail($implementationId);
 
         return new static($implementation);
+    }
+
+    public function getTargetResource(): ?DisplayableResource
+    {
+        return $this->implementation;
     }
 }

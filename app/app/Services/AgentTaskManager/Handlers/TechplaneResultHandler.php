@@ -2,6 +2,7 @@
 
 namespace App\Services\AgentTaskManager\Handlers;
 
+use App\Interfaces\DisplayableResource;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\AgentTask;
 use App\Models\Techplane;
@@ -51,5 +52,10 @@ class TechplaneResultHandler implements AgentResultHandlerInterface
         $techplane = Techplane::findOrFail($techplaneId);
 
         return new static($techplane);
+    }
+
+    public function getTargetResource(): ?DisplayableResource
+    {
+        return $this->techplane;
     }
 }

@@ -3,13 +3,17 @@
 namespace App\Models;
 
 use App\Common\Enums\GenerationStatus;
+use App\Interfaces\DisplayableResource;
 use App\Models\AgentTask;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Implementation extends Model
+class Implementation extends Model implements DisplayableResource
 {
+    use HasFactory;
+
     protected $fillable = [
         'content',
         'techplane_id',
@@ -67,5 +71,13 @@ class Implementation extends Model
         }
 
         return $this->status;
+    }
+
+    /**
+     * Возвращает маршрут для отображения ресурса
+     */
+    public function viewPage(): string
+    {
+        return route('implementations.show', $this->id);
     }
 }

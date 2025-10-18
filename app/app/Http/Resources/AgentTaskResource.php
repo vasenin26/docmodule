@@ -26,6 +26,9 @@ class AgentTaskResource extends JsonResource
             // virtual boolean field — true only if both are not null
             'agent_assigned' => ($task->agent_id !== null && $task->agent_uuid !== null),
 
+            // virtual boolean field — true if handler exists and can be instantiated
+            'has_handler' => !empty($task->handler),
+
             // reservation info
             'reserved_at' => $task->reserved_at?->toDateTimeString(),
             'reserved_until' => $task->reserved_until?->toDateTimeString(),

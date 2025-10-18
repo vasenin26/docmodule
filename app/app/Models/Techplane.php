@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Common\Enums\GenerationStatus;
+use App\Interfaces\DisplayableResource;
 use App\Models\Implementation;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Log;
 
-class Techplane extends Model
+class Techplane extends Model implements DisplayableResource
 {
     use HasFactory;
     protected $fillable = [
@@ -139,5 +140,13 @@ class Techplane extends Model
     public function exportAsMarkdown(): string
     {
         return (string) ($this->content ?? '');
+    }
+
+    /**
+     * Возвращает маршрут для отображения ресурса
+     */
+    public function viewPage(): string
+    {
+        return route('techplanes.show', $this->id);
     }
 }
