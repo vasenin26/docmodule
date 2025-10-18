@@ -375,6 +375,6 @@ class Page extends Model implements DisplayableResource
 
     public function viewPage(): string
     {
-        return route('page.show', $this->id);
+        return route('pages.show', $this->id);
     }
 }
