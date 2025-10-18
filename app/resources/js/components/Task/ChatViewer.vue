@@ -37,14 +37,32 @@
                         <div class="text-sm text-muted-foreground">
                             Chat ID: {{ chatId }}
                         </div>
-                        <Button @click="copyToClipboard" variant="outline" size="sm">
-                            <Copy class="h-4 w-4 mr-2" />
-                            Копировать
-                        </Button>
+                        <div class="flex gap-2">
+                            <Button @click="toggleViewMode" variant="outline" size="sm">
+                                <Eye class="h-4 w-4 mr-2" />
+                                {{ viewMode === 'json' ? 'Текст' : 'JSON' }}
+                            </Button>
+                            <Button @click="copyToClipboard" variant="outline" size="sm">
+                                <Copy class="h-4 w-4 mr-2" />
+                                Копировать
+                            </Button>
+                        </div>
                     </div>
                     
                     <div class="bg-muted rounded-lg p-4 max-h-96 overflow-auto">
-                        <pre class="text-sm whitespace-pre-wrap">{{ formattedContent }}</pre>
+                        <!-- JSON Viewer -->
+                        <JsonViewer 
+                            v-if="viewMode === 'json' && parsedContent"
+                            :value="parsedContent"
+                            copyable
+                            boxed
+                            sort
+                            theme="light"
+                            @onKeyClick="handleKeyClick"
+                        />
+                        
+                        <!-- Текстовый вид -->
+                        <pre v-else class="text-sm whitespace-pre-wrap">{{ formattedContent }}</pre>
                     </div>
                 </div>
 
@@ -61,7 +79,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import Button from '@/components/ui/button/Button.vue';
-import { X, AlertCircle, Copy, MessageSquare } from 'lucide-vue-next';
+import { X, AlertCircle, Copy, MessageSquare, Eye } from 'lucide-vue-next';
+import { JsonViewer } from 'vue3-json-viewer';
+import 'vue3-json-viewer/dist/vue3-json-viewer.css';
 import { createApi } from '@/service/api/Api';
 import { AgentTaskChatContentRequest } from '@/service/api/request/Task/AgentTaskChatContentRequest';
 
@@ -79,6 +99,7 @@ const emit = defineEmits<{
 const loading = ref(false);
 const error = ref<string | null>(null);
 const chatContent = ref<string | null>(null);
+const viewMode = ref<'text' | 'json'>('text');
 
 const formattedContent = computed(() => {
     if (!chatContent.value) return '';
@@ -88,6 +109,16 @@ const formattedContent = computed(() => {
         return JSON.stringify(parsed, null, 2);
     } catch {
         return chatContent.value;
+    }
+});
+
+const parsedContent = computed(() => {
+    if (!chatContent.value) return null;
+    
+    try {
+        return JSON.parse(chatContent.value);
+    } catch {
+        return null;
     }
 });
 
@@ -119,6 +150,14 @@ const copyToClipboard = async () => {
     } catch (err) {
         console.error('Failed to copy to clipboard:', err);
     }
+};
+
+const toggleViewMode = () => {
+    viewMode.value = viewMode.value === 'text' ? 'json' : 'text';
+};
+
+const handleKeyClick = (keyName: string) => {
+    console.log(`Клик по ключу: ${keyName}`);
 };
 
 onMounted(() => {
