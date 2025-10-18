@@ -84,6 +84,45 @@ class AgentTaskController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Получить содержимое чата для задачи (web API)
+     * GET /agent-tasks/{id}/chat-content
+     */
+    public function getChatContent(Request $request, int $id): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $task = AgentTask::findOrFail($id);
+            
+            // Проверяем доступ к задаче через проект
+            if ($task->project && !$task->project->canAccess(Auth::user())) {
+                abort(403);
+            }
+
+            $llmChat = $task->llmChat;
+            if (!$llmChat) {
+                return response()->json(['error' => 'Chat not found'], 404);
+            }
+
+            return response()->json([
+                'chat_id' => $llmChat->id,
+                'content' => json_encode($llmChat->messages ?? [])
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Task not found'], 404);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to get chat content', [
+                'task_id' => $id,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to get chat content'
+            ], 500);
+        }
+    }
 }
 
 

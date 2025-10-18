@@ -157,6 +157,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('projects.agent-tasks.index');
     });
 
+    // Agent tasks (global)
+    Route::get('agent-tasks/{id}/chat-content', [AgentTaskController::class, 'getChatContent'])
+        ->name('agent-tasks.chat-content');
+
     // Маршруты для промптов проекта
     Route::get('projects/{project}/prompts', [ProjectPromptController::class, 'index'])
         ->name('projects.prompts.index');

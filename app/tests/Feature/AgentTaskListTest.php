@@ -93,6 +93,76 @@ class AgentTaskListTest extends TestCase
         );
     }
 
+    public function test_agent_task_chat_content_can_be_accessed_via_web_api(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create(['owner_id' => $user->id]);
+
+        $this->actingAs($user);
+
+        // Создаем задачу с чатом
+        $chat = \App\Models\LLMChat::factory()->create([
+            'messages' => [
+                ['role' => 'user', 'content' => 'Test message'],
+                ['role' => 'assistant', 'content' => 'Test response']
+            ]
+        ]);
+
+        $task = AgentTask::factory()->create([
+            'project_id' => $project->id,
+            'created_by' => $user->id,
+            'chat_id' => $chat->id,
+        ]);
+
+        $response = $this->get(route('agent-tasks.chat-content', [
+            'id' => $task->id
+        ]));
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'chat_id',
+                'content'
+            ])
+            ->assertJsonPath('chat_id', $chat->id);
+
+        $content = json_decode($response->json('content'), true);
+        $this->assertIsArray($content);
+        $this->assertCount(2, $content);
+    }
+
+    public function test_agent_task_chat_content_returns_404_for_task_without_chat(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create(['owner_id' => $user->id]);
+
+        $this->actingAs($user);
+
+        $task = AgentTask::factory()->create([
+            'project_id' => $project->id,
+            'created_by' => $user->id,
+            'chat_id' => null,
+        ]);
+
+        $response = $this->get(route('agent-tasks.chat-content', [
+            'id' => $task->id
+        ]));
+
+        $response->assertStatus(404)
+            ->assertJson(['error' => 'Chat not found']);
+    }
+
+    public function test_agent_task_chat_content_requires_authentication(): void
+    {
+        $project = Project::factory()->create();
+        $task = AgentTask::factory()->create(['project_id' => $project->id]);
+
+        $response = $this->get(route('agent-tasks.chat-content', [
+            'id' => $task->id
+        ]));
+
+        $response->assertRedirect('/login');
+    }
+
     public function test_non_owner_cannot_view_project_agent_tasks(): void
     {
         $owner = User::factory()->create();

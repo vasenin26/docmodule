@@ -62,7 +62,8 @@
 import { ref, computed, onMounted } from 'vue';
 import Button from '@/components/ui/button/Button.vue';
 import { X, AlertCircle, Copy, MessageSquare } from 'lucide-vue-next';
-import axios from 'axios';
+import { createApi } from '@/service/api/Api';
+import { AgentTaskChatContentRequest } from '@/service/api/request/Task/AgentTaskChatContentRequest';
 
 interface Props {
     taskId: number | null;
@@ -97,11 +98,13 @@ const loadChatContent = async () => {
     error.value = null;
     
     try {
-        const response = await axios.get(`/api/agent/task/${props.taskId}/chat-content`);
-        chatContent.value = response.data.content;
+        const api = createApi();
+        const request = new AgentTaskChatContentRequest(props.taskId);
+        const response = await request.call(api);
+        chatContent.value = response.content;
     } catch (err: any) {
         console.error('Failed to load chat content:', err);
-        error.value = err.response?.data?.error || 'Не удалось загрузить содержимое чата';
+        error.value = err.payload?.error || 'Не удалось загрузить содержимое чата';
     } finally {
         loading.value = false;
     }
