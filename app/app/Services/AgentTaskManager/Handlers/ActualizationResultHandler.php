@@ -2,6 +2,7 @@
 
 namespace App\Services\AgentTaskManager\Handlers;
 
+use App\Interfaces\DisplayableResource;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\AgentTask;
 use App\Models\Actualization;
@@ -34,7 +35,7 @@ class ActualizationResultHandler implements AgentResultHandlerInterface
             'page_id' => $this->actualization->page_id,
             'page_version_id' => $this->actualization->page_version_id
         ]);
-        
+
         $this->actualization->update(['status' => Actualization::STATUS_COMPLETED]);
     }
 
@@ -49,5 +50,10 @@ class ActualizationResultHandler implements AgentResultHandlerInterface
         $actualization = Actualization::findOrFail($actualizationId);
 
         return new static($actualization);
+    }
+
+    public function getTargetResource(): ?DisplayableResource
+    {
+        return $this->actualization?->page;
     }
 }

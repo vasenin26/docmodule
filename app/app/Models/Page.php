@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Interfaces\DisplayableResource;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * @param Project $project
  */
-class Page extends Model
+class Page extends Model implements DisplayableResource
 {
     use HasFactory, SoftDeletes;
 
@@ -370,5 +371,10 @@ class Page extends Model
     public function checkCurrentVersion(int $version_id): bool
     {
         return $this->currentVersion->id === $version_id;
+    }
+
+    public function viewPage(): string
+    {
+        return route('page.show', $this->id);
     }
 }

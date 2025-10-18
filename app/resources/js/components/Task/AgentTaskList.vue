@@ -36,21 +36,33 @@
                                 <th class="p-4 text-left font-medium">Агент назначен</th>
                                 <th class="p-4 text-left font-medium">Резервирование</th>
                                 <th class="p-4 text-left font-medium">Статус</th>
-                                <th class="p-4 text-left font-medium">Целевой ресурс</th>
                                 <th class="p-4 text-left font-medium">Обновлено</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="task in tasks.data" :key="task.id" class="border-b">
                                 <td class="p-4">#{{ task.id }}</td>
-                                <td class="p-4">{{ task.type }}</td>
+                                <td class="p-4">
+                                    {{ task.type }}
+                                    <Button
+                                        v-if="task.has_handler"
+                                        variant="ghost"
+                                        size="sm"
+                                        @click="navigateToTargetResource(task.id)"
+                                        class="h-8 w-8 p-0"
+                                        :disabled="isLoadingTargetResource"
+                                    >
+                                        <ArrowRight class="h-4 w-4" />
+                                    </Button>
+                                    <span v-else class="text-muted-foreground">—</span>
+                                </td>
                                 <td class="p-4">{{ task.creator?.name ?? '—' }}</td>
                                 <td class="p-4">
                                     <div v-if="task.chat_id" class="flex items-center gap-2">
                                         <span>{{ task.chat_id }}</span>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="sm" 
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
                                             @click="openChatViewer(task.id, task.chat_id)"
                                             class="h-6 w-6 p-0"
                                         >
@@ -69,19 +81,6 @@
                                 </td>
                                 <td class="p-4">
                                     <AgentTaskStatusBadge :status="task.status" />
-                                </td>
-                                <td class="p-4">
-                                    <Button 
-                                        v-if="task.has_handler"
-                                        variant="ghost" 
-                                        size="sm" 
-                                        @click="navigateToTargetResource(task.id)"
-                                        class="h-8 w-8 p-0"
-                                        :disabled="isLoadingTargetResource"
-                                    >
-                                        <ArrowRight class="h-4 w-4" />
-                                    </Button>
-                                    <span v-else class="text-muted-foreground">—</span>
                                 </td>
                                 <td class="p-4 text-sm text-muted-foreground">{{ formatDateTime(task.updated_at) }}</td>
                             </tr>
@@ -246,13 +245,13 @@ const closeChatViewer = () => {
 
 const navigateToTargetResource = async (taskId: number) => {
     if (isLoadingTargetResource.value) return;
-    
+
     isLoadingTargetResource.value = true;
-    
+
     try {
         const response = await fetch(`/agent-tasks/${taskId}/target-resource`);
         const data = await response.json();
-        
+
         if (response.ok && data.url) {
             // Перенаправляем на целевую страницу
             window.location.href = data.url;
