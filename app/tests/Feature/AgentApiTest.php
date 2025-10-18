@@ -295,4 +295,84 @@ class AgentApiTest extends TestCase
         $response->assertStatus(404)
             ->assertJson(['error' => 'Task not found, not assigned to this agent, or not in processing state']);
     }
+
+    #[Test] public function agent_can_get_chat_content_for_assigned_task()
+    {
+        // Создаем задачу с чатом, назначенную агенту
+        $agentUuid = '550e8400-e29b-41d4-a716-446655440000';
+        $task = AgentTask::factory()->create([
+            'project_id' => $this->project->id,
+            'agent_id' => $this->agent->id,
+            'agent_uuid' => $agentUuid,
+            'status' => AgentTask::STATUS_PROCESSING,
+        ]);
+
+        // Создаем чат с сообщениями
+        $chat = \App\Models\LLMChat::factory()->create([
+            'messages' => [
+                ['role' => 'user', 'content' => 'Hello'],
+                ['role' => 'assistant', 'content' => 'Hi there!']
+            ]
+        ]);
+        $task->update(['chat_id' => $chat->id]);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->jwtToken,
+        ])->getJson("/api/agent/task/{$task->id}/chat-content");
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'chat_id',
+                'content'
+            ])
+            ->assertJsonPath('chat_id', $chat->id);
+
+        $content = json_decode($response->json('content'), true);
+        $this->assertIsArray($content);
+        $this->assertCount(2, $content);
+    }
+
+    #[Test] public function agent_cannot_get_chat_content_for_task_without_chat()
+    {
+        // Создаем задачу без чата
+        $agentUuid = '550e8400-e29b-41d4-a716-446655440000';
+        $task = AgentTask::factory()->create([
+            'project_id' => $this->project->id,
+            'agent_id' => $this->agent->id,
+            'agent_uuid' => $agentUuid,
+            'status' => AgentTask::STATUS_PROCESSING,
+            'chat_id' => null,
+        ]);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->jwtToken,
+        ])->getJson("/api/agent/task/{$task->id}/chat-content");
+
+        $response->assertStatus(404)
+            ->assertJson(['error' => 'Chat not found']);
+    }
+
+    #[Test] public function agent_cannot_get_chat_content_for_unassigned_task()
+    {
+        // Создаем задачу, не назначенную агенту
+        $task = AgentTask::factory()->create([
+            'project_id' => $this->project->id,
+            'agent_id' => null,
+            'agent_uuid' => null,
+            'status' => AgentTask::STATUS_WAIT,
+        ]);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->jwtToken,
+        ])->getJson("/api/agent/task/{$task->id}/chat-content");
+
+        $response->assertStatus(404)
+            ->assertJson(['error' => 'Task not found']);
+    }
+
+    #[Test] public function agent_cannot_get_chat_content_without_jwt_token()
+    {
+        $response = $this->getJson('/api/agent/task/1/chat-content');
+        $response->assertStatus(401);
+    }
 }

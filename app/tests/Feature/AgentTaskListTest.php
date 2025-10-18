@@ -58,6 +58,41 @@ class AgentTaskListTest extends TestCase
         );
     }
 
+    public function test_agent_tasks_list_does_not_include_chat_content(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create(['owner_id' => $user->id]);
+
+        $this->actingAs($user);
+
+        // Создаем задачу с чатом
+        $chat = \App\Models\LLMChat::factory()->create([
+            'messages' => [
+                ['role' => 'user', 'content' => 'Test message'],
+                ['role' => 'assistant', 'content' => 'Test response']
+            ]
+        ]);
+
+        $task = AgentTask::factory()->create([
+            'project_id' => $project->id,
+            'created_by' => $user->id,
+            'chat_id' => $chat->id,
+        ]);
+
+        $response = $this->get(route('projects.agent-tasks.index', $project->id));
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('agent-tasks/Index')
+            ->has('tasks.data.0', function ($taskData) use ($task) {
+                // Проверяем, что chat_id присутствует, но контент чата не загружен
+                $taskData->has('chat_id')
+                         ->where('chat_id', $task->chat_id)
+                         ->missing('llmChat'); // llmChat не должен быть в ответе
+            })
+        );
+    }
+
     public function test_non_owner_cannot_view_project_agent_tasks(): void
     {
         $owner = User::factory()->create();

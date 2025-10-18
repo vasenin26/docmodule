@@ -11,6 +11,7 @@ use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Models\AgentTask;
 use App\Services\AgentTaskManager\AgentTaskManagerService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
@@ -243,6 +244,49 @@ class TaskController extends Controller
             'status' => 'processing',
             'message' => 'Task marked as processing'
         ]);
+    }
+
+    /**
+     * Получить содержимое чата для задачи
+     * GET /api/agent/task/{id}/chat-content
+     */
+    public function getChatContent(Request $request, int $id): JsonResponse
+    {
+        $agent = $request->get('agent');
+        $agentUuid = $request->getAgentUuid();
+
+        try {
+            $task = AgentTask::where('id', $id)
+                ->where('agent_uuid', $agentUuid)
+                ->where('agent_id', $agent->id)
+                ->first();
+
+            if (!$task) {
+                return response()->json(['error' => 'Task not found'], 404);
+            }
+
+            $llmChat = $task->llmChat;
+            if (!$llmChat) {
+                return response()->json(['error' => 'Chat not found'], 404);
+            }
+
+            return response()->json([
+                'chat_id' => $llmChat->id,
+                'content' => json_encode($llmChat->messages ?? [])
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('API: Failed to get chat content', [
+                'task_id' => $id,
+                'agent_id' => $agent->id,
+                'agent_uuid' => $agentUuid,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to get chat content'
+            ], 500);
+        }
     }
 
     private function logSuspiciousActivity($request, string $action, array $context = []): void

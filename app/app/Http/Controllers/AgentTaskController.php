@@ -17,7 +17,7 @@ class AgentTaskController extends Controller
             abort(403);
         }
 
-        $query = AgentTask::with(['project', 'creator', 'llmChat', 'agent'])
+        $query = AgentTask::with(['project', 'creator', 'agent'])
             ->orderBy('created_at', 'desc');
 
         if ($project) {

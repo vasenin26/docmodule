@@ -13,6 +13,7 @@ Route::prefix('agent')->name('agent.')->middleware(['agent.jwt'])->group(functio
     Route::put('task/{id}', [TaskController::class, 'updateTask'])->name('task.update');
     Route::get('task/{id}', [TaskController::class, 'getTaskById'])->name('task.show');
     Route::put('task/{id}/process', [TaskController::class, 'processTask'])->name('task.process');
+    Route::get('task/{id}/chat-content', [TaskController::class, 'getChatContent'])->name('task.chat-content');
 
     // Page API routes
     Route::get('page/version/{id}', [PageController::class, 'getPageVersion'])->name('page.version');
