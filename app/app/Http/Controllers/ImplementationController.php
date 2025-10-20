@@ -42,7 +42,7 @@ class ImplementationController extends Controller
                 'updated_at' => $implementation->updated_at,
                 'techplane' => $implementation->techplane,
                 'creator' => $implementation->creator,
-                'llm_chat' => $implementation->llmChat,
+                'llm_chat' => $implementation->llmChat?->toApiArray(),
             ],
             'project_id' => $implementation->techplane->task->project_id,
         ]);
@@ -71,12 +71,7 @@ class ImplementationController extends Controller
             'status' => $actualStatus->value,
             'content' => $implementation->content,
             'updated_at' => $implementation->updated_at,
-            'chat' => $implementation->llmChat ? [
-                'id' => $implementation->llmChat->id,
-                'messages' => $implementation->llmChat->messages,
-                'total_tokens' => $implementation->llmChat->total_tokens,
-                'context_fill' => $implementation->llmChat->context_fill,
-            ] : null,
+            'chat' => $implementation->llmChat?->toApiArray(),
         ]);
     }
 

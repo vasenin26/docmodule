@@ -46,32 +46,137 @@ class LLMChat extends Model
 
     /**
      * Получение токенов запроса с fallback на 0
+     * Подсчитывает суммарный расход prompt токенов для всех корневых задач и их дочерних задач
      *
      * @return int
      */
     public function getPromptTokensOrZero(): int
     {
-        return (int) $this->agentTasks()->sum('prompt_tokens');
+        // Получаем только корневые задачи (без parent_id)
+        $rootTasks = $this->agentTasks()->whereNull('parent_id')->get();
+        
+        $totalTokens = 0;
+        
+        foreach ($rootTasks as $rootTask) {
+            // Добавляем токены самой корневой задачи
+            $totalTokens += $rootTask->getPromptTokensOrZero();
+            
+            // Добавляем токены всех дочерних задач рекурсивно
+            $totalTokens += $this->getSubtasksPromptTokensRecursive($rootTask);
+        }
+        
+        return $totalTokens;
     }
 
     /**
      * Получение токенов ответа с fallback на 0
+     * Подсчитывает суммарный расход completion токенов для всех корневых задач и их дочерних задач
      *
      * @return int
      */
     public function getCompletionTokensOrZero(): int
     {
-        return (int) $this->agentTasks()->sum('completion_tokens');
+        // Получаем только корневые задачи (без parent_id)
+        $rootTasks = $this->agentTasks()->whereNull('parent_id')->get();
+        
+        $totalTokens = 0;
+        
+        foreach ($rootTasks as $rootTask) {
+            // Добавляем токены самой корневой задачи
+            $totalTokens += $rootTask->getCompletionTokensOrZero();
+            
+            // Добавляем токены всех дочерних задач рекурсивно
+            $totalTokens += $this->getSubtasksCompletionTokensRecursive($rootTask);
+        }
+        
+        return $totalTokens;
     }
 
     /**
      * Получение общих токенов с fallback на 0
+     * Подсчитывает суммарный расход токенов для всех корневых задач и их дочерних задач
      *
      * @return int
      */
     public function getTotalTokensOrZero(): int
     {
-        return (int) $this->agentTasks()->sum('total_tokens');
+        // Получаем только корневые задачи (без parent_id)
+        $rootTasks = $this->agentTasks()->whereNull('parent_id')->get();
+        
+        $totalTokens = 0;
+        
+        foreach ($rootTasks as $rootTask) {
+            // Добавляем токены самой корневой задачи
+            $totalTokens += $rootTask->getTotalTokensOrZero();
+            
+            // Добавляем токены всех дочерних задач рекурсивно
+            $totalTokens += $this->getSubtasksTokensRecursive($rootTask);
+        }
+        
+        return $totalTokens;
+    }
+    
+    /**
+     * Рекурсивный подсчет токенов для дочерних задач
+     *
+     * @param AgentTask $task
+     * @return int
+     */
+    private function getSubtasksTokensRecursive(AgentTask $task): int
+    {
+        $subtasksTokens = 0;
+        
+        foreach ($task->children as $child) {
+            // Добавляем токены дочерней задачи
+            $subtasksTokens += $child->getTotalTokensOrZero();
+            
+            // Рекурсивно добавляем токены её дочерних задач
+            $subtasksTokens += $this->getSubtasksTokensRecursive($child);
+        }
+        
+        return $subtasksTokens;
+    }
+    
+    /**
+     * Рекурсивный подсчет prompt токенов для дочерних задач
+     *
+     * @param AgentTask $task
+     * @return int
+     */
+    private function getSubtasksPromptTokensRecursive(AgentTask $task): int
+    {
+        $subtasksTokens = 0;
+        
+        foreach ($task->children as $child) {
+            // Добавляем prompt токены дочерней задачи
+            $subtasksTokens += $child->getPromptTokensOrZero();
+            
+            // Рекурсивно добавляем prompt токены её дочерних задач
+            $subtasksTokens += $this->getSubtasksPromptTokensRecursive($child);
+        }
+        
+        return $subtasksTokens;
+    }
+    
+    /**
+     * Рекурсивный подсчет completion токенов для дочерних задач
+     *
+     * @param AgentTask $task
+     * @return int
+     */
+    private function getSubtasksCompletionTokensRecursive(AgentTask $task): int
+    {
+        $subtasksTokens = 0;
+        
+        foreach ($task->children as $child) {
+            // Добавляем completion токены дочерней задачи
+            $subtasksTokens += $child->getCompletionTokensOrZero();
+            
+            // Рекурсивно добавляем completion токены её дочерних задач
+            $subtasksTokens += $this->getSubtasksCompletionTokensRecursive($child);
+        }
+        
+        return $subtasksTokens;
     }
 
     /**
