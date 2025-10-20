@@ -44,14 +44,7 @@ class TechplaneController extends Controller
                     'name' => $techplane->creator->name,
                     'email' => $techplane->creator->email,
                 ] : null,
-                'llm_chat' => $techplane->llmChat ? [
-                    'id' => $techplane->llmChat->id,
-                    'messages' => $techplane->llmChat->messages,
-                    'total_tokens' => $techplane->llmChat->total_tokens,
-                    'context_fill' => $techplane->llmChat->context_fill,
-                    'created_at' => $techplane->llmChat->created_at,
-                    'updated_at' => $techplane->llmChat->updated_at,
-                ] : null,
+                'llm_chat' => $techplane->llmChat ? $techplane->llmChat->toApiArray() : null,
             ],
             'project_id' => $techplane->task->project_id,
         ]);
@@ -95,12 +88,7 @@ class TechplaneController extends Controller
             'status' => $techplane->generationStatus(),
             'content' => $techplane->content,
             'updated_at' => $techplane->updated_at,
-            'chat' => $techplane->llmChat ? [
-                'id' => $techplane->llmChat->id,
-                'messages' => $techplane->llmChat->messages,
-                'total_tokens' => $techplane->llmChat->total_tokens,
-                'context_fill' => $techplane->llmChat->context_fill,
-            ] : null,
+            'chat' => $techplane->llmChat ? $techplane->llmChat->toApiArray() : null,
         ]);
     }
 
@@ -169,12 +157,7 @@ class TechplaneController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Сообщение отправлено и передано агенту на обработку',
-                    'chat' => [
-                        'id' => $techplane->llmChat->id,
-                        'messages' => $techplane->llmChat->messages,
-                        'total_tokens' => $techplane->llmChat->total_tokens,
-                        'context_fill' => $techplane->llmChat->context_fill,
-                    ]
+                    'chat' => $techplane->llmChat?->toApiArray()
                 ]);
             }
 

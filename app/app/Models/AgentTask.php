@@ -18,11 +18,15 @@ class AgentTask extends Model
         'handler_options',
         'project_id',
         'created_by',
+        'parent_id',
         'chat_id',
         'status',
         'agent_uuid',
         'agent_id',
         'agent_model',
+        'prompt_tokens',
+        'completion_tokens',
+        'total_tokens',
         'result_required',
         'context_id',
         'timeout',
@@ -44,7 +48,25 @@ class AgentTask extends Model
             'type' => AgentTaskType::class,
             'reserved_at' => 'datetime',
             'reserved_until' => 'datetime',
+            'prompt_tokens' => 'integer',
+            'completion_tokens' => 'integer',
+            'total_tokens' => 'integer',
         ];
+    }
+
+    public function getPromptTokensOrZero(): int
+    {
+        return $this->prompt_tokens ?? 0;
+    }
+
+    public function getCompletionTokensOrZero(): int
+    {
+        return $this->completion_tokens ?? 0;
+    }
+
+    public function getTotalTokensOrZero(): int
+    {
+        return $this->total_tokens ?? 0;
     }
 
     // Константы статусов для type safety
@@ -80,6 +102,22 @@ class AgentTask extends Model
     public function agent(): BelongsTo
     {
         return $this->belongsTo(Agent::class);
+    }
+
+    /**
+     * Родительская задача (если есть)
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    /**
+     * Дочерние задачи
+     */
+    public function children()
+    {
+        return $this->hasMany(self::class, 'parent_id');
     }
 
     // Status check methods

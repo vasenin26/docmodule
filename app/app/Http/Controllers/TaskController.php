@@ -137,14 +137,7 @@ class TaskController extends Controller implements HasMiddleware
                     'name' => $task->creator->name,
                     'email' => $task->creator->email,
                 ] : null,
-                'llm_chat' => $task->llmChat ? [
-                    'id' => $task->llmChat->id,
-                    'messages' => $task->llmChat->messages,
-                    'total_tokens' => $task->llmChat->total_tokens,
-                    'context_fill' => $task->llmChat->context_fill,
-                    'created_at' => $task->llmChat->created_at,
-                    'updated_at' => $task->llmChat->updated_at,
-                ] : null,
+                'llm_chat' => $task->llmChat ? $task->llmChat->toApiArray() : null,
                 'techplane' => $task->techplane,
                 'attachedPageVersions' => $task->pageVersions->map(function ($pv) {
                     return [
@@ -212,14 +205,7 @@ class TaskController extends Controller implements HasMiddleware
                     'name' => $task->creator->name,
                     'email' => $task->creator->email,
                 ],
-                'llm_chat' => $task->llmChat ? [
-                    'id' => $task->llmChat->id,
-                    'messages' => $task->llmChat->messages,
-                    'total_tokens' => $task->llmChat->total_tokens,
-                    'context_fill' => $task->llmChat->context_fill,
-                    'created_at' => $task->llmChat->created_at,
-                    'updated_at' => $task->llmChat->updated_at,
-                ] : null,
+                'llm_chat' => $task->llmChat ? $task->llmChat->toApiArray() : null,
                 'attachedPageVersions' => $task->pageVersions->map(function ($pv) {
                     return [
                         'id' => $pv->id,
@@ -306,12 +292,7 @@ class TaskController extends Controller implements HasMiddleware
             'status' => $task->generationStatus(),
             'content' => $task->content,
             'updated_at' => $task->updated_at,
-            'chat' => $task->llmChat ? [
-                'id' => $task->llmChat->id,
-                'messages' => $task->llmChat->messages,
-                'total_tokens' => $task->llmChat->total_tokens,
-                'context_fill' => $task->llmChat->context_fill,
-            ] : null,
+            'chat' => $task->llmChat ? $task->llmChat->toApiArray() : null,
         ]);
     }
 
@@ -431,12 +412,7 @@ class TaskController extends Controller implements HasMiddleware
                 return response()->json([
                     'success' => true,
                     'message' => 'Сообщение отправлено и передано агенту на обработку',
-                    'chat' => [
-                        'id' => $task->llmChat->id,
-                        'messages' => $task->llmChat->messages,
-                        'total_tokens' => $task->llmChat->total_tokens,
-                        'context_fill' => $task->llmChat->context_fill,
-                    ]
+                    'chat' => $task->llmChat?->toApiArray()
                 ]);
             }
 

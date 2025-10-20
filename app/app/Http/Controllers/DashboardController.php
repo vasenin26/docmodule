@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LLMChat;
+use App\Models\AgentTask;
 use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,8 +38,8 @@ class DashboardController extends Controller
      */
     public function getTokenStatistics(): array
     {
-        // Получаем агрегированную статистику из базы данных
-        $stats = LLMChat::selectRaw('
+        // Получаем агрегированную статистику из agent_tasks (новое место хранения токенов)
+        $stats = AgentTask::selectRaw('
             COALESCE(SUM(prompt_tokens), 0) as prompt_tokens,
             COALESCE(SUM(completion_tokens), 0) as completion_tokens,
             COALESCE(SUM(total_tokens), 0) as total_tokens

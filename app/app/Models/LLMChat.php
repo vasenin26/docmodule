@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LLMChat extends Model
 {
@@ -17,9 +18,6 @@ class LLMChat extends Model
 
     protected $fillable = [
         'messages',
-        'prompt_tokens',
-        'completion_tokens',
-        'total_tokens',
         'context_fill',
     ];
 
@@ -42,9 +40,8 @@ class LLMChat extends Model
      */
     public function isTokensCalculated(): bool
     {
-        return $this->prompt_tokens !== null ||
-            $this->completion_tokens !== null ||
-            $this->total_tokens !== null;
+        // Токены теперь хранятся в связанных задачах (agent_tasks)
+        return (int) $this->agentTasks()->sum('total_tokens') > 0;
     }
 
     /**
@@ -54,7 +51,7 @@ class LLMChat extends Model
      */
     public function getPromptTokensOrZero(): int
     {
-        return $this->prompt_tokens ?? 0;
+        return (int) $this->agentTasks()->sum('prompt_tokens');
     }
 
     /**
@@ -64,7 +61,7 @@ class LLMChat extends Model
      */
     public function getCompletionTokensOrZero(): int
     {
-        return $this->completion_tokens ?? 0;
+        return (int) $this->agentTasks()->sum('completion_tokens');
     }
 
     /**
@@ -74,7 +71,7 @@ class LLMChat extends Model
      */
     public function getTotalTokensOrZero(): int
     {
-        return $this->total_tokens ?? 0;
+        return (int) $this->agentTasks()->sum('total_tokens');
     }
 
     /**
@@ -111,22 +108,16 @@ class LLMChat extends Model
      */
     public function updateMessages(array $messages, array $tokenStats = []): bool
     {
-        $updateData = ['messages' => $messages];
+        // Токены больше не обновляются в llm_chats; они живут в agent_tasks
+        return $this->update(['messages' => $messages]);
+    }
 
-        // Добавляем статистику токенов если предоставлена
-        if (!empty($tokenStats)) {
-            if (isset($tokenStats['prompt_tokens'])) {
-                $updateData['prompt_tokens'] = $this->getPromptTokensOrZero() + $tokenStats['prompt_tokens'];
-            }
-            if (isset($tokenStats['completion_tokens'])) {
-                $updateData['completion_tokens'] = $this->getCompletionTokensOrZero() + $tokenStats['completion_tokens'];
-            }
-            if (isset($tokenStats['total_tokens'])) {
-                $updateData['total_tokens'] = $this->getTotalTokensOrZero() + $tokenStats['total_tokens'];
-            }
-        }
-
-        return $this->update($updateData);
+    /**
+     * Связанные задачи агента, относящиеся к этому чату
+     */
+    public function agentTasks(): HasMany
+    {
+        return $this->hasMany(AgentTask::class, 'chat_id');
     }
 
     /**
@@ -151,6 +142,21 @@ class LLMChat extends Model
         }
 
         return end($this->messages);
+    }
+
+    /**
+     * Представление данных чата для API/вида
+     */
+    public function toApiArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'messages' => $this->messages ?? [],
+            'total_tokens' => $this->getTotalTokensOrZero(),
+            'context_fill' => $this->context_fill,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+        ];
     }
 
     /**

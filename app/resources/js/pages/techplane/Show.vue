@@ -227,8 +227,9 @@ const checkGenerationStatus = async () => {
             } else {
                 chat.value.messages = data.chat.messages;
             }
-            // Прокидываем context_fill
+            // Прокидываем context_fill и total_tokens
             (chat.value as any).context_fill = (data.chat as any).context_fill ?? (chat.value as any)?.context_fill ?? 0;
+            (chat.value as any).total_tokens = (data.chat as any).total_tokens ?? (chat.value as any)?.total_tokens ?? 0;
         }
 
         // Остановить опрос если генерация завершена

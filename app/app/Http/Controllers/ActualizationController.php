@@ -234,10 +234,7 @@ class ActualizationController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Сообщение отправлено и передано агенту на обработку',
-                    'chat' => [
-                        'id' => $actualization->llmChat->id,
-                        'messages' => $actualization->llmChat->messages
-                    ]
+                    'chat' => $actualization->llmChat?->toApiArray()
                 ]);
             }
 

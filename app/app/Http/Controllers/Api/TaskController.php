@@ -82,7 +82,7 @@ class TaskController extends Controller
             'chat' => [
                 'id' => $task->llmChat->id,
                 'messages' => $task->llmChat->messages ?? [],
-                'total_tokens' => $task->llmChat->total_tokens,
+                'total_tokens' => $task->total_tokens,
                 'context_fill' => $task->llmChat->context_fill,
             ]
         ]);
@@ -133,10 +133,13 @@ class TaskController extends Controller
             $chat = $agentTask->llmChat;
             $chat->update([
                 'messages' => $updateData->chat,
-                'prompt_tokens' => ($chat->prompt_tokens ?? 0) + ($updateData->stats->prompt_tokens ?? 0),
-                'completion_tokens' => ($chat->completion_tokens ?? 0) + ($updateData->stats->completion_tokens ?? 0),
-                'total_tokens' => ($chat->total_tokens ?? 0) + ($updateData->stats->total_tokens ?? 0),
                 'context_fill' => $updateData->context_fill ?? $chat->context_fill,
+            ]);
+
+            $agentTask->update([
+                'prompt_tokens' => $updateData->stats->prompt_tokens ?? $agentTask->prompt_tokens,
+                'completion_tokens' => $updateData->stats->completion_tokens ?? $agentTask->completion_tokens,
+                'total_tokens' => $updateData->stats->total_tokens ?? $agentTask->total_tokens,
             ]);
 
             $handlerFactory->createTaskHandler($agentTask)?->handleResult($updateData->result);
@@ -210,7 +213,7 @@ class TaskController extends Controller
             'chat' => [
                 'id' => $task->llmChat->id,
                 'messages' => $task->llmChat->messages ?? [],
-                'total_tokens' => $task->llmChat->total_tokens,
+                'total_tokens' => $task->total_tokens,
                 'context_fill' => $task->llmChat->context_fill,
             ]
         ]);

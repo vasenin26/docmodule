@@ -389,8 +389,9 @@ const fetchActualizationStatus = async () => {
                 } else {
                     chat.value.messages = data.data.chat.messages;
                 }
-                // Прокидываем context_fill из API
+                // Прокидываем context_fill и total_tokens из API
                 (chat.value as any).context_fill = (data.data.chat as any).context_fill ?? (chat.value as any)?.context_fill ?? 0;
+                (chat.value as any).total_tokens = (data.data.chat as any).total_tokens ?? (chat.value as any)?.total_tokens ?? 0;
             }
             
             // Обновляем содержимое черновика при завершении актуализации
