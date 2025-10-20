@@ -20,6 +20,10 @@ class AgentResultHandlerFactory implements AgentResultHandlerFactoryInterface
     {
         $handlerClass = $task->handler;
 
+        if(empty($handlerClass)) {
+            return null;
+        }
+
         try {
             $implementationClass = class_implements($handlerClass);
         } catch (\Exception $exception) {

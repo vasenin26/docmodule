@@ -42,6 +42,9 @@ interface Props {
             reserved_until?: string | null;
             reserved_seconds?: number | null;
             status: string;
+            prompt_tokens?: number | null;
+            completion_tokens?: number | null;
+            total_tokens?: number | null;
             updated_at: string;
         }>;
         links: Array<{

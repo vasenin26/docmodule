@@ -75,7 +75,7 @@ class TaskController extends Controller
         $task->loadMissing(['project', 'llmChat']);
         return response()->json([
             'id' => $task->id,
-            'type' => $task->type->value,
+            'type' => $task->type,
             'agent_uuid' => $task->agent_uuid,
             'project_id' => $task->project_id,
             'result_required' => $task->result_required,
@@ -206,7 +206,7 @@ class TaskController extends Controller
 
         return response()->json([
             'id' => $task->id,
-            'type' => $task->type->value,
+            'type' => $task->type,
             'agent_uuid' => $task->agent_uuid,
             'project_id' => $task->project_id,
             'result_required' => $task->result_required,

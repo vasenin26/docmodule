@@ -36,6 +36,11 @@ class AgentTaskResource extends JsonResource
 
             'status' => $task->status,
 
+            // Token usage
+            'prompt_tokens' => $task->prompt_tokens,
+            'completion_tokens' => $task->completion_tokens,
+            'total_tokens' => $task->total_tokens,
+
             // Last update
             'updated_at' => $task->updated_at?->toDateTimeString(),
         ];

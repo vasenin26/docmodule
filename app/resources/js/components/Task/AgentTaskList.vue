@@ -35,6 +35,7 @@
                                 <th class="p-4 text-left font-medium">Модель</th>
                                 <th class="p-4 text-left font-medium">Агент назначен</th>
                                 <th class="p-4 text-left font-medium">Резервирование</th>
+                                <th class="p-4 text-left font-medium">Расход</th>
                                 <th class="p-4 text-left font-medium">Статус</th>
                                 <th class="p-4 text-left font-medium">Обновлено</th>
                             </tr>
@@ -54,7 +55,6 @@
                                     >
                                         <ArrowRight class="h-4 w-4" />
                                     </Button>
-                                    <span v-else class="text-muted-foreground">—</span>
                                 </td>
                                 <td class="p-4">{{ task.creator?.name ?? '—' }}</td>
                                 <td class="p-4">
@@ -79,13 +79,17 @@
                                     <div>until: {{ formatDateTime(task.reserved_until) || '—' }}</div>
                                     <div>sec: {{ task.reserved_seconds ?? '—' }}</div>
                                 </td>
+                                <td class="p-4 text-sm text-muted-foreground">
+                                    <div>tx: {{ task.prompt_tokens ?? '—' }}</div>
+                                    <div>rx: {{ task.completion_tokens ?? '—' }}</div>
+                                </td>
                                 <td class="p-4">
                                     <AgentTaskStatusBadge :status="task.status" />
                                 </td>
                                 <td class="p-4 text-sm text-muted-foreground">{{ formatDateTime(task.updated_at) }}</td>
                             </tr>
                             <tr v-if="tasks.data.length === 0">
-                                <td colspan="11" class="p-8 text-center text-muted-foreground">
+                                <td colspan="12" class="p-8 text-center text-muted-foreground">
                                     <div v-if="searchQuery || statusFilter">Задачи не найдены по заданным критериям</div>
                                     <div v-else>Задачи не найдены</div>
                                 </td>
@@ -146,6 +150,9 @@ interface AgentTaskListItem {
     reserved_until?: string | null;
     reserved_seconds?: number | null;
     status: string;
+    prompt_tokens?: number | null;
+    completion_tokens?: number | null;
+    total_tokens?: number | null;
     updated_at: string;
 }
 
