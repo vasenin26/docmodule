@@ -13,6 +13,8 @@ class GenerationModel extends Model
     protected $fillable = [
         'name',
         'context_size',
+        'price_in',
+        'price_out',
     ];
 
     public function projectMappings(): HasMany

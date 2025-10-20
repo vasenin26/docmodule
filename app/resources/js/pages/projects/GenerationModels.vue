@@ -3,18 +3,10 @@
         <template #context-actions>
             <ProjectDropdownMenu :project-id="project.id" :project-title="project.title" />
         </template>
-        <div class="space-y-6">
-            <div class="flex items-center justify-between">
-                <div>
+        <div class="mx-auto max-w-2xl">
+                <div class="mb-2">
                     <Heading :title="'Настройки генерации'" :description="`${project.title} • Сопоставление типов генерации и моделей`" />
                 </div>
-                <Button variant="outline" as-child>
-                    <Link :href="route('projects.show', project.id)">
-                        <Icon name="arrow-left" class="mr-2 h-4 w-4" />
-                        К проекту
-                    </Link>
-                </Button>
-            </div>
 
             <Card>
                 <CardHeader>
@@ -24,18 +16,16 @@
                     </CardDescription>
                 </CardHeader>
                 <CardContent class="space-y-4">
-                    <div v-for="type in generationTypes" :key="type.value" class="grid gap-3 md:grid-cols-3 items-center">
+                    <div v-for="type in generationTypes" :key="type.value" class="grid gap-3 md:grid-cols-4 items-center">
                         <div class="text-sm font-medium">{{ type.label }}</div>
-                        <div class="md:col-span-2 flex items-center gap-2">
-                            <select
-                                v-model="selected[type.value]"
-                                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                            >
-                                <option :value="null">— Не выбрано —</option>
-                                <option v-for="m in models" :key="m.id" :value="m.id">
-                                    {{ m.name }} ({{ m.context_size }})
-                                </option>
-                            </select>
+                        <div class="md:col-span-3 flex items-center gap-2 justify-stretch">
+                            <ModelCombobox
+                             class="flex-grow"
+                                :models="models"
+                                :selected-model-id="selected[type.value]"
+                                placeholder="— Не выбрано —"
+                                @update:selected-model-id="(value) => selected[type.value] = value"
+                            />
                         </div>
                     </div>
                     <div class="flex items-center justify-end pt-4">
@@ -65,10 +55,11 @@ import CardContent from '@/components/ui/card/CardContent.vue';
 import CardDescription from '@/components/ui/card/CardDescription.vue';
 import CardHeader from '@/components/ui/card/CardHeader.vue';
 import CardTitle from '@/components/ui/card/CardTitle.vue';
+import { ModelCombobox } from '@/components/ui/combobox';
 
 interface Project { id: number; title: string }
 interface GenerationType { value: string; label: string }
-interface GenerationModel { id: number; name: string; context_size: number }
+interface GenerationModel { id: number; name: string; context_size: number; price_in: number | null; price_out: number | null }
 interface Mapping { generation_type: string; model_id: number | null }
 
 const props = defineProps<{

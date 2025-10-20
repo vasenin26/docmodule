@@ -20,7 +20,7 @@ class ProjectGenerationModelController extends Controller
             abort(403);
         }
 
-        $models = GenerationModel::query()->orderBy('name')->get(['id','name','context_size']);
+        $models = GenerationModel::query()->orderBy('price_out')->get(['id','name','context_size','price_in','price_out']);
         $types = collect(AgentTaskType::cases())->map(fn($t) => [
             'value' => $t->value,
             'label' => $t->getDescription(),
