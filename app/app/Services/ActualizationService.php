@@ -184,6 +184,7 @@ class ActualizationService
             'chat' => $actualization->llmChat ? [
                 'id' => $actualization->llmChat->id,
                 'messages' => $actualization->llmChat->messages,
+                'total_tokens' => $actualization->llmChat->total_tokens,
                 'context_fill' => $actualization->llmChat->context_fill,
             ] : null,
             'has_active_agent_task' => $hasActiveAgentTask,

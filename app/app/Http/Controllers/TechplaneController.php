@@ -47,6 +47,7 @@ class TechplaneController extends Controller
                 'llm_chat' => $techplane->llmChat ? [
                     'id' => $techplane->llmChat->id,
                     'messages' => $techplane->llmChat->messages,
+                    'total_tokens' => $techplane->llmChat->total_tokens,
                     'context_fill' => $techplane->llmChat->context_fill,
                     'created_at' => $techplane->llmChat->created_at,
                     'updated_at' => $techplane->llmChat->updated_at,
@@ -97,6 +98,7 @@ class TechplaneController extends Controller
             'chat' => $techplane->llmChat ? [
                 'id' => $techplane->llmChat->id,
                 'messages' => $techplane->llmChat->messages,
+                'total_tokens' => $techplane->llmChat->total_tokens,
                 'context_fill' => $techplane->llmChat->context_fill,
             ] : null,
         ]);
@@ -170,6 +172,7 @@ class TechplaneController extends Controller
                     'chat' => [
                         'id' => $techplane->llmChat->id,
                         'messages' => $techplane->llmChat->messages,
+                        'total_tokens' => $techplane->llmChat->total_tokens,
                         'context_fill' => $techplane->llmChat->context_fill,
                     ]
                 ]);

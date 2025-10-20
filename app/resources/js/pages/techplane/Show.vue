@@ -111,6 +111,7 @@
                     :sending="chatSending"
                     :requestCount="requestCount"
                     :contextFill="chat?.context_fill ?? 0"
+                    :totalTokens="chat?.total_tokens ?? 0"
                     @sendMessage="sendMessageToChat"
                     @stop="sendStopGenerating"
                 />

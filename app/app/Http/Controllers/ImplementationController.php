@@ -74,6 +74,7 @@ class ImplementationController extends Controller
             'chat' => $implementation->llmChat ? [
                 'id' => $implementation->llmChat->id,
                 'messages' => $implementation->llmChat->messages,
+                'total_tokens' => $implementation->llmChat->total_tokens,
                 'context_fill' => $implementation->llmChat->context_fill,
             ] : null,
         ]);

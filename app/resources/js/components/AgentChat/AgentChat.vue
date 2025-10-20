@@ -39,7 +39,12 @@
                 <span v-if="sending">Отправка...</span>
                 <span v-else>Отправить</span>
             </Button>
-            <LinearProgress v-if="typeof safeContextFill === 'number'" :value="safeContextFill" :heightPx="5" />
+            <div v-if="typeof safeContextFill === 'number'" class="flex items-center gap-2">
+                <span class="text-xs text-gray-500 whitespace-nowrap">
+                    Расход: {{ formattedTotalTokens }}
+                </span>
+                <LinearProgress :value="safeContextFill" :heightPx="5" class="flex-1" />
+            </div>
         </div>
     </div>
 </template>
@@ -59,6 +64,7 @@ interface Props {
     status?: string;
     requestCount?: number;
     contextFill?: number;
+    totalTokens?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -66,6 +72,7 @@ const props = withDefaults(defineProps<Props>(), {
     loading: false,
     sending: false,
     contextFill: 0,
+    totalTokens: 0,
 });
 
 const emit = defineEmits<{
@@ -153,6 +160,14 @@ const safeContextFill = computed(() => {
     if (v < 0) return 0;
     if (v > 1) return 1;
     return v;
+});
+
+
+// Человекочитаемый формат числа токенов с пробелами как разделителями тысяч
+const formattedTotalTokens = computed(() => {
+    const n = Number(props.totalTokens || 0);
+    if (!isFinite(n)) return '0';
+    return n.toLocaleString('ru-RU');
 });
 
 

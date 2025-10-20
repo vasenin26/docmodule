@@ -140,6 +140,7 @@ class TaskController extends Controller implements HasMiddleware
                 'llm_chat' => $task->llmChat ? [
                     'id' => $task->llmChat->id,
                     'messages' => $task->llmChat->messages,
+                    'total_tokens' => $task->llmChat->total_tokens,
                     'context_fill' => $task->llmChat->context_fill,
                     'created_at' => $task->llmChat->created_at,
                     'updated_at' => $task->llmChat->updated_at,
@@ -214,6 +215,7 @@ class TaskController extends Controller implements HasMiddleware
                 'llm_chat' => $task->llmChat ? [
                     'id' => $task->llmChat->id,
                     'messages' => $task->llmChat->messages,
+                    'total_tokens' => $task->llmChat->total_tokens,
                     'context_fill' => $task->llmChat->context_fill,
                     'created_at' => $task->llmChat->created_at,
                     'updated_at' => $task->llmChat->updated_at,
@@ -307,6 +309,7 @@ class TaskController extends Controller implements HasMiddleware
             'chat' => $task->llmChat ? [
                 'id' => $task->llmChat->id,
                 'messages' => $task->llmChat->messages,
+                'total_tokens' => $task->llmChat->total_tokens,
                 'context_fill' => $task->llmChat->context_fill,
             ] : null,
         ]);
@@ -431,6 +434,7 @@ class TaskController extends Controller implements HasMiddleware
                     'chat' => [
                         'id' => $task->llmChat->id,
                         'messages' => $task->llmChat->messages,
+                        'total_tokens' => $task->llmChat->total_tokens,
                         'context_fill' => $task->llmChat->context_fill,
                     ]
                 ]);

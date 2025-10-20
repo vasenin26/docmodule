@@ -82,6 +82,7 @@ class TaskController extends Controller
             'chat' => [
                 'id' => $task->llmChat->id,
                 'messages' => $task->llmChat->messages ?? [],
+                'total_tokens' => $task->llmChat->total_tokens,
                 'context_fill' => $task->llmChat->context_fill,
             ]
         ]);
@@ -209,6 +210,7 @@ class TaskController extends Controller
             'chat' => [
                 'id' => $task->llmChat->id,
                 'messages' => $task->llmChat->messages ?? [],
+                'total_tokens' => $task->llmChat->total_tokens,
                 'context_fill' => $task->llmChat->context_fill,
             ]
         ]);
