@@ -262,7 +262,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
                 'created_by' => $creatorId,
                 'parent_id' => $parentTaskId,
                 'chat_id' => $chat->id,
-                'status' => AgentTask::STATUS_WAIT,
+                'status' => AgentTask::STATUS_PROCESSING,
                 'result_required' => false,
                 'agent_model' => $preferredModel,
                 'agent_id' => $agentId,
