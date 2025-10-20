@@ -148,7 +148,8 @@ class AgentTask extends Model
     // Scopes для удобных запросов
     public function scopeWaiting($query)
     {
-        return $query->where('status', self::STATUS_WAIT);
+        return $query->where('status', self::STATUS_WAIT)
+            ->whereNull('parent_id');
     }
 
     public function scopeProcessing($query)
@@ -180,6 +181,7 @@ class AgentTask extends Model
     public function scopeAvailableForOrchestrator($query)
     {
         return $query->where('status', self::STATUS_WAIT)
+            ->whereNull('parent_id')
             ->where(function ($q) {
                 $q->where(function ($q1) {
                     // Полностью свободные задачи
@@ -265,18 +267,18 @@ class AgentTask extends Model
                 'total_tokens' => $this->getTotalTokensOrZero(),
             ];
         }
-        
+
         // Для корневых задач суммируем с подзадачами
         $ownTokens = [
             'prompt_tokens' => $this->getPromptTokensOrZero(),
             'completion_tokens' => $this->getCompletionTokensOrZero(),
             'total_tokens' => $this->getTotalTokensOrZero(),
         ];
-        
+
         $subtaskTokens = $this->children()
             ->selectRaw('SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens')
             ->first();
-        
+
         return [
             'prompt_tokens' => $ownTokens['prompt_tokens'] + ($subtaskTokens->prompt_tokens ?? 0),
             'completion_tokens' => $ownTokens['completion_tokens'] + ($subtaskTokens->completion_tokens ?? 0),

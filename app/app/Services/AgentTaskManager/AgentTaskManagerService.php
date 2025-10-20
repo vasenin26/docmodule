@@ -74,6 +74,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
         try {
             // Сначала проверяем, есть ли у агента уже назначенная задача
             $existingTask = AgentTask::where('agent_uuid', $agentId)
+                ->whereNull('parent_id')
                 ->where('status', AgentTask::STATUS_PROCESSING)
                 ->first();
 
@@ -217,7 +218,31 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
 
     public function stopTask(int $id): void
     {
-        AgentTask::where('id', $id)->update(['status' => AgentTask::STATUS_SUCCESS]);
+        $task = AgentTask::findOrFail($id);
+
+        // Останавливаем основную задачу
+        $task->update(['status' => AgentTask::STATUS_SUCCESS]);
+
+        // Останавливаем все подзадачи
+        $subtasks = $task->children()
+            ->where('status', AgentTask::STATUS_PROCESSING)
+            ->get();
+
+        if ($subtasks->isNotEmpty()) {
+            $subtaskIds = $subtasks->pluck('id')->toArray();
+            AgentTask::whereIn('id', $subtaskIds)
+                ->update(['status' => AgentTask::STATUS_SUCCESS]);
+
+            Log::info('Stopped task and its subtasks', [
+                'task_id' => $id,
+                'subtask_ids' => $subtaskIds,
+                'subtasks_count' => count($subtaskIds),
+            ]);
+        } else {
+            Log::info('Stopped task (no active subtasks)', [
+                'task_id' => $id,
+            ]);
+        }
     }
 
     /**
