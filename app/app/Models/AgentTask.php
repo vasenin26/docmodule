@@ -45,7 +45,6 @@ class AgentTask extends Model
         return [
             'handler_options' => 'array',
             'result_required' => 'boolean',
-            'type' => AgentTaskType::class,
             'reserved_at' => 'datetime',
             'reserved_until' => 'datetime',
             'prompt_tokens' => 'integer',
@@ -251,5 +250,69 @@ class AgentTask extends Model
         }
 
         return $stoppedTaskIds;
+    }
+
+    /**
+     * Получить токены с учётом подзадач (только для корневых задач)
+     */
+    public function getTokensWithSubtasks(): array
+    {
+        if ($this->parent_id !== null) {
+            // Для подзадач возвращаем только собственные токены
+            return [
+                'prompt_tokens' => $this->getPromptTokensOrZero(),
+                'completion_tokens' => $this->getCompletionTokensOrZero(),
+                'total_tokens' => $this->getTotalTokensOrZero(),
+            ];
+        }
+        
+        // Для корневых задач суммируем с подзадачами
+        $ownTokens = [
+            'prompt_tokens' => $this->getPromptTokensOrZero(),
+            'completion_tokens' => $this->getCompletionTokensOrZero(),
+            'total_tokens' => $this->getTotalTokensOrZero(),
+        ];
+        
+        $subtaskTokens = $this->children()
+            ->selectRaw('SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens')
+            ->first();
+        
+        return [
+            'prompt_tokens' => $ownTokens['prompt_tokens'] + ($subtaskTokens->prompt_tokens ?? 0),
+            'completion_tokens' => $ownTokens['completion_tokens'] + ($subtaskTokens->completion_tokens ?? 0),
+            'total_tokens' => $ownTokens['total_tokens'] + ($subtaskTokens->total_tokens ?? 0),
+        ];
+    }
+
+    /**
+     * Проверить, является ли задача корневой (без родителя)
+     */
+    public function isRootTask(): bool
+    {
+        return $this->parent_id === null;
+    }
+
+    /**
+     * Получить все подзадачи рекурсивно
+     */
+    public function getAllSubtasks()
+    {
+        return $this->children()->with('children');
+    }
+
+    /**
+     * Scope для корневых задач (без родителя)
+     */
+    public function scopeRootTasks($query)
+    {
+        return $query->whereNull('parent_id');
+    }
+
+    /**
+     * Scope для подзадач (с родителем)
+     */
+    public function scopeSubtasks($query)
+    {
+        return $query->whereNotNull('parent_id');
     }
 }

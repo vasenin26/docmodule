@@ -8,6 +8,7 @@ use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\Agent;
 use App\Models\AgentTask;
+use App\Models\LLMChat;
 use App\Models\Project;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
@@ -229,5 +230,65 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
             ->where('agent_uuid', $agentUuid)
             ->with('llmChat')
             ->first();
+    }
+
+    /**
+     * Создать новую подзадачу для существующей задачи
+     */
+    public function createSubtask(int $parentTaskId, int $agentId, string $agentUuid, string $type): int
+    {
+        try {
+            // Найти родительскую задачу
+            $parent = AgentTask::findOrFail($parentTaskId);
+            $projectId = $parent->project_id;
+            $creatorId = $parent->created_by;
+
+            // Создаём новый пустой чат
+            $chat = LLMChat::create([
+                'messages' => [],
+                'context_fill' => null,
+            ]);
+
+            // Определить preferred model через проект
+            $project = Project::find($projectId);
+            $preferredModel = $project?->getGenerationModelNameForType($type);
+
+            // Создать подзадачу
+            $task = AgentTask::create([
+                'type' => $type,
+                'handler' => null,
+                'handler_options' => [],
+                'project_id' => $projectId,
+                'created_by' => $creatorId,
+                'parent_id' => $parentTaskId,
+                'chat_id' => $chat->id,
+                'status' => AgentTask::STATUS_WAIT,
+                'result_required' => false,
+                'agent_model' => $preferredModel,
+                'agent_id' => $agentId,
+                'agent_uuid' => $agentUuid,
+            ]);
+
+            Log::info('Agent subtask created', [
+                'subtask_id' => $task->id,
+                'parent_id' => $parentTaskId,
+                'agent_id' => $agentId,
+                'agent_uuid' => $agentUuid,
+                'type' => $type,
+                'project_id' => $projectId,
+                'handler' => null,
+            ]);
+
+            return $task->id;
+        } catch (\Exception $e) {
+            Log::error('Failed to create agent subtask', [
+                'parent_task_id' => $parentTaskId,
+                'agent_id' => $agentId,
+                'agent_uuid' => $agentUuid,
+                'type' => $type,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
     }
 }

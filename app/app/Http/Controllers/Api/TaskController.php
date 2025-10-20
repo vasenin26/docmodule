@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Common\DTO\AgentSubtaskCreateDTO;
 use App\Common\DTO\AgentTaskUpdateDTO;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Agent\CreateSubtaskRequest;
 use App\Http\Requests\Agent\GetTaskDetailsRequest;
 use App\Http\Requests\Agent\GetTaskRequest;
 use App\Http\Requests\Agent\UpdateTaskRequest;
@@ -252,6 +254,67 @@ class TaskController extends Controller
             'status' => 'processing',
             'message' => 'Task marked as processing'
         ]);
+    }
+
+    /**
+     * Создать подзадачу для существующей задачи
+     * POST /api/agent/task/{id}/subtasks
+     */
+    public function createSubtask(CreateSubtaskRequest $request, int $id): JsonResponse
+    {
+        $agent = $request->get('agent');
+        $agentUuid = $request->getAgentUuid();
+
+        try {
+            // Авторизационная проверка владения родительской задачей
+            $parent = AgentTask::find($id);
+            
+            if (!$parent) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Parent task not found',
+                ], 404);
+            }
+            
+            if (!$parent->agent_id || $parent->agent_id !== $agent->id || ($parent->agent_uuid && $parent->agent_uuid !== $agentUuid)) {
+                $this->logSuspiciousActivity($request, 'subtask_create_denied', [
+                    'requested_parent_task_id' => $id,
+                    'agent_id' => $agent->id,
+                    'agent_uuid' => $agentUuid,
+                    'reason' => 'parent_task_not_owned',
+                ]);
+                
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Forbidden: parent task not owned by this agent',
+                ], 403);
+            }
+
+            // Создать DTO для создания подзадачи
+            $dto = AgentSubtaskCreateDTO::fromArray(array_merge($request->validated(), ['parent_task_id' => $id]));
+            
+            // Создать подзадачу
+            $subtaskId = $this->taskManager->createSubtask(
+                $dto->parentTaskId,
+                $agent->id,
+                $agentUuid,
+                $dto->type
+            );
+
+            return response()->json(['id' => $subtaskId], 201);
+
+        } catch (\Exception $e) {
+            Log::error('API: Failed to create subtask', [
+                'parent_task_id' => $id,
+                'agent_id' => $agent->id,
+                'agent_uuid' => $agentUuid,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to create subtask'
+            ], 500);
+        }
     }
 
     private function logSuspiciousActivity($request, string $action, array $context = []): void
