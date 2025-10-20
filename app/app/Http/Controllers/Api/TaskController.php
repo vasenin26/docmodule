@@ -81,12 +81,7 @@ class TaskController extends Controller
             'result_required' => $task->result_required,
             'agent_model' => $task->agent_model,
             'context_id' => $task->getContextId(),
-            'chat' => [
-                'id' => $task->llmChat->id,
-                'messages' => $task->llmChat->messages ?? [],
-                'total_tokens' => $task->total_tokens,
-                'context_fill' => $task->llmChat->context_fill,
-            ]
+            'chat' => $task->llmChat?->toApiArray(),
         ]);
     }
 
@@ -268,14 +263,14 @@ class TaskController extends Controller
         try {
             // Авторизационная проверка владения родительской задачей
             $parent = AgentTask::find($id);
-            
+
             if (!$parent) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Parent task not found',
                 ], 404);
             }
-            
+
             if (!$parent->agent_id || $parent->agent_id !== $agent->id || ($parent->agent_uuid && $parent->agent_uuid !== $agentUuid)) {
                 $this->logSuspiciousActivity($request, 'subtask_create_denied', [
                     'requested_parent_task_id' => $id,
@@ -283,7 +278,7 @@ class TaskController extends Controller
                     'agent_uuid' => $agentUuid,
                     'reason' => 'parent_task_not_owned',
                 ]);
-                
+
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Forbidden: parent task not owned by this agent',
@@ -292,7 +287,7 @@ class TaskController extends Controller
 
             // Создать DTO для создания подзадачи
             $dto = AgentSubtaskCreateDTO::fromArray(array_merge($request->validated(), ['parent_task_id' => $id]));
-            
+
             // Создать подзадачу
             $subtaskId = $this->taskManager->createSubtask(
                 $dto->parentTaskId,
