@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { LLMMessage } from '@/types';
 import { computed } from 'vue';
-import TaskListItem from '@/components/AgentChat/messages/tools/TaskListItem.vue';
+import TaskListItem from '@/components/AgentChat/messages/tools/Tasks/TaskListItem.vue';
 import ToolHeaderStatus from '@/components/AgentChat/chunks/ToolHeaderStatus.vue';
 
 const props = defineProps<{

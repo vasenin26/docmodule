@@ -2,7 +2,7 @@
 import type { LLMMessage } from '@/types';
 import { ref, computed } from 'vue';
 import { useTextExpansion } from '@/composables/useTextExpansion';
-import TaskListItem from '@/components/AgentChat/messages/tools/TaskListItem.vue';
+import TaskListItem from '@/components/AgentChat/messages/tools/Tasks/TaskListItem.vue';
 import ToolHeaderStatus from '@/components/AgentChat/chunks/ToolHeaderStatus.vue';
 
 const props = defineProps<{
