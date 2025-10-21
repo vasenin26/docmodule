@@ -13,6 +13,7 @@ class AgentTaskUpdateDTO
         public ?string $result = null,
         public ?float $context_fill = null,
         public ?string $model = null,
+        public ?array $context = null,
     ) {}
 
     /**
@@ -48,6 +49,7 @@ class AgentTaskUpdateDTO
             result: $data['result'] ?? null,
             context_fill: self::clamp(isset($data['context_fill']) ? (is_numeric($data['context_fill']) ? (float)$data['context_fill'] : null) : null),
             model: $data['model'] ?? null,
+            context: $data['context'] ?? null,
         );
     }
 
@@ -112,6 +114,7 @@ class AgentTaskUpdateDTO
             'result_length' => $this->result ? strlen($this->result) : 0,
             'context_fill' => $this->context_fill,
             'model' => $this->model,
+            'has_context' => $this->context !== null,
         ];
     }
 

@@ -125,13 +125,21 @@ class TaskController extends Controller
                 'result' => $request->getResult(),
                 'context_fill' => $request->getContextFill(),
                 'model' => $request->input('model') ?? null,
+                'context' => $request->input('context'),
             ]);
 
             $chat = $agentTask->llmChat;
-            $chat->update([
+            $chatUpdateData = [
                 'messages' => $updateData->chat,
                 'context_fill' => $updateData->context_fill ?? $chat->context_fill,
-            ]);
+            ];
+            
+            // Обновляем context только если он передан
+            if ($updateData->context !== null) {
+                $chatUpdateData['context'] = $updateData->context;
+            }
+            
+            $chat->update($chatUpdateData);
 
             $agentTask->update([
                 'prompt_tokens' => $updateData->stats->prompt_tokens ?? $agentTask->prompt_tokens,
@@ -207,12 +215,7 @@ class TaskController extends Controller
             'result_required' => $task->result_required,
             'agent_model' => $task->agent_model,
             'context_id' => $task->getContextId(),
-            'chat' => [
-                'id' => $task->llmChat->id,
-                'messages' => $task->llmChat->messages ?? [],
-                'total_tokens' => $task->total_tokens,
-                'context_fill' => $task->llmChat->context_fill,
-            ]
+            'chat' => $task->llmChat->toApiArray(),
         ]);
     }
 

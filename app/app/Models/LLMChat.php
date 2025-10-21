@@ -18,6 +18,7 @@ class LLMChat extends Model
 
     protected $fillable = [
         'messages',
+        'context',
         'context_fill',
     ];
 
@@ -25,6 +26,7 @@ class LLMChat extends Model
     {
         return [
             'messages' => 'array',
+            'context' => 'array',
             'context_fill' => 'float',
         ];
     }
@@ -257,6 +259,7 @@ class LLMChat extends Model
         return [
             'id' => $this->id,
             'messages' => $this->messages ?? [],
+            'context' => $this->context ?? [],
             'total_tokens' => $this->getTotalTokensOrZero(),
             'context_fill' => $this->context_fill,
             'created_at' => $this->created_at,

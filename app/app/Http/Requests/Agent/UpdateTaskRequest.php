@@ -72,6 +72,10 @@ class UpdateTaskRequest extends FormRequest
                 'string',
                 'max:255',
             ],
+            'context' => [
+                'nullable',
+                'array',
+            ],
         ];
     }
 
