@@ -21,7 +21,13 @@ function parseResult(): any | undefined {
     if (!raw) return undefined;
     try {
         const parsed = JSON.parse(raw);
-        if (parsed && parsed.payload) return parsed.payload;
+        if (parsed && parsed.payload) {
+            // Объединяем message из корня с payload для полной информации
+            return {
+                ...parsed.payload,
+                message: parsed.message || parsed.payload.message
+            };
+        }
         return parsed;
     } catch {
         return undefined;
@@ -39,6 +45,11 @@ function containerClass(): string {
 
         <template v-if="parseResult()">
             <div class="text-sm space-y-3">
+                <div v-if="!getSuccess()" class="space-y-1">
+                    <div class="text-xs font-medium text-gray-600">Сообщение:</div>
+                    <div class="text-sm bg-gray-100 p-2 rounded border">{{ parseResult()?.message }}</div>
+                </div>
+
                 <div class="space-y-1">
                     <div class="text-xs font-medium text-gray-600">Файл:</div>
                     <div class="text-sm bg-white p-2 rounded border font-mono overflow-x-auto">{{ parseResult()?.file_path }}</div>
@@ -46,38 +57,42 @@ function containerClass(): string {
 
                 <div class="grid grid-cols-2 gap-2 text-xs">
                     <div class="bg-white p-2 rounded border">
-                        <div class="font-medium text-gray-600">Операция:</div>
-                        <div class="text-sm">{{ parseResult()?.operation || 'Не указана' }}</div>
+                        <div class="font-medium text-gray-600">Режим:</div>
+                        <div class="text-sm">{{ parseResult()?.mode || 'Не указан' }}</div>
                     </div>
                     <div class="bg-white p-2 rounded border">
-                        <div class="font-medium text-gray-600">Позиция:</div>
-                        <div class="text-sm">{{ parseResult()?.position || 'Не указана' }}</div>
+                        <div class="font-medium text-gray-600">Изменения внесены:</div>
+                        <div class="text-sm">
+                            <span :class="parseResult()?.changes_made ? 'text-green-600' : 'text-red-600'">
+                                {{ parseResult()?.changes_made ? 'Да' : 'Нет' }}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="space-y-1">
-                    <div class="text-xs font-medium text-gray-600">Искомый текст:</div>
-                    <div class="text-sm font-mono bg-gray-100 p-2 rounded border overflow-x-auto whitespace-pre">
-                        {{ parseResult()?.search_text || 'Не указан' }}
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="bg-white p-2 rounded border">
+                        <div class="font-medium text-gray-600">Файл создан:</div>
+                        <div class="text-sm">
+                            <span :class="parseResult()?.file_created ? 'text-green-600' : 'text-gray-600'">
+                                {{ parseResult()?.file_created ? 'Да' : 'Нет' }}
+                            </span>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="space-y-1">
-                    <div class="flex items-center justify-between">
-                        <div class="text-xs font-medium text-gray-600">Новый текст:</div>
-                        <button @click="toggleTextExpansion('insert-replace-' + props.index)" class="text-xs font-medium text-blue-600 hover:text-blue-800">
-                            {{ isTextExpanded('insert-replace-' + props.index) ? 'Скрыть' : 'Показать' }}
-                        </button>
-                    </div>
-                    <div v-if="isTextExpanded('insert-replace-' + props.index)" class="text-sm font-mono bg-gray-100 p-2 rounded border overflow-auto whitespace-pre">
-                        {{ parseResult()?.new_text || parseResult()?.replacement_text }}
+                    <div class="bg-white p-2 rounded border">
+                        <div class="font-medium text-gray-600">Байт записано:</div>
+                        <div class="text-sm">{{ parseResult()?.bytes_written || 0 }}</div>
                     </div>
                 </div>
 
-                <div v-if="parseResult()?.changes_count !== undefined" class="space-y-1">
-                    <div class="text-xs font-medium text-gray-600">Количество изменений:</div>
-                    <div class="text-sm bg-white p-2 rounded border">
-                        {{ parseResult()?.changes_count }}
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="bg-white p-2 rounded border">
+                        <div class="font-medium text-gray-600">Исходная длина:</div>
+                        <div class="text-sm">{{ parseResult()?.original_length || 0 }} байт</div>
+                    </div>
+                    <div class="bg-white p-2 rounded border">
+                        <div class="font-medium text-gray-600">Новая длина:</div>
+                        <div class="text-sm">{{ parseResult()?.new_length || 0 }} байт</div>
                     </div>
                 </div>
             </div>
