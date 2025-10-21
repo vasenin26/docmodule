@@ -168,6 +168,7 @@
                 :requestCount="requestCount"
                 :contextFill="chat?.context_fill ?? 0"
                 :totalTokens="chat?.total_tokens ?? 0"
+                :context="chat?.context"
                 @sendMessage="sendMessageToChat"
                 @stop="sendStopGenerating"
             />
@@ -297,9 +298,10 @@ const checkGenerationStatus = async () => {
             } else {
                 chat.value.messages = data.chat.messages;
             }
-            // Прокидываем context_fill и total_tokens из API
+            // Прокидываем context_fill, total_tokens и context из API
             (chat.value as any).context_fill = (data.chat as any).context_fill ?? (chat.value as any)?.context_fill ?? 0;
             (chat.value as any).total_tokens = (data.chat as any).total_tokens ?? (chat.value as any)?.total_tokens ?? 0;
+            (chat.value as any).context = (data.chat as any).context ?? (chat.value as any)?.context ?? null;
         }
 
         // Останавливаем опрос если генерация завершена или завершилась с ошибкой

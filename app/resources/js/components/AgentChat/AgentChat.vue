@@ -26,7 +26,7 @@
                 </div>
             </div>
         </div>
-        <TaskProgressInfo :messages="messages" />
+        <TaskProgressInfo :tasks="context?.tasks || []" />
 
         <div class="flex flex-col gap-2 border-t p-4">
             <textarea
@@ -65,6 +65,7 @@ interface Props {
     requestCount?: number;
     contextFill?: number;
     totalTokens?: number;
+    context?: any;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -73,6 +74,7 @@ const props = withDefaults(defineProps<Props>(), {
     sending: false,
     contextFill: 0,
     totalTokens: 0,
+    context: () => ({}),
 });
 
 const emit = defineEmits<{
