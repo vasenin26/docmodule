@@ -1,5 +1,8 @@
 <template>
   <AppLayout :title="`Редактировать агента - ${agent.name}`">
+      <template #context-actions>
+          <ProjectDropdownMenu :project-id="project.id" :project-title="project.title" />
+      </template>
     <div class="mx-auto max-w-2xl">
       <div class="mb-6">
         <Heading>Редактировать агента</Heading>
@@ -224,6 +227,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import AppLayout from '@/layouts/AppLayout.vue'
+import ProjectDropdownMenu from '@/components/ProjectDropdownMenu.vue';
 
 interface Agent {
   id: number
@@ -274,7 +278,7 @@ const copyToken = async () => {
     alert('Токен не найден')
     return
   }
-  
+
   try {
     await navigator.clipboard.writeText(props.agent.token)
     alert('Токен скопирован в буфер обмена')
@@ -287,7 +291,7 @@ const copyToken = async () => {
 const regenerateToken = () => {
   if (confirm('Вы уверены, что хотите регенерировать токен? Старый токен станет недействительным.')) {
     isRegenerating.value = true
-    
+
     router.post(route('projects.agents.regenerate-token', [props.project.id, props.agent.id]), {}, {
       onFinish: () => {
         isRegenerating.value = false
@@ -298,7 +302,7 @@ const regenerateToken = () => {
 
 const startAgent = () => {
   isStarting.value = true
-  
+
   router.post(route('projects.agents.start', [props.project.id, props.agent.id]), {}, {
     onFinish: () => {
       isStarting.value = false
@@ -315,7 +319,7 @@ const copyPublicKey = async () => {
     alert('Публичный ключ не найден')
     return
   }
-  
+
   try {
     await navigator.clipboard.writeText(props.agent.public_key)
     alert('Публичный ключ скопирован в буфер обмена')

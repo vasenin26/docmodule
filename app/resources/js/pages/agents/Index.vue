@@ -1,6 +1,7 @@
 <template>
   <AppLayout :title="`Агенты - ${project.title}`">
     <template #context-actions>
+        <ProjectDropdownMenu :project-id="project.id" :project-title="project.title" />
       <Button as-child>
         <Link :href="route('projects.agents.create', project.id)">
           <Icon name="plus" class="mr-2 h-4 w-4" />
@@ -152,6 +153,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 // import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import AppLayout from '@/layouts/AppLayout.vue'
+import ProjectDropdownMenu from '@/components/ProjectDropdownMenu.vue';
 
 interface Agent {
   id: number

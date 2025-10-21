@@ -19,6 +19,12 @@
                 </Link>
             </DropdownMenuItem>
             <DropdownMenuItem as-child>
+                <Link :href="route('projects.agents.index', projectId)" class="flex items-center">
+                    <Icon name="bot" class="mr-2 h-4 w-4" />
+                    Агенты
+                </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem as-child>
                 <Link :href="route('projects.agent-tasks.index', projectId)" class="flex items-center">
                     <Icon name="play" class="mr-2 h-4 w-4" />
                     Задачи агентов

@@ -12,7 +12,7 @@
                     </Button>
 
                     <!-- Кнопка чата -->
-                    <Button v-if="task.llm_chat" @click="openChatModal" variant="outline" size="sm"> Чат</Button>
+                    <ChatButton :show-condition="!!task.llm_chat" @click="openChatModal" variant="outline" size="sm" />
 
                     <TaskExportButton />
                     <Button v-if="task.pageVersion?.page" as-child variant="outline" size="sm">
@@ -178,6 +178,7 @@
 
 <script setup lang="ts">
 import AgentChat from '@/components/AgentChat/AgentChat.vue';
+import ChatButton from '@/components/ChatButton.vue';
 import DiffViewer from '@/components/DiffViewer.vue';
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
 import TaskExportButton from '@/components/TaskExportButton.vue';

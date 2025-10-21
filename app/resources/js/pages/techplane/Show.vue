@@ -28,7 +28,7 @@
                 <span v-else>Готово</span>
             </Button>
             <!-- Кнопка чата (если есть) -->
-            <Button v-if="chat" @click="openChatModal" variant="default"> Чат </Button>
+            <ChatButton :show-condition="!!chat" @click="openChatModal" variant="default" />
             <!-- Кнопка возврата к задаче -->
             <Button as-child variant="outline">
                 <Link :href="route('tasks.show', techplane.task.id)"> К задаче </Link>
@@ -130,6 +130,7 @@
 
 <script setup lang="ts">
 import AgentChat from '@/components/AgentChat/AgentChat.vue';
+import ChatButton from '@/components/ChatButton.vue';
 import TechplaneExportButton from '@/components/techplane/TechplaneExportButton.vue';
 import Icon from '@/components/Icon.vue';
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';

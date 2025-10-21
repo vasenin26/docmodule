@@ -1,5 +1,8 @@
 <template>
   <AppLayout :title="`Создать агента - ${project.title}`">
+      <template #context-actions>
+          <ProjectDropdownMenu :project-id="project.id" :project-title="project.title" />
+      </template>
     <div class="mx-auto max-w-2xl">
       <div class="mb-6">
         <Heading>Создать агента</Heading>
@@ -54,18 +57,18 @@
                 <span class="text-sm font-medium">После создания агента</span>
               </div>
               <p class="text-sm text-muted-foreground">
-                Агенту будет автоматически сгенерирован JWT токен для аутентификации в API. 
+                Агенту будет автоматически сгенерирован JWT токен для аутентификации в API.
                 Токен будет отображен на странице редактирования агента.
               </p>
             </div>
-            
+
             <div class="rounded-lg bg-muted p-4">
               <div class="flex items-center gap-2 mb-2">
                 <Icon name="shield" class="h-4 w-4 text-green-600" />
                 <span class="text-sm font-medium">Безопасность</span>
               </div>
               <p class="text-sm text-muted-foreground">
-                Токен обеспечивает безопасную аутентификацию агента при работе с API. 
+                Токен обеспечивает безопасную аутентификацию агента при работе с API.
                 Сохраните токен в безопасном месте - он не будет показан повторно.
               </p>
             </div>
@@ -87,6 +90,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import AppLayout from '@/layouts/AppLayout.vue'
+import ProjectDropdownMenu from '@/components/ProjectDropdownMenu.vue';
 
 interface Project {
   id: number

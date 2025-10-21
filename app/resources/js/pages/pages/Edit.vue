@@ -10,14 +10,12 @@
                 >
                     Актуализировать
                 </Button>
-                <Button
-                    v-if="actualization && actualization.llm_chat"
+                <ChatButton
+                    :show-condition="!!(actualization && actualization.llm_chat)"
                     @click="openChatModal"
                     variant="default"
                     size="sm"
-                >
-                    Чат
-                </Button>
+                />
 
                 <Button as-child variant="outline">
                     <Link :href="route('pages.show', pageVersion?.page_id)"> Просмотр</Link>
@@ -175,6 +173,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import ActualizationStatus from '@/components/PageInfo/ActualizationStatus.vue';
 import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import AgentChat from '@/components/AgentChat/AgentChat.vue';
+import ChatButton from '@/components/ChatButton.vue';
 import type { LLMChat } from '@/types';
 import { useActualizationChat } from '@/composables/useActualizationChat';
 import { createApi } from '@/service/api/Api';

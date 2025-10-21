@@ -2,7 +2,7 @@
     <AppLayout :title="`Реализация #${implementation.id}`">
         <template #context-actions>
             <!-- Кнопка чата (если есть) -->
-            <Button v-if="chat" @click="openChatModal" variant="default"> Чат </Button>
+            <ChatButton :show-condition="!!chat" @click="openChatModal" variant="default" />
             <!-- Кнопка возврата к техплану -->
             <Button as-child variant="outline">
                 <Link v-if="implementation.techplane" :href="route('techplanes.show', implementation.techplane.id)"> К техплану </Link>
@@ -88,6 +88,7 @@
 
 <script setup lang="ts">
 import AgentChat from '@/components/AgentChat/AgentChat.vue';
+import ChatButton from '@/components/ChatButton.vue';
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

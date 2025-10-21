@@ -38,12 +38,6 @@ const allNavItems = computed((): NavItem[] => {
             projectRequired: true,
         },
         {
-            title: 'Агенты',
-            href: currentProject ? `/projects/${currentProject.id}/agents` : '/agents',
-            icon: Bot,
-            projectRequired: true,
-        },
-        {
             title: null,
             href: currentProject ? `/projects/${currentProject.id}/edit` : '/projects',
             icon: Settings,

@@ -1,6 +1,7 @@
 <template>
     <AppLayout :title="pageTitle">
         <template #context-actions>
+            <ProjectDropdownMenu :project-id="project.id" :project-title="project.title" />
             <Button v-if="project" as-child variant="outline">
                 <Link :href="route('projects.show', project.id)"> К проекту </Link>
             </Button>
@@ -17,7 +18,7 @@
             :filters="filters"
         />
     </AppLayout>
-    
+
 </template>
 
 <script setup lang="ts">
@@ -27,6 +28,7 @@ import AgentTaskList from '@/components/Task/AgentTaskList.vue';
 import { computed } from 'vue';
 import Button from '@/components/ui/button/Button.vue';
 import { Link } from '@inertiajs/vue3';
+import ProjectDropdownMenu from '@/components/ProjectDropdownMenu.vue';
 
 interface Props {
     tasks: {
