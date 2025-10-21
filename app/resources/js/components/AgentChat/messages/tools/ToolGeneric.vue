@@ -3,6 +3,7 @@ import type { LLMMessage } from '@/types';
 import { useMessageExpansion } from '@/composables/useMessageExpansion';
 import { useTextExpansion } from '@/composables/useTextExpansion';
 import { useToolCallCache } from '@/composables/useToolCallCache';
+import ToolHeaderStatus from '@/components/AgentChat/chunks/ToolHeaderStatus.vue';
 
 const props = defineProps<{
     message: LLMMessage;
@@ -61,30 +62,11 @@ function getToolMessageClass(success: boolean | undefined): string {
         : 'bg-orange-50 border border-orange-200';
 }
 
-function getToolIconClass(success: boolean | undefined): string {
-    return success === false ? 'bg-red-500' : 'bg-orange-500';
-}
-
-function getToolLabelClass(success: boolean | undefined): string {
-    return success === false ? 'text-red-700' : 'text-orange-700';
-}
 </script>
 
 <template>
     <div class="rounded-lg p-3" :class="getToolMessageClass(getToolSuccess())">
-        <div class="mb-2 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <div :class="getToolIconClass(getToolSuccess())" class="flex h-5 w-5 items-center justify-center rounded-full">
-                    <span class="text-xs font-medium text-white">T</span>
-                </div>
-                <span class="text-xs font-medium" :class="getToolLabelClass(getToolSuccess())">
-                    Инструмент {{ getToolName() }}
-                </span>
-                <span class="px-2 py-1 rounded text-xs font-medium" :class="getToolSuccess() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                    {{ getToolSuccess() ? 'Успешно' : 'Ошибка' }}
-                </span>
-            </div>
-        </div>
+        <ToolHeaderStatus :title="'Инструмент ' + getToolName()" :isError="getToolSuccess() === false" />
 
         <div class="text-sm space-y-3">
             <div v-if="getToolArgs()" class="space-y-1">
