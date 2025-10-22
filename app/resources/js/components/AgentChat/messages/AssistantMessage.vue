@@ -49,39 +49,12 @@ function getToolCallArgs(toolCall: { arguments?: string }): string | undefined {
         <!-- Содержимое сообщения -->
         <div class="text-sm">
             <div v-if="!message.message.content" class="text-gray-500 italic">Сообщение без текстового содержимого</div>
-            
+
             <!-- Tool calls -->
             <div v-if="message.message.tool_calls && message.message.tool_calls.length > 0" class="mt-2 mb-2">
                 <div class="flex flex-wrap gap-1 mb-2">
                     <div v-for="toolCall in message.message.tool_calls" :key="toolCall.id" class="tag text-xs text-gray-500 italic">
                         {{ registerFunctionName(toolCall) }}
-                    </div>
-                </div>
-                
-                <!-- Аргументы каждого вызова -->
-                <div v-for="toolCall in message.message.tool_calls" :key="'args-' + toolCall.id" class="mb-2">
-                    <div class="text-xs text-gray-600 font-medium mb-1">
-                        Аргументы функции {{ getToolCallName(toolCall) }}:
-                    </div>
-                    <div v-if="isLongText(getToolCallArgs(toolCall), 100) && !isTextExpanded(toolCall.id)" class="space-y-1">
-                        <div class="text-xs font-mono bg-gray-100 p-2 rounded border overflow-x-auto">
-                            {{ getTruncatedText(getToolCallArgs(toolCall), 100) }}
-                        </div>
-                        <button @click="toggleTextExpansion(toolCall.id)" class="text-xs font-medium text-blue-600 hover:text-blue-800">
-                            Показать полностью
-                        </button>
-                    </div>
-                    <div v-else class="space-y-1">
-                        <div class="text-xs font-mono bg-gray-100 p-2 rounded border overflow-x-auto">
-                            {{ getToolCallArgs(toolCall) }}
-                        </div>
-                        <button
-                            v-if="isLongText(getToolCallArgs(toolCall), 100)"
-                            @click="toggleTextExpansion(toolCall.id)"
-                            class="text-xs font-medium text-blue-600 hover:text-blue-800"
-                        >
-                            Свернуть
-                        </button>
                     </div>
                 </div>
             </div>

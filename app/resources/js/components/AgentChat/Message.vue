@@ -19,60 +19,60 @@ const props = defineProps<{
 </script>
 
 <template>
-    <UserMessage 
-        v-if="message.type === 'user'" 
-        :message="message" 
-        :index="index" 
+    <UserMessage
+        v-if="message.type === 'user'"
+        :message="message"
+        :index="index"
     />
-    <UserTaskMessage 
-        v-else-if="message.type === 'user-task'" 
-        :message="message" 
-        :index="index" 
+    <UserTaskMessage
+        v-else-if="message.type === 'user-task'"
+        :message="message"
+        :index="index"
     />
-    <AssistantMessage 
-        v-else-if="message.type === 'assistant'" 
-        :message="message" 
-        :index="index" 
+    <AssistantMessage
+        v-else-if="message.type === 'assistant'"
+        :message="message"
+        :index="index"
     />
-    <SystemMessage 
-        v-else-if="message.type === 'system'" 
-        :message="message" 
-        :index="index" 
+    <SystemMessage
+        v-else-if="message.type === 'system'"
+        :message="message"
+        :index="index"
     />
-    <ToolMessage 
-        v-else-if="message.type === 'tool'" 
-        :message="message" 
-        :index="index" 
+    <ToolMessage
+        v-else-if="message.type === 'tool'"
+        :message="message"
+        :index="index"
     />
-    <GitFileMessage 
-        v-else-if="message.type === 'git-file'" 
-        :message="message" 
-        :index="index" 
+    <GitFileMessage
+        v-else-if="message.type === 'git-file'"
+        :message="message"
+        :index="index"
     />
-    <PageVersionMessage 
-        v-else-if="message.type === 'page-version'" 
-        :message="message" 
-        :index="index" 
+    <PageVersionMessage
+        v-else-if="message.type === 'page-version'"
+        :message="message"
+        :index="index"
     />
-    <InfoMessage 
-        v-else-if="message.type === 'info'" 
-        :message="message" 
-        :index="index" 
+    <InfoMessage
+        v-else-if="message.type === 'info'"
+        :message="message"
+        :index="index"
     />
-    <ServiceMessage 
-        v-else-if="message.type === 'service'" 
-        :message="message" 
-        :index="index" 
+    <ServiceMessage
+        v-else-if="message.type === 'service' || message.type === 'slice'"
+        :message="message"
+        :index="index"
     />
-    <div 
+    <div
         v-else-if="message.type === 'call-tool'"
         :message="message"
         :index="index"
     />
-    <UnknownMessage 
-        v-else 
-        :message="message" 
-        :index="index" 
+    <UnknownMessage
+        v-else
+        :message="message"
+        :index="index"
     />
 </template>
 
