@@ -40,22 +40,6 @@ function containerClass(): string {
                     <div class="text-xs font-medium text-gray-600">Файл:</div>
                     <div class="text-sm bg-white p-2 rounded border font-mono overflow-x-auto">{{ parseResult()?.file_path }}</div>
                 </div>
-
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="bg-white p-2 rounded border">
-                        <div class="font-medium text-gray-600">Статус:</div>
-                        <div class="text-sm">
-                            <span :class="parseResult()?.status === 'added' ? 'text-green-600' : 'text-orange-600'">
-                                {{ parseResult()?.status || 'Не указан' }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="bg-white p-2 rounded border">
-                        <div class="font-medium text-gray-600">Режим:</div>
-                        <div class="text-sm">{{ parseResult()?.mode || 'Не указан' }}</div>
-                    </div>
-                </div>
-
                 <div v-if="parseResult()?.message" class="space-y-1">
                     <div class="text-xs font-medium text-gray-600">Сообщение git:</div>
                     <div class="text-sm bg-gray-100 p-2 rounded border">
