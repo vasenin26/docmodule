@@ -3,6 +3,7 @@ import type { LLMMessage } from '@/types';
 import { useMessageExpansion } from '@/composables/useMessageExpansion';
 import { useTextExpansion } from '@/composables/useTextExpansion';
 import { useToolCallCache } from '@/composables/useToolCallCache';
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
 
 const props = defineProps<{
     message: LLMMessage;
@@ -62,13 +63,13 @@ function getToolCallArgs(toolCall: { arguments?: string }): string | undefined {
             <!-- Основной контент -->
             <div v-if="message.message.content">
                 <div v-if="isLongMessage(message.message.content) && !expandedMessages.has(props.index)" class="space-y-2">
-                    <div class="overflow-x-hidden break-words whitespace-pre-wrap">{{ getTruncatedContent(message.message.content) }}</div>
+                    <MarkdownRenderer :content="getTruncatedContent(message.message.content)"></MarkdownRenderer>
                     <button @click="toggleMessageExpansion(props.index)" class="text-xs font-medium text-blue-600 hover:text-blue-800">
                         Показать полностью
                     </button>
                 </div>
                 <div v-else class="space-y-2">
-                    <div class="overflow-x-hidden break-words whitespace-pre-wrap">{{ message.message.content }}</div>
+                    <MarkdownRenderer :content="message.message.content"></MarkdownRenderer>
                     <button
                         v-if="isLongMessage(message.message.content)"
                         @click="toggleMessageExpansion(props.index)"
