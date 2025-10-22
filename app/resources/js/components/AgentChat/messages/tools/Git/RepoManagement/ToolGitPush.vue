@@ -57,34 +57,6 @@ function containerClass(): string {
                     <div class="text-sm bg-red-100 p-2 rounded border text-red-800 font-mono">{{ parseResult()?.exception }}</div>
                 </div>
 
-                <div class="space-y-1">
-                    <div class="text-xs font-medium text-gray-600">Удаленный репозиторий:</div>
-                    <div class="text-sm bg-white p-2 rounded border font-mono">{{ parseResult()?.remote || parseResult()?.origin || 'origin' }}</div>
-                </div>
-
-                <div class="space-y-1">
-                    <div class="text-xs font-medium text-gray-600">Ветка:</div>
-                    <div class="text-sm bg-white p-2 rounded border font-mono">{{ parseResult()?.branch || 'main' }}</div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="bg-white p-2 rounded border">
-                        <div class="font-medium text-gray-600">Отправлено коммитов:</div>
-                        <div class="text-sm">{{ parseResult()?.commits_pushed || 0 }}</div>
-                    </div>
-                    <div class="bg-white p-2 rounded border">
-                        <div class="font-medium text-gray-600">Отправлено объектов:</div>
-                        <div class="text-sm">{{ parseResult()?.objects_pushed || 0 }}</div>
-                    </div>
-                </div>
-
-                <div v-if="parseResult()?.message" class="space-y-1">
-                    <div class="text-xs font-medium text-gray-600">Результат:</div>
-                    <div class="text-sm bg-gray-100 p-2 rounded border">
-                        {{ parseResult()?.message }}
-                    </div>
-                </div>
-
                 <div v-if="parseResult()?.url" class="space-y-1">
                     <div class="text-xs font-medium text-gray-600">URL репозитория:</div>
                     <div class="text-sm bg-white p-2 rounded border font-mono break-all">
