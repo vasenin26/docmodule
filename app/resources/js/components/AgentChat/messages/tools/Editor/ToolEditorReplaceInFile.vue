@@ -35,7 +35,7 @@ function containerClass(): string {
 
 <template>
     <div class="rounded-lg p-3" :class="containerClass()">
-        <ToolHeaderStatus :title="'замена в файле'" :isError="!getSuccess()" />
+        <ToolHeaderStatus :title="'Замена в файле'" :isError="!getSuccess()" />
 
         <template v-if="parseResult()">
             <div class="text-sm space-y-3">
@@ -47,10 +47,10 @@ function containerClass(): string {
                 <div class="space-y-1">
                     <div class="text-xs font-medium text-gray-600">Искомый текст:</div>
                     <div class="text-sm font-mono bg-gray-100 p-2 rounded border overflow-x-auto whitespace-pre">
-                        {{ parseResult()?.search_text || parseResult()?.old_text }}
+                        {{ parseResult()?.search_text || parseResult()?.pattern }}
                     </div>
                 </div>
-                
+
                 <div class="space-y-1">
                     <div class="flex items-center justify-between">
                         <div class="text-xs font-medium text-gray-600">Заменяющий текст:</div>
@@ -59,7 +59,7 @@ function containerClass(): string {
                         </button>
                     </div>
                     <div v-if="isTextExpanded('replace-in-file-' + props.index)" class="text-sm font-mono bg-gray-100 p-2 rounded border overflow-auto whitespace-pre">
-                        {{ parseResult()?.replacement_text || parseResult()?.new_text }}
+                        {{ parseResult()?.replacement_text || parseResult()?.replacement }}
                     </div>
                 </div>
 
