@@ -51,7 +51,8 @@ class AgentTaskListTest extends TestCase
                      ->has('reserved_until')
                      ->has('reserved_seconds')
                      ->has('status')
-                     ->has('updated_at');
+                     ->has('updated_at')
+                     ->has('cost');
             })
             ->has('project')
             ->where('project.id', $project->id)
@@ -175,5 +176,3 @@ class AgentTaskListTest extends TestCase
         $response->assertStatus(403);
     }
 }
-
-

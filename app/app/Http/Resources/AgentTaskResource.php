@@ -41,7 +41,8 @@ class AgentTaskResource extends JsonResource
             'completion_tokens' => $task->completion_tokens,
             'total_tokens' => $task->total_tokens,
 
-            // Стоимость не выводится через API
+            // Стоимость (если задана) — переводим из целого RUB*1000 в рубли с плавающей точкой или null
+            'cost' => is_null($task->cost) ? null : (int) $task->cost,
 
             // Last update
             'updated_at' => $task->updated_at?->toDateTimeString(),
