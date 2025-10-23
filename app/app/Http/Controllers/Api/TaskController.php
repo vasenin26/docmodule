@@ -12,6 +12,7 @@ use App\Http\Requests\Agent\UpdateTaskRequest;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Models\AgentTask;
 use App\Services\AgentTaskManager\AgentTaskManagerService;
+use App\Services\Pricing\PricingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,8 @@ use Illuminate\Support\Facades\Log;
 class TaskController extends Controller
 {
     public function __construct(
-        private readonly AgentTaskManagerService $taskManager
+        private readonly AgentTaskManagerService $taskManager,
+        private readonly PricingService $pricingService
     )
     {
     }
@@ -162,6 +164,18 @@ class TaskController extends Controller
             if (!empty($taskUpdates)) {
                 $agentTask->update($taskUpdates);
             }
+
+            // После обновления токенов и (возможно) agent_model — рассчитываем стоимость через PricingService
+            $promptTokens = (int) ($agentTask->prompt_tokens ?? 0);
+            $completionTokens = (int) ($agentTask->completion_tokens ?? 0);
+
+            $calculatedCost = $this->pricingService->calculateCost($agentTask->agent_model, $promptTokens, $completionTokens);
+            if ($calculatedCost !== null) {
+                $agentTask->cost = $calculatedCost;
+            } else {
+                $agentTask->cost = null;
+            }
+            $agentTask->save();
 
             return response()->json([
                 'status' => 'updated',

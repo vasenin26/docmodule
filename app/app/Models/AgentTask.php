@@ -34,7 +34,7 @@ class AgentTask extends Model
         'reserved_until',
         'reserved_seconds',
         // Стоимость задачи, сохраненная в базе
-        // хранится как RUB * 1000 для повышения точности до 0.001
+        // хранится как целое RUB * 1000 для повышения точности до 0.001
         'cost',
     ];
 
@@ -53,7 +53,7 @@ class AgentTask extends Model
             'prompt_tokens' => 'integer',
             'completion_tokens' => 'integer',
             'total_tokens' => 'integer',
-            'cost' => 'decimal:3',
+            'cost' => 'integer',
         ];
     }
 

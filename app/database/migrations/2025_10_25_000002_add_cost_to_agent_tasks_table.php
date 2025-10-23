@@ -9,9 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('agent_tasks', function (Blueprint $table) {
-            // Храним стоимость в единицах RUB * 1000 для повышения точности (3 знака после запятой)
+            // Храним стоимость в виде целого (int) как RUB * 1000 для повышения точности (сохранение в миллибаблях)
             if (!Schema::hasColumn('agent_tasks', 'cost')) {
-                $table->decimal('cost', 20, 3)->nullable()->comment('Стоимость задачи, хранится как RUB * 1000 для точности');
+                $table->unsignedBigInteger('cost')->nullable()->comment('Стоимость задачи, хранится как целое: RUB * 1000');
             }
         });
     }
