@@ -8,38 +8,37 @@ class PricingService
 {
     /**
      * Calculate the cost for a task based on prompt/completion tokens and GenerationModel pricing.
-     * Returns the cost to store (in RUB * 1000) as float, or null if pricing is unavailable.
+     * Returns the cost to store (in RUB * 1000) as int, or null if pricing is unavailable.
      *
      * @param string|null $agentModelName
      * @param int $promptTokens
      * @param int $completionTokens
-     * @return float|null
+     * @return int|null
      */
-    public function calculateCost(?string $agentModelName, int $promptTokens, int $completionTokens): ?float
+    public function calculateCost(?string $agentModelName, int $promptTokens, int $completionTokens): ?int
     {
         if (empty($agentModelName)) {
             return null;
         }
 
-        // Загрузить pricing по имени модели
+        // Load pricing by model name
         $model = GenerationModel::where('name', $agentModelName)->first();
         if (!$model) {
             return null;
         }
 
-        // Цена за 1 000 000 токенов
+        // Price per 1_000_000 tokens
         if (is_null($model->price_in) || is_null($model->price_out)) {
             return null;
         }
 
-        // Расчет по формуле: (prompt_tokens / 1_000_000) * price_in + (completion_tokens / 1_000_000) * price_out
+        // Calculation: (prompt_tokens / 1_000_000) * price_in + (completion_tokens / 1_000_000) * price_out
         $costRaw = ($promptTokens / 1000000.0) * (float)$model->price_in
             + ($completionTokens / 1000000.0) * (float)$model->price_out;
 
-        // Храним как RUB * 1000 для точности
-        $costToStore = (float) round($costRaw * 1000);
+        // Store as integer RUB * 1000 for precision
+        $costToStore = (int) round($costRaw * 1000);
 
-        // Вернуть значение, которое можно напрямую записать в поле cost
         return $costToStore;
     }
 }
