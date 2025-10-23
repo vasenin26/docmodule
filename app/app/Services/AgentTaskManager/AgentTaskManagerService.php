@@ -15,9 +15,20 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\Pricing\PricingService;
 
 class AgentTaskManagerService implements AgentTaskManagerInterface
 {
+    /**
+     * Pricing service used to calculate task costs based on GenerationModel
+     */
+    protected PricingService $pricingService;
+
+    public function __construct(PricingService $pricingService)
+    {
+        $this->pricingService = $pricingService;
+    }
+
     /**
      * Создать новую задачу для агента
      */
