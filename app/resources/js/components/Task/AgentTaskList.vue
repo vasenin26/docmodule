@@ -281,7 +281,7 @@ const formatCost = (cost?: number | null) => {
     try {
         // cost stored in backend as RUB * 1000; convert to RUB float
         const rub = cost / 1000;
-        return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(rub);
+        return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 2 }).format(rub);
     } catch (e) {
         return `${cost} ₽`;
     }
