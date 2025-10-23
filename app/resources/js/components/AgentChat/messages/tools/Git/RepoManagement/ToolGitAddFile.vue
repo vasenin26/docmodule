@@ -36,10 +36,29 @@ function containerClass(): string {
 
         <template v-if="parseResult()">
             <div class="text-sm space-y-3">
-                <div class="space-y-1">
-                    <div class="text-xs font-medium text-gray-600">Файл:</div>
-                    <div class="text-sm bg-white p-2 rounded border font-mono overflow-x-auto">{{ parseResult()?.file_path }}</div>
+                <!-- Добавленные файлы -->
+                <div v-if="parseResult()?.added_files?.length" class="space-y-1">
+                    <div class="text-xs font-medium text-gray-600">Добавленные файлы:</div>
+                    <div class="space-y-1">
+                        <div v-for="file in parseResult()?.added_files" :key="file" 
+                             class="text-sm bg-white p-2 rounded border font-mono overflow-x-auto">
+                            {{ file }}
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Ошибки -->
+                <div v-if="parseResult()?.errors?.length" class="space-y-1">
+                    <div class="text-xs font-medium text-red-600">Ошибки:</div>
+                    <div class="space-y-1">
+                        <div v-for="error in parseResult()?.errors" :key="error" 
+                             class="text-sm bg-red-50 p-2 rounded border text-red-700">
+                            {{ error }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Сообщение git -->
                 <div v-if="parseResult()?.message" class="space-y-1">
                     <div class="text-xs font-medium text-gray-600">Сообщение git:</div>
                     <div class="text-sm bg-gray-100 p-2 rounded border">
