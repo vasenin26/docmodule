@@ -13,12 +13,10 @@ class PricingServiceTest extends TestCase
 
     public function test_basic_cost_calculation()
     {
-        // Arrange: create a GenerationModel with known prices
-        GenerationModel::create([
+        // Arrange: create a GenerationModel with known prices using factory
+        GenerationModel::factory()->priced(0.05, 0.08)->create([
             'name' => 'gpt-test',
             'context_size' => 1000,
-            'price_in' => 0.05,
-            'price_out' => 0.08,
         ]);
 
         $service = new PricingService();
