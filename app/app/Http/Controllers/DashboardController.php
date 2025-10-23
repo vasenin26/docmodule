@@ -42,7 +42,11 @@ class DashboardController extends Controller
     public function getTokenStatistics(): array
     {
         // Получаем агрегированную статистику из agent_tasks (новое место хранения токенов)
-        $stats = AgentTask::selectRaw('\n            COALESCE(SUM(prompt_tokens), 0) as prompt_tokens,\n            COALESCE(SUM(completion_tokens), 0) as completion_tokens,\n            COALESCE(SUM(total_tokens), 0) as total_tokens\n        ')->first();
+        $stats = AgentTask::selectRaw('
+            COALESCE(SUM(prompt_tokens), 0) as prompt_tokens,
+            COALESCE(SUM(completion_tokens), 0) as completion_tokens,
+            COALESCE(SUM(total_tokens), 0) as total_tokens
+        ')->first();
 
         return [
             'prompt_tokens' => (int) $stats->prompt_tokens,
