@@ -33,6 +33,9 @@ class AgentTask extends Model
         'reserved_at',
         'reserved_until',
         'reserved_seconds',
+        // Стоимость задачи, сохраненная в базе
+        // хранится как целое RUB * 1000 для повышения точности до 0.001
+        'cost',
     ];
 
     public function getContextId(): string
@@ -50,6 +53,7 @@ class AgentTask extends Model
             'prompt_tokens' => 'integer',
             'completion_tokens' => 'integer',
             'total_tokens' => 'integer',
+            'cost' => 'integer',
         ];
     }
 

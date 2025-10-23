@@ -41,10 +41,10 @@ class AgentTaskResource extends JsonResource
             'completion_tokens' => $task->completion_tokens,
             'total_tokens' => $task->total_tokens,
 
+            // Стоимость не выводится через API
+
             // Last update
             'updated_at' => $task->updated_at?->toDateTimeString(),
         ];
     }
 }
-
-
