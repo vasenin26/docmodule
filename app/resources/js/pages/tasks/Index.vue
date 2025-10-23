@@ -30,7 +30,7 @@ interface Props {
     // Полное описание находится внутри компонента TaskList
     // и не экспортируется, поэтому дублируем здесь кратко
     // чтобы избежать ошибки типизации
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     tasks: {
         data: Array<{
             id: number;
