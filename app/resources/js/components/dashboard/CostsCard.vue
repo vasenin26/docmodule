@@ -3,7 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Coins } from 'lucide-vue-next';
 
 defineProps<{
-    cost: number;
+    cost: {
+        total: number;
+        daily: number;
+        monthly: number;
+    };
 }>();
 
 const formatCost = (cost: number): string => {
@@ -25,9 +29,22 @@ const formatCost = (cost: number): string => {
             </CardTitle>
         </CardHeader>
         <CardContent>
-            <div class="flex items-center justify-between rounded-lg bg-green-50 p-3 dark:bg-green-950/20">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Общие расходы</span>
-                <span class="text-xl font-bold text-green-600">{{ formatCost(cost) }} ₽</span>
+            <div class="space-y-4">
+                <!-- Расходы за день -->
+                <div class="flex items-center justify-between rounded-lg bg-blue-50 p-3 dark:bg-blue-950/20">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">За день</span>
+                    <span class="text-lg font-bold text-blue-600">{{ formatCost(cost.daily) }} ₽</span>
+                </div>
+                <!-- Расходы за месяц -->
+                <div class="flex items-center justify-between rounded-lg bg-purple-50 p-3 dark:bg-purple-950/20">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">За месяц</span>
+                    <span class="text-lg font-bold text-purple-600">{{ formatCost(cost.monthly) }} ₽</span>
+                </div>
+                <!-- Общие расходы -->
+                <div class="flex items-center justify-between rounded-lg bg-green-50 p-3 dark:bg-green-950/20">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Общие расходы</span>
+                    <span class="text-xl font-bold text-green-600">{{ formatCost(cost.total) }} ₽</span>
+                </div>
             </div>
         </CardContent>
     </Card>

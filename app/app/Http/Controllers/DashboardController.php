@@ -25,7 +25,7 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $costStatistics = $this->getTotalCosts();
+        $costStatistics = $this->getCostStatistics();
 
         return Inertia::render('Dashboard', [
             'token_statistics' => $tokenStatistics,
@@ -36,17 +36,33 @@ class DashboardController extends Controller
 
     /**
      * Получение статистики токенов
+     * Токены считаются только по проектам пользователя
      *
      * @return array
      */
     public function getTokenStatistics(): array
     {
-        // Получаем агрегированную статистику из agent_tasks (новое место хранения токенов)
-        $stats = AgentTask::selectRaw('
-            COALESCE(SUM(prompt_tokens), 0) as prompt_tokens,
-            COALESCE(SUM(completion_tokens), 0) as completion_tokens,
-            COALESCE(SUM(total_tokens), 0) as total_tokens
-        ')->first();
+        $userId = Auth::id();
+        
+        // Получаем ID проектов пользователя
+        $userProjectIds = Project::where('owner_id', $userId)->pluck('id');
+
+        // Если у пользователя нет проектов, возвращаем нули
+        if ($userProjectIds->isEmpty()) {
+            return [
+                'prompt_tokens' => 0,
+                'completion_tokens' => 0,
+                'total_tokens' => 0,
+            ];
+        }
+
+        // Получаем агрегированную статистику из agent_tasks по проектам пользователя
+        $stats = AgentTask::whereIn('project_id', $userProjectIds)
+            ->selectRaw('
+                COALESCE(SUM(prompt_tokens), 0) as prompt_tokens,
+                COALESCE(SUM(completion_tokens), 0) as completion_tokens,
+                COALESCE(SUM(total_tokens), 0) as total_tokens
+            ')->first();
 
         return [
             'prompt_tokens' => (int) $stats->prompt_tokens,
@@ -56,21 +72,52 @@ class DashboardController extends Controller
     }
 
     /**
-     * Получение общей суммы расходов (поле cost в agent_tasks)
+     * Получение статистики расходов (общие, за день, за месяц)
+     * Расходы считаются только по проектам пользователя
      *
-     * @return int
+     * @return array
      */
-    public function getTotalCosts(): int
+    public function getCostStatistics(): array
     {
-        // Используем COALESCE для обработки случая отсутствия записей или NULL
-        $stats = AgentTask::selectRaw('COALESCE(SUM(cost), 0) as total_cost')->first();
+        $userId = Auth::id();
+        $now = now();
+        $startOfDay = $now->copy()->startOfDay();
+        $startOfMonth = $now->copy()->startOfMonth();
 
-        if (!$stats) {
-            return 0;
+        // Получаем ID проектов пользователя
+        $userProjectIds = Project::where('owner_id', $userId)->pluck('id');
+
+        // Если у пользователя нет проектов, возвращаем нули
+        if ($userProjectIds->isEmpty()) {
+            return [
+                'total' => 0,
+                'daily' => 0,
+                'monthly' => 0,
+            ];
         }
 
-        // cost хранится как RUB * 1000 (миллибаблей) - приводим к целому
-        return (int) $stats->total_cost;
+        // Общие расходы по проектам пользователя
+        $totalCost = AgentTask::whereIn('project_id', $userProjectIds)
+            ->selectRaw('COALESCE(SUM(cost), 0) as total_cost')
+            ->first();
+        
+        // Расходы за день по проектам пользователя
+        $dailyCost = AgentTask::whereIn('project_id', $userProjectIds)
+            ->where('updated_at', '>=', $startOfDay)
+            ->selectRaw('COALESCE(SUM(cost), 0) as daily_cost')
+            ->first();
+            
+        // Расходы за месяц по проектам пользователя
+        $monthlyCost = AgentTask::whereIn('project_id', $userProjectIds)
+            ->where('updated_at', '>=', $startOfMonth)
+            ->selectRaw('COALESCE(SUM(cost), 0) as monthly_cost')
+            ->first();
+
+        return [
+            'total' => (int) ($totalCost->total_cost ?? 0),
+            'daily' => (int) ($dailyCost->daily_cost ?? 0),
+            'monthly' => (int) ($monthlyCost->monthly_cost ?? 0),
+        ];
     }
 
     /**
