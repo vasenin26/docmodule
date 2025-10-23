@@ -26,7 +26,7 @@
         
         <div v-if="isListVisible" class="space-y-1 max-h-32 overflow-y-auto">
             <div 
-                v-for="task in tasks" 
+                v-for="task in sortedTasks" 
                 :key="task.id" 
                 class="flex items-center gap-2 text-xs"
             >
@@ -108,5 +108,15 @@ const shouldShow = computed(() => {
     const stats = extractStatsFromTasks();
     if (!stats) return false;
     return stats.total > 0;
+});
+
+// Локально отсортированные задачи: выполненные первыми, внутри групп по id возрастанию
+const sortedTasks = computed(() => {
+    const list = Array.isArray(props.tasks) ? [...props.tasks] : [];
+    return list.sort((a, b) => {
+        if (a.done === b.done) return a.id - b.id;
+        // Выполненные (done=true) должны идти первыми
+        return (b.done ? 1 : 0) - (a.done ? 1 : 0);
+    });
 });
 </script>
