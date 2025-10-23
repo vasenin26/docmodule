@@ -82,6 +82,7 @@
                                 <td class="p-4 text-sm text-muted-foreground">
                                     <div>tx: {{ task.prompt_tokens ?? '—' }}</div>
                                     <div>rx: {{ task.completion_tokens ?? '—' }}</div>
+                                    <div class="cost">cost: {{ formatCost(task.cost) }}</div>
                                 </td>
                                 <td class="p-4">
                                     <AgentTaskStatusBadge :status="task.status" />
@@ -154,6 +155,7 @@ interface AgentTaskListItem {
     completion_tokens?: number | null;
     total_tokens?: number | null;
     updated_at: string;
+    cost?: number | null;
 }
 
 interface Props {
@@ -273,6 +275,15 @@ const navigateToTargetResource = async (taskId: number) => {
         isLoadingTargetResource.value = false;
     }
 };
+
+const formatCost = (cost?: number | null) => {
+    if (cost == null) return '\u2014';
+    try {
+        // cost stored in backend as RUB * 1000; convert to RUB float
+        const rub = cost / 1000;
+        return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(rub);
+    } catch (e) {
+        return `${cost} ₽`;
+    }
+};
 </script>
-
-

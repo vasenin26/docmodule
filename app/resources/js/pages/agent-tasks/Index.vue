@@ -47,6 +47,7 @@ interface Props {
             prompt_tokens?: number | null;
             completion_tokens?: number | null;
             total_tokens?: number | null;
+            cost?: number | null;
             updated_at: string;
         }>;
         links: Array<{
@@ -71,5 +72,3 @@ const pageTitle = computed(() =>
     props.project ? `Задачи агентов: ${props.project.title}` : 'Задачи агентов'
 );
 </script>
-
-

@@ -50,6 +50,31 @@ class AgentTaskResourceTest extends TestCase
         $data2 = $resource2->toArray(request());
         $this->assertFalse($data2['agent_assigned']);
     }
+
+    public function test_cost_is_null_when_task_cost_is_null(): void
+    {
+        $task = AgentTask::factory()->create([
+            'cost' => null,
+        ]);
+
+        $resource = new AgentTaskResource($task);
+        $data = $resource->toArray(request());
+
+        $this->assertArrayHasKey('cost', $data);
+        $this->assertNull($data['cost']);
+    }
+
+    public function test_cost_is_integer_when_task_cost_present(): void
+    {
+        // cost stored as integer RUB * 1000
+        $task = AgentTask::factory()->create([
+            'cost' => 1500000, // represents 1500.000 RUB stored as 1500*1000
+        ]);
+
+        $resource = new AgentTaskResource($task);
+        $data = $resource->toArray(request());
+
+        $this->assertArrayHasKey('cost', $data);
+        $this->assertEquals(1500000, $data['cost']);
+    }
 }
-
-
