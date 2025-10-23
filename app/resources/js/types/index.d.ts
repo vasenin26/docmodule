@@ -239,3 +239,10 @@ export interface TreeNode {
     parent_id?: number | null;
     children?: TreeNode[];
 }
+
+// Добавляем тип свойства cost_statistics для страницы Dashboard
+export interface DashboardPageProps {
+    token_statistics: TokenStatistics;
+    projects: Project[];
+    cost_statistics: number;
+}

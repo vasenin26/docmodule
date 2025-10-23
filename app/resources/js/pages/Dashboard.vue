@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ExpenseCard from '@/components/dashboard/ExpenseCard.vue';
+import CostsCard from '@/components/dashboard/CostsCard.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type TokenStatistics, type Project } from '@/types';
 import { Head } from '@inertiajs/vue3';
@@ -9,6 +10,7 @@ import Projects from '@/components/dashboard/Projects.vue';
 defineProps<{
     token_statistics: TokenStatistics;
     projects: Project[];
+    cost_statistics: number;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -28,10 +30,8 @@ const breadcrumbs: BreadcrumbItem[] = [
                 <!-- Карточка расходов на токены -->
                 <ExpenseCard :statistics="token_statistics" />
 
-                <!-- Placeholder карточки для будущих компонентов -->
-                <div class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                    <PlaceholderPattern />
-                </div>
+                <!-- Costs card showing total cost -->
+                <CostsCard :cost="cost_statistics" />
                 <div class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
                     <PlaceholderPattern />
                 </div>
