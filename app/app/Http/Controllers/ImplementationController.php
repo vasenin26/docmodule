@@ -40,7 +40,13 @@ class ImplementationController extends Controller
                 'actual_status' => $implementation->actualStatus()->value,
                 'created_at' => $implementation->created_at,
                 'updated_at' => $implementation->updated_at,
-                'techplane' => $implementation->techplane,
+                'techplane' => [
+                    'id' => $implementation->techplane->id,
+                    'task' => [
+                        'id' => $implementation->techplane->task->id,
+                        'title' => $implementation->techplane->task->title,
+                    ],
+                ],
                 'creator' => $implementation->creator,
                 'llm_chat' => $implementation->llmChat?->toApiArray(),
             ],

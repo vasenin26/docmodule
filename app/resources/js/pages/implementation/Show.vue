@@ -12,7 +12,7 @@
         <div class="container mx-auto px-4 py-8">
             <!-- Заголовок -->
             <div class="mb-6">
-                <h1 class="text-3xl font-bold text-gray-900">Реализация техплана</h1>
+                <h1 class="text-3xl font-bold text-gray-900">Реализация техплана №{{ implementation.id }}</h1>
                 <p class="mt-2 text-gray-600">Создана: {{ formatDate(implementation.created_at) }} • Автор: {{ implementation.creator?.name }}</p>
             </div>
 
@@ -23,11 +23,16 @@
                 </CardHeader>
                 <CardContent>
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div>
-                            <Label class="text-sm font-medium text-gray-500">ID реализации</Label>
-                            <p class="text-sm">{{ implementation.id }}</p>
+                        <div class="md:col-span-2">
+                            <Label class="text-sm font-medium text-gray-500">Связанная задача</Label>
+                            <p class="text-sm">
+                                <Link v-if="implementation.techplane?.task" :href="route('tasks.show', implementation.techplane.task.id)" class="text-blue-600 hover:underline">
+                                    {{ implementation.techplane.task.title || `Задача #${implementation.techplane.task.id}` }}
+                                </Link>
+                                <span v-else class="text-gray-500">Задача не найдена</span>
+                            </p>
                         </div>
-                        <div>
+                        <div class="md:col-span-2">
                             <Label class="text-sm font-medium text-gray-500">Связанный техплан</Label>
                             <p class="text-sm">
                                 <Link v-if="implementation.techplane" :href="route('techplanes.show', implementation.techplane.id)" class="text-blue-600 hover:underline">
@@ -36,11 +41,7 @@
                                 <span v-else class="text-gray-500">Техплан не найден</span>
                             </p>
                         </div>
-                        <div>
-                            <Label class="text-sm font-medium text-gray-500">Страница</Label>
-                            <p class="text-sm">{{ implementation.techplane?.task?.pageVersion?.page?.title || 'Неизвестно' }}</p>
-                        </div>
-                        <div>
+                        <div class="md:col-span-2">
                             <Label class="text-sm font-medium text-gray-500">Статус</Label>
                             <p class="text-sm">{{ implementation.actual_status }}</p>
                         </div>
@@ -119,14 +120,7 @@ interface ImplementationData {
         id: number;
         task: {
             id: number;
-            pageVersion: {
-                id: number;
-                title: string;
-                page: {
-                    id: number;
-                    title: string;
-                };
-            };
+            title: string | null;
         };
     };
 }
@@ -252,8 +246,6 @@ onMounted(() => {
     console.log('Implementation data:', props.implementation);
     console.log('Techplane data:', props.implementation.techplane);
     console.log('Task data:', props.implementation.techplane?.task);
-    console.log('PageVersion data:', props.implementation.techplane?.task?.pageVersion);
-    console.log('Page data:', props.implementation.techplane?.task?.pageVersion?.page);
     
     // Начинаем опрос если содержимое пустое или статус не завершен
     if (!implementationContent.value || (implementationStatus.value !== 'completed' && implementationStatus.value !== 'failed')) {
