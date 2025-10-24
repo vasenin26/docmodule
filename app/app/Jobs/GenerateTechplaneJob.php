@@ -8,6 +8,7 @@ use App\Factory\PromptProviderFactory;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\Factory\LLMChatFactoryInterface;
+use App\Models\AgentTask;
 use App\Models\Techplane;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -47,6 +48,12 @@ class GenerateTechplaneJob implements ShouldQueue
         LLMChatFactoryInterface $chatFactory,
     ): void {
         $techplane = Techplane::with(['task.pageVersion.page'])->findOrFail($this->techplaneId);
+
+        if($techplane->chat_id !== null) {
+            Log::info('Techplane have active chat', [$techplane->chat_id]);
+            AgentTask::stopGeneratingForChat($techplane->chat_id, $agentTaskManager);
+        }
+
         $task = $techplane->task;
 
         // Устанавливаем статус "generating"

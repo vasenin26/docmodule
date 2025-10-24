@@ -277,10 +277,9 @@ class AgentTask extends Model
      */
     public static function stopGeneratingForChat(int $chatId, AgentTaskManagerInterface $agentTaskManager): array
     {
-        $agentTasks = self::where([
-            'chat_id' => $chatId,
-            'status' => self::STATUS_PROCESSING,
-        ])->get();
+        $agentTasks = self::where('chat_id', $chatId)
+            ->whereIn('status', [self::STATUS_PROCESSING, self::STATUS_WAIT])
+            ->get();
 
         $stoppedTaskIds = [];
 

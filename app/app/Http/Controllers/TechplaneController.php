@@ -55,20 +55,11 @@ class TechplaneController extends Controller
      */
     public function restartGeneration(Techplane $techplane): JsonResponse
     {
-        if ($techplane->generationStatus() === Techplane::STATUS_GENERATING) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Генерация уже выполняется'
-            ], 400);
-        }
+        GenerateTechplaneJob::dispatch($techplane->id);
 
         $techplane->update([
             'generation_status' => Techplane::STATUS_PENDING,
-            'content' => null,
-            'chat_id' => null
         ]);
-
-        GenerateTechplaneJob::dispatch($techplane->id);
 
         return response()->json([
             'success' => true,
