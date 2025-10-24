@@ -6,6 +6,8 @@ enum AgentTaskType: string
 {
     case TEXT = 'text';
     case CODE = 'code';
+    case TASK = 'task';
+    case TECH = 'tech';
     case ACTUALIZATION = 'actualization';
 
     /**
@@ -40,6 +42,8 @@ enum AgentTaskType: string
         return match($this) {
             self::TEXT => 'Текстовая задача',
             self::CODE => 'Задача с кодом',
+            self::TASK => 'Генерация задачи',
+            self::TECH => 'Генерация техплана',
             self::ACTUALIZATION => 'Актуализация статьи документации',
         };
     }

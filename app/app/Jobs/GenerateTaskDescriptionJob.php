@@ -8,6 +8,7 @@ use App\Factory\PromptProviderFactory;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\Factory\LLMChatFactoryInterface;
+use App\Models\AgentTask;
 use App\Models\VersionDiffTask;
 use App\Services\DiffGenerator\DiffGeneratorService;
 use Exception;
@@ -64,6 +65,6 @@ class GenerateTaskDescriptionJob implements ShouldQueue
 
         $handler = $agentResultHandlerFactory->createVersionDiffResultHandler($versionDiffTask);
 
-        $agentTaskManager->createTask($handler, $versionDiffTask->created_by, $versionDiffTask->project_id, $chat->id, true, AgentTaskType::TEXT);
+        $agentTaskManager->createTask($handler, $versionDiffTask->created_by, $versionDiffTask->project_id, $chat->id, true, AgentTaskType::TASK);
     }
 }
