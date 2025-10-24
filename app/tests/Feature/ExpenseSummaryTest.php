@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Common\Enums\AgentTaskType;
 use App\Models\AgentTask;
 use App\Models\Project;
 use App\Models\User;
@@ -120,17 +121,17 @@ class ExpenseSummaryTest extends TestCase
         AgentTask::factory()->create([
             'project_id' => $project->id,
             'cost' => 1000,
-            'type' => 'text'
+            'type' => AgentTaskType::TEXT->value
         ]);
         
         AgentTask::factory()->create([
             'project_id' => $project->id,
             'cost' => 2000,
-            'type' => 'code'
+            'type' => AgentTaskType::CODE->value
         ]);
 
         $response = $this->actingAs($user)
-            ->getJson('/expense-summary/data?period=day&task_type=text');
+            ->getJson('/expense-summary/data?period=day&task_type=' . AgentTaskType::TEXT->value);
 
         $response->assertStatus(200);
         $data = $response->json('data');

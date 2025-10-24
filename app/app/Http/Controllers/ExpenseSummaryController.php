@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Common\Enums\AgentTaskType;
 use App\Http\Requests\ExpenseSummaryRequest;
 use App\Http\Resources\ExpenseSummaryResource;
 use App\Services\ExpenseSummaryService;
@@ -29,13 +30,12 @@ class ExpenseSummaryController extends Controller
         
         return Inertia::render('ExpenseSummary', [
             'projects' => $projects,
-            'taskTypes' => [
-                ['value' => 'text', 'label' => 'Текстовая задача'],
-                ['value' => 'code', 'label' => 'Задача с кодом'],
-                ['value' => 'task', 'label' => 'Генерация задачи'],
-                ['value' => 'tech', 'label' => 'Генерация техплана'],
-                ['value' => 'actualization', 'label' => 'Актуализация'],
-            ]
+            'taskTypes' => collect(AgentTaskType::cases())->map(function (AgentTaskType $type) {
+                return [
+                    'value' => $type->value,
+                    'label' => $type->getDescription()
+                ];
+            })->toArray()
         ]);
     }
 
