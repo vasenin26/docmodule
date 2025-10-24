@@ -16,6 +16,7 @@ use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\AgentTaskController;
 use App\Http\Controllers\PageSearchController;
 use App\Http\Controllers\TechplaneController;
+use App\Http\Controllers\ExpenseSummaryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -210,6 +211,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('projects.agents.regenerate-token');
     Route::post('projects/{project}/agents/{agent}/start', [AgentController::class, 'startAgent'])
         ->name('projects.agents.start');
+    
+    // Сводка расходов
+    Route::get('/expense-summary', [ExpenseSummaryController::class, 'index'])
+        ->name('expense-summary');
+    Route::get('/expense-summary/data', [ExpenseSummaryController::class, 'getData'])
+        ->name('expense-summary.data');
 });
 
 

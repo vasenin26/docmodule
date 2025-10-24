@@ -246,3 +246,30 @@ export interface DashboardPageProps {
     projects: Project[];
     cost_statistics: number;
 }
+
+// Типы для сводки расходов
+export interface ExpenseSummaryData {
+  period: string;
+  total_cost: number;
+  task_count: number;
+  period_label: string;
+  project_name?: string;
+}
+
+export interface ExpenseSummaryFilters {
+  period: 'day' | 'week' | 'month';
+  date_from: string;
+  date_to: string;
+  task_type: string;
+  project_id: number | null;
+}
+
+export interface ExpenseTaskType {
+  value: string;
+  label: string;
+}
+
+export interface ExpenseSummaryResponse {
+  success: boolean;
+  data: ExpenseSummaryData[];
+}

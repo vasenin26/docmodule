@@ -4,10 +4,13 @@ namespace App\Models;
 
 use App\Common\Enums\AgentTaskType;
 use App\Interfaces\AgentTaskManagerInterface;
+use App\Observers\AgentTaskObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[ObservedBy([AgentTaskObserver::class])]
 class AgentTask extends Model
 {
     use HasFactory;

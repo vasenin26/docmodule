@@ -115,3 +115,22 @@ export function createApi(): Api {
     cachedApi = new Api(apiUrl, csrfToken);
     return cachedApi;
 }
+
+let cachedWebApi: Api | null = null;
+
+export function createWebApi(): Api {
+    if (cachedWebApi) {
+        return cachedWebApi;
+    }
+
+    // Get base URL for web routes (without /api prefix)
+    const baseUrl = typeof document !== 'undefined'
+        ? (document.querySelector('meta[name="app-url"]')?.getAttribute('content') || window.location.origin)
+        : 'http://localhost';
+
+    const csrfToken = typeof document !== 'undefined'
+        ? (document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || null)
+        : null;
+    cachedWebApi = new Api(baseUrl, csrfToken);
+    return cachedWebApi;
+}

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Coins } from 'lucide-vue-next';
+import { Coins, ArrowRight } from 'lucide-vue-next';
+import { Link } from '@inertiajs/vue3';
 
 defineProps<{
     cost: {
@@ -23,9 +24,18 @@ const formatCost = (cost: number): string => {
 <template>
     <Card class="h-full">
         <CardHeader>
-            <CardTitle class="flex items-center gap-2">
-                <Coins class="h-5 w-5 text-green-600" />
-                Расходы
+            <CardTitle class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <Coins class="h-5 w-5 text-green-600" />
+                    Расходы
+                </div>
+                <Link 
+                    href="/expense-summary" 
+                    class="flex items-center gap-1 text-sm text-green-600 hover:text-green-800 transition-colors"
+                >
+                    <span>Сводка</span>
+                    <ArrowRight class="h-4 w-4" />
+                </Link>
             </CardTitle>
         </CardHeader>
         <CardContent>
