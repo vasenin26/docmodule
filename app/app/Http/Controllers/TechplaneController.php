@@ -209,6 +209,10 @@ class TechplaneController extends Controller
     {
         $stoppedTasks = AgentTask::stopGeneratingForChat((int)$techplane->chat_id, $agentTaskManager);
 
+        $techplane->update([
+            'generation_status' => Techplane::STATUS_COMPLETED,
+        ]);
+
         return response()->json([
             'techplane_id' => $techplane->id,
             'agent_task_id' => $stoppedTasks,

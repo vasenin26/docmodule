@@ -114,7 +114,7 @@ class TaskController extends Controller
                 ], 404);
             }
 
-            if ($agentTask->status === AgentTask::STATUS_SUCCESS) {
+            if ($agentTask->status !== AgentTask::STATUS_PROCESSING) {
                 return response()->json([
                     'status' => 'stopped',
                     'message' => 'Task was already stopped'

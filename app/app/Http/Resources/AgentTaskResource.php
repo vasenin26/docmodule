@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Common\Enums\AgentTaskStatus;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class AgentTaskResource extends JsonResource
@@ -35,6 +36,9 @@ class AgentTaskResource extends JsonResource
             'reserved_seconds' => $task->reserved_seconds,
 
             'status' => $task->status,
+            'status_description' => $this->getStatusDescription($task->status),
+            'status_is_finished' => $this->isStatusFinished($task->status),
+            'status_is_active' => $this->isStatusActive($task->status),
 
             // Token usage
             'prompt_tokens' => $task->prompt_tokens,
@@ -47,5 +51,32 @@ class AgentTaskResource extends JsonResource
             // Last update
             'updated_at' => $task->updated_at?->toDateTimeString(),
         ];
+    }
+
+    /**
+     * Получить описание статуса
+     */
+    private function getStatusDescription(string $status): string
+    {
+        $statusEnum = AgentTaskStatus::fromValue($status);
+        return $statusEnum ? $statusEnum->getDescription() : $status;
+    }
+
+    /**
+     * Проверить, является ли статус завершенным
+     */
+    private function isStatusFinished(string $status): bool
+    {
+        $statusEnum = AgentTaskStatus::fromValue($status);
+        return $statusEnum ? $statusEnum->isFinished() : false;
+    }
+
+    /**
+     * Проверить, является ли статус активным
+     */
+    private function isStatusActive(string $status): bool
+    {
+        $statusEnum = AgentTaskStatus::fromValue($status);
+        return $statusEnum ? $statusEnum->isActive() : false;
     }
 }

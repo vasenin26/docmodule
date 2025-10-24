@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Common\Enums\AgentTaskType;
+use App\Common\Enums\AgentTaskStatus;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Observers\AgentTaskObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -75,18 +76,22 @@ class AgentTask extends Model
         return $this->total_tokens ?? 0;
     }
 
-    // Константы статусов для type safety
+    // Константы статусов для обратной совместимости (deprecated)
     public const STATUS_WAIT = 'wait';
     public const STATUS_PROCESSING = 'processing';
     public const STATUS_SUCCESS = 'success';
     public const STATUS_FAILED = 'failed';
+    public const STATUS_STOPPED = 'stopped';
+    public const STATUS_ABANDONED = 'abandoned';
 
-    // Массив всех возможных статусов для валидации
+    // Массив всех возможных статусов для валидации (deprecated, используйте AgentTaskStatus::values())
     public const STATUSES = [
         self::STATUS_WAIT,
         self::STATUS_PROCESSING,
         self::STATUS_SUCCESS,
         self::STATUS_FAILED,
+        self::STATUS_STOPPED,
+        self::STATUS_ABANDONED,
     ];
 
     // Eloquent Relations
@@ -147,9 +152,35 @@ class AgentTask extends Model
         return $this->status === self::STATUS_FAILED;
     }
 
+    public function isStopped(): bool
+    {
+        return $this->status === self::STATUS_STOPPED;
+    }
+
+    public function isAbandoned(): bool
+    {
+        return $this->status === self::STATUS_ABANDONED;
+    }
+
     public function isFinished(): bool
     {
-        return $this->isCompleted() || $this->isFailed();
+        return $this->isCompleted() || $this->isFailed() || $this->isStopped() || $this->isAbandoned();
+    }
+
+    /**
+     * Получить статус как enum
+     */
+    public function getStatusEnum(): ?AgentTaskStatus
+    {
+        return AgentTaskStatus::fromValue($this->status);
+    }
+
+    /**
+     * Проверить статус с помощью enum
+     */
+    public function hasStatus(AgentTaskStatus $status): bool
+    {
+        return $this->status === $status->value;
     }
 
     // Scopes для удобных запросов
@@ -255,6 +286,7 @@ class AgentTask extends Model
 
         foreach ($agentTasks as $agentTask) {
             $agentTaskManager->stopTask($agentTask->id);
+
             $stoppedTaskIds[] = $agentTask->id;
         }
 
@@ -323,5 +355,53 @@ class AgentTask extends Model
     public function scopeSubtasks($query)
     {
         return $query->whereNotNull('parent_id');
+    }
+
+    /**
+     * Scope для остановленных задач
+     */
+    public function scopeStopped($query)
+    {
+        return $query->where('status', self::STATUS_STOPPED);
+    }
+
+    /**
+     * Scope для заброшенных задач
+     */
+    public function scopeAbandoned($query)
+    {
+        return $query->where('status', self::STATUS_ABANDONED);
+    }
+
+    /**
+     * Scope для завершенных задач (включая все финальные статусы)
+     */
+    public function scopeFinished($query)
+    {
+        return $query->whereIn('status', [
+            self::STATUS_SUCCESS,
+            self::STATUS_FAILED,
+            self::STATUS_STOPPED,
+            self::STATUS_ABANDONED,
+        ]);
+    }
+
+    /**
+     * Scope для задач с определенным статусом (используя enum)
+     */
+    public function scopeWithStatus($query, AgentTaskStatus $status)
+    {
+        return $query->where('status', $status->value);
+    }
+
+    /**
+     * Scope для активных задач (не завершенных)
+     */
+    public function scopeActive($query)
+    {
+        return $query->whereIn('status', [
+            self::STATUS_WAIT,
+            self::STATUS_PROCESSING,
+        ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Common\Enums\AgentTaskStatus;
 use App\Factory\AgentResultHandlerFactory;
 use App\Http\Resources\AgentTaskResource;
 use App\Models\AgentTask;
@@ -26,7 +27,12 @@ class AgentTaskController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->string('status'));
+            $status = $request->string('status');
+            
+            // Валидируем статус через enum
+            if (AgentTaskStatus::isValid($status)) {
+                $query->where('status', $status);
+            }
         }
 
         if ($request->filled('search')) {
@@ -76,6 +82,16 @@ class AgentTaskController extends Controller
             ],
         ];
 
+        // Получаем все доступные статусы с описаниями
+        $availableStatuses = collect(AgentTaskStatus::cases())->map(function ($status) {
+            return [
+                'value' => $status->value,
+                'label' => $status->getDescription(),
+                'is_finished' => $status->isFinished(),
+                'is_active' => $status->isActive(),
+            ];
+        })->toArray();
+
         return Inertia::render('agent-tasks/Index', [
             'tasks' => $tasks,
             'project' => $project ? ['id' => $project->id, 'title' => $project->title] : null,
@@ -83,6 +99,7 @@ class AgentTaskController extends Controller
                 'search' => $request->input('search'),
                 'status' => $request->input('status'),
             ],
+            'availableStatuses' => $availableStatuses,
         ]);
     }
 

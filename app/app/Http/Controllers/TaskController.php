@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Common\Enums\AgentTaskType;
+use App\Common\Enums\AgentTaskStatus;
 use App\Common\Enums\GenerationStatus;
 use App\Factory\PromptProviderFactory;
 use App\Interfaces\Factory\LLMChatFactoryInterface;
@@ -504,7 +505,9 @@ class TaskController extends Controller implements HasMiddleware
             'agent_task_id' => $stoppedTasks,
             'chat_id' => $task->llmChat->id,
             'message' => 'Задача успешно остановлена',
-            'success' => true
+            'success' => true,
+            'status' => AgentTaskStatus::STOPPED->value,
+            'status_description' => AgentTaskStatus::STOPPED->getDescription()
         ]);
     }
 }

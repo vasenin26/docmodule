@@ -232,7 +232,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
         $task = AgentTask::findOrFail($id);
 
         // Останавливаем основную задачу
-        $task->update(['status' => AgentTask::STATUS_SUCCESS]);
+        $task->update(['status' => AgentTask::STATUS_STOPPED]);
 
         // Останавливаем все подзадачи
         $subtasks = $task->children()
@@ -242,7 +242,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
         if ($subtasks->isNotEmpty()) {
             $subtaskIds = $subtasks->pluck('id')->toArray();
             AgentTask::whereIn('id', $subtaskIds)
-                ->update(['status' => AgentTask::STATUS_SUCCESS]);
+                ->update(['status' => AgentTask::STATUS_STOPPED]);
 
             Log::info('Stopped task and its subtasks', [
                 'task_id' => $id,
