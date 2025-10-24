@@ -38,6 +38,7 @@ class TechplaneController extends Controller
                 'updated_at' => $techplane->updated_at,
                 'task' => [
                     'id' => $techplane->task->id,
+                    'title' => $techplane->task->title,
                 ],
                 'creator' => $techplane->creator ? [
                     'id' => $techplane->creator->id,

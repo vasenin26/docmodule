@@ -52,7 +52,7 @@
         <div class="container mx-auto px-4 py-8">
             <!-- Заголовок -->
             <div class="mb-6">
-                <h1 class="text-3xl font-bold text-gray-900">Технический план</h1>
+                <h1 class="text-3xl font-bold text-gray-900">Технический план #{{ techplane.id }}</h1>
                 <p class="mt-2 text-gray-600">Создан: {{ formatDate(techplane.created_at) }} • Автор: {{ techplane.creator?.name }}</p>
             </div>
 
@@ -63,15 +63,11 @@
                 </CardHeader>
                 <CardContent>
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div>
-                            <Label class="text-sm font-medium text-gray-500">ID техплана</Label>
-                            <p class="text-sm">{{ techplane.id }}</p>
-                        </div>
-                        <div>
+                        <div class="md:col-span-2">
                             <Label class="text-sm font-medium text-gray-500">Связанная задача</Label>
                             <p class="text-sm">
                                 <Link :href="route('tasks.show', techplane.task.id)" class="text-blue-600 hover:underline">
-                                    Задача #{{ techplane.task.id }}
+                                    {{ techplane.task.title || `Задача #${techplane.task.id}` }}
                                 </Link>
                             </p>
                         </div>
@@ -164,6 +160,7 @@ interface TechplaneData {
     llm_chat?: LLMChat | null;
     task: {
         id: number;
+        title: string | null;
     };
 }
 
