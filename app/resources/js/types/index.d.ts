@@ -250,10 +250,10 @@ export interface DashboardPageProps {
 // Типы для сводки расходов
 export interface ExpenseSummaryData {
   period: string;
-  total_cost: number;
-  task_count: number;
-  period_label: string;
-  project_name?: string;
+  totalCost: number;
+  taskCount: number;
+  periodLabel: string;
+  projectName?: string;
 }
 
 export interface ExpenseSummaryFilters {

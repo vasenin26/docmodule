@@ -22,7 +22,7 @@ import {
   CategoryScale,
   LinearScale
 } from 'chart.js';
-import type { ExpenseSummaryData } from '@/types/expenseSummary';
+import type { ExpenseSummaryData } from '@/types';
 import { computed } from 'vue';
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
@@ -40,11 +40,11 @@ const chartData = computed(() => {
   }
 
   return {
-    labels: props.data.map(item => item.period_label),
+        labels: props.data.map(item => item.periodLabel),
     datasets: [
       {
         label: 'Расходы (₽)',
-        data: props.data.map(item => item.total_cost),
+        data: props.data.map(item => item.totalCost),
         backgroundColor: 'rgba(59, 130, 246, 0.5)',
         borderColor: 'rgba(59, 130, 246, 1)',
         borderWidth: 1,
@@ -56,7 +56,6 @@ const chartData = computed(() => {
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  indexAxis: 'y' as const, // Горизонтальный график
   plugins: {
     title: {
       display: true,
@@ -68,14 +67,24 @@ const chartOptions = {
     tooltip: {
       callbacks: {
         label: function(context: any) {
-          return `Расходы: ${context.parsed.x.toFixed(2)} ₽`;
+          return `Расходы: ${context.parsed.y.toFixed(2)} ₽`;
         }
       }
     }
   },
   scales: {
     x: {
+      title: {
+        display: true,
+        text: 'Дата'
+      }
+    },
+    y: {
       beginAtZero: true,
+      title: {
+        display: true,
+        text: 'Стоимость (₽)'
+      },
       ticks: {
         callback: function(value: any) {
           return `${value.toFixed(2)} ₽`;

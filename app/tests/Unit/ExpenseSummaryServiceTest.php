@@ -52,13 +52,13 @@ class ExpenseSummaryServiceTest extends TestCase
         AgentTask::factory()->create([
             'project_id' => $project->id,
             'cost' => 1000,
-            'updated_at' => $today
+            'created_at' => $today
         ]);
         
         AgentTask::factory()->create([
             'project_id' => $project->id,
             'cost' => 2000,
-            'updated_at' => $yesterday
+            'created_at' => $yesterday
         ]);
 
         $result = $this->service->getExpenseSummary(

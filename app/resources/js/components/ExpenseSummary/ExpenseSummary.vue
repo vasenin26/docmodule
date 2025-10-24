@@ -93,11 +93,11 @@ const currentFilters = ref<ExpenseSummaryFilters>({
 const api = createWebApi();
 
 const totalCost = computed(() => {
-  return chartData.value.reduce((sum, item) => sum + item.total_cost, 0);
+  return chartData.value.reduce((sum, item) => sum + (item.totalCost || 0), 0);
 });
 
 const totalTasks = computed(() => {
-  return chartData.value.reduce((sum, item) => sum + item.task_count, 0);
+  return chartData.value.reduce((sum, item) => sum + (item.taskCount || 0), 0);
 });
 
 const averageCost = computed(() => {

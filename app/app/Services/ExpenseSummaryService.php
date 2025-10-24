@@ -35,10 +35,10 @@ class ExpenseSummaryService
 
         // Фильтрация по датам
         if ($dateFrom) {
-            $query->where('updated_at', '>=', $dateFrom);
+            $query->where('created_at', '>=', $dateFrom->startOfDay());
         }
         if ($dateTo) {
-            $query->where('updated_at', '<=', $dateTo);
+            $query->where('created_at', '<=', $dateTo->endOfDay());
         }
 
         // Фильтрация по типу задач
@@ -92,10 +92,10 @@ class ExpenseSummaryService
     private function getGroupByClause(string $period): string
     {
         return match($period) {
-            'day' => 'DATE(updated_at)',
-            'week' => 'DATE_TRUNC(\'week\', updated_at)',
-            'month' => 'DATE_TRUNC(\'month\', updated_at)',
-            default => 'DATE(updated_at)'
+            'day' => 'DATE(created_at)',
+            'week' => 'DATE_TRUNC(\'week\', created_at)',
+            'month' => 'DATE_TRUNC(\'month\', created_at)',
+            default => 'DATE(created_at)'
         };
     }
 
