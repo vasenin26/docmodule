@@ -110,6 +110,7 @@ class TaskController extends Controller implements HasMiddleware
         return Inertia::render('tasks/Show', [
             'task' => [
                 'id' => $task->id,
+                'title' => $task->title,
                 'content' => $task->content,
                 'generation_status' => $task->generationStatus(),
                 'created_at' => $task->created_at,
@@ -173,6 +174,7 @@ class TaskController extends Controller implements HasMiddleware
         return Inertia::render('tasks/Edit', [
             'task' => [
                 'id' => $task->id,
+                'title' => $task->title,
                 'content' => $task->content,
                 'generation_status' => $task->generationStatus(),
                 'created_at' => $task->created_at,
@@ -254,6 +256,11 @@ class TaskController extends Controller implements HasMiddleware
             'generation_status' => GenerationStatus::COMPLETED->value,
         ];
 
+        // Обновляем title если он передан
+        if (isset($validated['title'])) {
+            $updates['title'] = $validated['title'];
+        }
+
         // Применяем изменения привязок, если переданы
         $attachmentsAdd = collect($request->input('attachments_add', []))->map(fn($v) => (int)$v)->all();
         $attachmentsRemove = collect($request->input('attachments_remove', []))->map(fn($v) => (int)$v)->all();
@@ -291,6 +298,7 @@ class TaskController extends Controller implements HasMiddleware
 
         return response()->json([
             'status' => $task->generationStatus(),
+            'title' => $task->title,
             'content' => $task->content,
             'updated_at' => $task->updated_at,
             'chat' => $task->llmChat ? $task->llmChat->toApiArray() : null,
@@ -302,22 +310,6 @@ class TaskController extends Controller implements HasMiddleware
      */
     public function restartGeneration(VersionDiffTask $task): JsonResponse
     {
-        // Проверить, что генерация не выполняется в данный момент
-        if ($task->generation_status === VersionDiffTask::STATUS_GENERATING) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Генерация уже выполняется'
-            ], 400);
-        }
-
-        // Сбросить статус и контент
-        $task->update([
-            'generation_status' => VersionDiffTask::STATUS_PENDING,
-            'content' => null,
-            'llm_chat_id' => null
-        ]);
-
-        // Запустить новую генерацию
         GenerateTaskDescriptionJob::dispatch($task->id);
 
         return response()->json([
@@ -469,6 +461,7 @@ class TaskController extends Controller implements HasMiddleware
 
         $validated = $request->validated();
         $description = $validated['description'] ?? null;
+        $title = $validated['title'] ?? null;
 
         $promptProvider = $promptProviderFactory->createProjectPromptService($project->id);
 
@@ -482,6 +475,7 @@ class TaskController extends Controller implements HasMiddleware
         $task = VersionDiffTask::create([
             'project_id' => $project->id,
             'created_by' => Auth::id(),
+            'title' => $title,
             'content' => $description ?? '',
             // Задача создается вручную, генерация не требуется
             'generation_status' => VersionDiffTask::STATUS_COMPLETED,

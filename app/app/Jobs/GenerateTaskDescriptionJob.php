@@ -53,6 +53,18 @@ class GenerateTaskDescriptionJob implements ShouldQueue
     {
         $versionDiffTask = VersionDiffTask::with(['pageVersion.page', 'pageVersion.previousVersion', 'pageVersions.page'])->findOrFail($this->versionDiffTaskId);
 
+        if($versionDiffTask->chat_id !== null) {
+            Log::info('Techplane have active chat', [$versionDiffTask->chat_id]);
+            AgentTask::stopGeneratingForChat($versionDiffTask->chat_id, $agentTaskManager);
+        }
+
+        // Сбросить статус и контент
+        $versionDiffTask->update([
+            'generation_status' => VersionDiffTask::STATUS_PENDING,
+            'content' => null,
+            'llm_chat_id' => null
+        ]);
+
         $promptProvider = $promptProviderFactory->createProjectPromptService($versionDiffTask->project_id);
 
         $chat = $chatFactory->createChatForGenerateDescription(

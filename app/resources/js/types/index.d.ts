@@ -96,6 +96,7 @@ export interface VersionDiffTask {
     id: number;
     project_id: number;
     page_version_id: number | null;
+    title: string | null;
     content: string | null;
     created_by: number;
     generation_status: string;

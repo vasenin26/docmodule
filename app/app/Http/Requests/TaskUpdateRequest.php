@@ -22,6 +22,7 @@ class TaskUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'title' => ['nullable', 'string', 'max:255'],
             'content' => 'required|string|max:65535',
             'attachments_add' => ['sometimes', 'array'],
             'attachments_add.*' => ['integer', 'exists:page_versions,id'],
@@ -38,6 +39,8 @@ class TaskUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'title.string' => 'Заголовок задачи должен быть текстом',
+            'title.max' => 'Заголовок задачи не может превышать 255 символов',
             'content.required' => 'Описание задачи обязательно для заполнения',
             'content.string' => 'Описание задачи должно быть текстом',
             'content.max' => 'Описание задачи не может превышать 65535 символов',

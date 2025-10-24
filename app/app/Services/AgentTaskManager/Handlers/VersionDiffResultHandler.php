@@ -26,8 +26,17 @@ class VersionDiffResultHandler implements AgentResultHandlerInterface
 
     public function handleResult(?string $result): void
     {
-        if(!empty($result)) {
-            $this->versionDiffTask->content = $result;
+        if (!empty($result)) {
+            $data = json_decode($result, true);
+            $title = $data['title'] ?? null;
+            $content = $data['content'] ?? null;
+
+            if ($title !== null) {
+                $this->versionDiffTask->title = $title;
+            }
+            if ($content !== null) {
+                $this->versionDiffTask->content = $content;
+            }
         }
 
         $this->versionDiffTask->generation_status = VersionDiffTask::STATUS_COMPLETED;
@@ -39,7 +48,7 @@ class VersionDiffResultHandler implements AgentResultHandlerInterface
     {
         $diffId = $task->handler_options[self::OPTION_VERSION_DIFF_TASK_ID] ?? null;
 
-        if(is_null($diffId)) {
+        if (is_null($diffId)) {
             throw new Exception('AgentTask have no required option', 500);
         }
 

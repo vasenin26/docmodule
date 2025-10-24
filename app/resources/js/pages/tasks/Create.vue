@@ -19,13 +19,15 @@
                 <form @submit.prevent="submit" class="space-y-4">
                     <TaskEditor
                         v-model:content="form.description"
+                        v-model:title="form.title"
                         :errors="errors || {}"
                         :submitting="processing"
                         :cancel-href="route('projects.tasks.index', project.id)"
                         submit-text="Создать задачу"
                         submitting-text="Создание..."
-                        title="Создание задачи"
+                        card-title="Создание задачи"
                         description="Введите описание задачи."
+                        :show-title="true"
                     />
                 </form>
             </div>
@@ -50,6 +52,7 @@ const props = defineProps<{
 }>();
 
 const form = useForm({
+    title: '' as string,
     description: '' as string,
 });
 

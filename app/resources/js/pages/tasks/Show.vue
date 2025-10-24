@@ -1,8 +1,8 @@
 <template>
-    <AppLayout :title="task.pageVersion?.page ? `Задача: ${task.pageVersion.page.title}` : 'Задача'">
+    <AppLayout :title="taskTitle || ((props.task as any).pageVersion?.page ? `Задача: ${(props.task as any).pageVersion.page.title}` : 'Задача')">
         <template #context-actions>
                     <Button as-child variant="outline" size="sm">
-                        <Link :href="route('tasks.edit', task.id)">Редактировать задачу</Link>
+                        <Link :href="route('tasks.edit', props.task.id)">Редактировать задачу</Link>
                     </Button>
 
                     <!-- Кнопка перезапуска генерации -->
@@ -26,7 +26,7 @@
                 <!-- Метаинформация -->
                 <Card>
                     <CardHeader>
-                        <CardTitle>Метаинформация</CardTitle>
+                        <CardTitle>{{ taskTitle || 'Задача без заголовка' }}</CardTitle>
                         <CardDescription>Сведения о задаче</CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-2">
@@ -209,6 +209,7 @@ interface TechplaneData {
 
 interface TaskData {
     id: number;
+    title: string | null;
     content: string;
     generation_status: string;
     created_at: string;
@@ -246,8 +247,11 @@ const props = defineProps<{
     task: TaskData & { attachedPageVersions?: { id: number; title: string; version: number | null }[] };
 }>();
 
+// Убираем computed, используем props.task напрямую
+
 // Реактивные переменные для отслеживания статуса
 const generationStatus = ref<string>(props.task.generation_status || 'unknown');
+const taskTitle = ref<string | null>(props.task.title || null);
 const taskContent = ref<string | null>(props.task.content || null);
 const chat = ref<LLMChat | null>(props.task.llm_chat || null);
 const isPolling = ref<boolean>(false);
@@ -284,6 +288,7 @@ const checkGenerationStatus = async () => {
         const data = await request.call(api);
         requestCount.value++;
         generationStatus.value = data.status;
+        taskTitle.value = (data as any).title || null;
         taskContent.value = data.content || null;
 
         // Обновляем сообщения чата, если пришли с сервера
@@ -345,6 +350,7 @@ const restartGeneration = async () => {
         if (data.success) {
             // Сбросить состояние и начать опрос заново
             generationStatus.value = 'pending';
+            taskTitle.value = null;
             taskContent.value = null;
             startPolling();
         }

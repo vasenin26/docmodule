@@ -28,7 +28,7 @@
                         <thead class="border-b bg-muted/50">
                             <tr>
                                 <th class="p-4 text-left font-medium">ID</th>
-                                <th class="p-4 text-left font-medium">Заголовок страницы</th>
+                                <th class="p-4 text-left font-medium">Задача</th>
                                 <th class="p-4 text-left font-medium">Статус</th>
                                 <th class="p-4 text-left font-medium">Дата создания</th>
                                 <th class="p-4 text-left font-medium">Создатель</th>
@@ -42,9 +42,9 @@
                                 </td>
                                 <td class="p-4">
                                     <div class="flex flex-col">
-                                        <span class="font-medium">{{ task.pageVersion?.page?.title ?? 'Без страницы' }}</span>
+                                        <span class="font-medium">{{ task.title || 'Задача без заголовка' }}</span>
                                         <span class="text-sm text-muted-foreground">
-                                            {{ truncateContent(task.pageVersion?.page?.content) }}
+                                            {{ task.pageVersion?.page?.title ? `Страница: ${task.pageVersion.page.title}` : 'Без привязки к странице' }}
                                         </span>
                                     </div>
                                 </td>
@@ -114,10 +114,11 @@ import { ref, computed } from 'vue';
 
 interface TaskListItem {
     id: number;
+    title: string | null;
     generation_status: string;
     created_at: string;
-    pageVersion: {
-        page: {
+    pageVersion?: {
+        page?: {
             title: string;
             content: string;
         };

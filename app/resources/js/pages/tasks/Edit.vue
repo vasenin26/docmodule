@@ -1,5 +1,5 @@
 <template>
-    <AppLayout :title="task.pageVersion?.page ? `Редактирование задачи: ${task.pageVersion.page.title}` : 'Редактирование задачи'">
+    <AppLayout :title="task.title || (task.pageVersion?.page ? `Редактирование задачи: ${task.pageVersion.page.title}` : 'Редактирование задачи')">
         <template #context-actions>
             <Button as-child variant="outline">
                 <Link :href="route('tasks.show', task.id)">Назад к задаче</Link>
@@ -12,9 +12,11 @@
                 <div class="space-y-6 lg:col-span-1">
                     <TaskEditor
                         v-model:content="form.content"
+                        v-model:title="form.title"
                         :errors="errors"
                         :submitting="isSubmitting"
                         :cancel-href="route('tasks.show', task.id)"
+                        :show-title="true"
                     />
                 </div>
 
@@ -107,6 +109,7 @@ import { ref } from 'vue';
 
 interface TaskData {
     id: number;
+    title: string | null;
     content: string;
     generation_status: string;
     created_at: string;
@@ -140,6 +143,7 @@ const props = defineProps<{ task: TaskData & { attachedPageVersions?: { id:numbe
 
 // Форма для редактирования
 const form = useForm({
+    title: props.task.title || '',
     content: props.task.content || '',
     attachments_add: [] as number[],
     attachments_remove: [] as number[],

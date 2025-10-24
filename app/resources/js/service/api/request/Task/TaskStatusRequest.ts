@@ -2,6 +2,7 @@ import { Method, type ApiInterface, type Request } from '@/service/api/Api';
 
 export interface TaskStatusResponse {
     status: string;
+    title?: string | null;
     content?: string | null;
     updated_at?: string;
     chat?: {

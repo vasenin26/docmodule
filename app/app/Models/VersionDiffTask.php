@@ -27,6 +27,7 @@ class VersionDiffTask extends Model implements DisplayableResource
         'project_id',
         'page_id',
         'page_version_id',
+        'title',
         'content',
         'created_by',
         'generation_status',
