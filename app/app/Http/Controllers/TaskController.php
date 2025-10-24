@@ -394,7 +394,7 @@ class TaskController extends Controller implements HasMiddleware
                         $projectId,
                         $chat->id,
                         false,
-                        AgentTaskType::TEXT
+                        AgentTaskType::TASK
                     );
 
                     $task->update([

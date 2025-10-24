@@ -139,7 +139,7 @@ class TechplaneController extends Controller
                         $techplane->task->project_id,
                         $chat->id,
                         false,
-                        AgentTaskType::TEXT
+                        AgentTaskType::TECH
                     );
 
                     $techplane->update([
