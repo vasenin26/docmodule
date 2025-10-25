@@ -33,7 +33,7 @@
                 v-model="input"
                 :disabled="frozenInput"
                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                @keydown.ctrl.enter="sendMessage"
+                @keydown.enter="handleEnter"
             ></textarea>
             <Button @click="sendMessage" :disabled="frozenInput || !input.trim()">
                 <span v-if="sending">Отправка...</span>
@@ -171,6 +171,24 @@ const formattedTotalTokens = computed(() => {
     if (!isFinite(n)) return '0';
     return n.toLocaleString('ru-RU');
 });
+
+// Обработчик нажатия Enter: отправляет сообщение по одному нажатию Enter,
+// а при зажатом Ctrl или Meta (Cmd) позволяет вставлять перенос строки.
+function handleEnter(e: KeyboardEvent) {
+    // Если поле ввода заблокировано — не отправляем
+    if (props.status !== 'completed') {
+        return;
+    }
+
+    // Если зажат Ctrl или Meta (Cmd) — позволяем вставку новой строки
+    if (e.ctrlKey || e.metaKey) {
+        return;
+    }
+
+    // Для обычного Enter — предотвращаем вставку новой строки и отправляем сообщение
+    e.preventDefault();
+    sendMessage();
+}
 
 
 // Пр прокрутка при монтировании
