@@ -30,10 +30,11 @@
 
         <div class="flex flex-col gap-2 border-t p-4">
             <textarea
+                ref="textarea"
                 v-model="input"
                 :disabled="frozenInput"
                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                @keydown.enter="handleEnter"
+                @keydown="handleKeydown"
             ></textarea>
             <Button @click="sendMessage" :disabled="frozenInput || !input.trim()">
                 <span v-if="sending">Отправка...</span>
@@ -83,6 +84,7 @@ const emit = defineEmits<{
 }>();
 
 const input = ref('');
+const textarea = ref<HTMLTextAreaElement | null>(null);
 
 // Отображение точек на основе количества запросов
 const loadingDots = computed(() => {
@@ -172,16 +174,48 @@ const formattedTotalTokens = computed(() => {
     return n.toLocaleString('ru-RU');
 });
 
-// Обработчик нажатия Enter: отправляет сообщение по одному нажатию Enter,
-// а при зажатом Ctrl или Meta (Cmd) позволяет вставлять перенос строки.
-function handleEnter(e: KeyboardEvent) {
+// Обработчик нажатия клавиш: обрабатываем Enter и учитываем модификаторы
+function handleKeydown(e: KeyboardEvent) {
+    // Обрабатываем только Enter
+    if (e.key !== 'Enter') return;
+
     // Если поле ввода заблокировано — не отправляем
     if (props.status !== 'completed') {
         return;
     }
 
-    // Если зажат Ctrl или Meta (Cmd) — позволяем вставку новой строки
+    const el = textarea.value || (e.target as HTMLTextAreaElement);
+
+    // Если зажат Ctrl или Meta (Cmd) — вставляем перенос строки в текущую позицию
     if (e.ctrlKey || e.metaKey) {
+        // Compute selection/caret
+        let start = 0;
+        let end = 0;
+        try {
+            start = el.selectionStart ?? input.value.length;
+            end = el.selectionEnd ?? start;
+        } catch (err) {
+            start = input.value.length;
+            end = start;
+        }
+
+        const before = input.value.slice(0, start);
+        const after = input.value.slice(end);
+        input.value = before + '\n' + after;
+
+        // Restore caret after the inserted newline
+        nextTick(() => {
+            try {
+                const pos = start + 1;
+                el.selectionStart = el.selectionEnd = pos;
+                el.focus();
+            } catch (err) {
+                // ignore errors in test env
+            }
+        });
+
+        // Prevent default to avoid double-insertion in some browsers
+        e.preventDefault();
         return;
     }
 
