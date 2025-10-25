@@ -1,10 +1,10 @@
 <template>
-    <Button 
-        v-if="showCondition" 
-        @click="$emit('click')" 
-        :variant="variant" 
-        :size="size"
-        class="flex items-center gap-2"
+    <Button
+        v-if="showCondition"
+        @click="$emit('click')"
+        :variant="variant"
+        :size="size || 'sm'"
+        class="flex items-center gap-2 bg-purple-600"
     >
         <Bot class="h-4 w-4" />
         Агент

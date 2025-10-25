@@ -5,7 +5,7 @@ import type { Page, PagesData, FlatPage, TreeNode } from '@/types';
 import ProjectPagesSubtree from '@/components/pages/ProjectPagesSubtree.vue';
 import { usePage } from '@inertiajs/vue3';
 import { normalizeToFlat, buildTree, sortTreeByTitle } from '@/utils/normalizeToFlat';
-import { FlatPagesService } from '@/services/FlatPagesService';
+import { FlatPagesService } from '@/service/FlatPagesService';
 
 defineOptions({ name: 'ProjectPagesTree' });
 
@@ -106,7 +106,7 @@ watch(() => pagesFromProps.value, () => {
     text-align: center;
     color: #666;
     font-style: italic;
-    
+
     &.error {
         color: #e74c3c;
     }

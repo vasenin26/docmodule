@@ -12,7 +12,7 @@
                     </Button>
 
                     <!-- Кнопка чата -->
-                    <ChatButton :show-condition="!!task.llm_chat" @click="openChatModal" variant="outline" size="sm" />
+                    <ChatButton :show-condition="!!task.llm_chat" @click="openChatModal"/>
 
                     <TaskExportButton />
                     <Button v-if="task.pageVersion?.page" as-child variant="outline" size="sm">
