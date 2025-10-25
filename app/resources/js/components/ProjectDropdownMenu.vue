@@ -36,7 +36,6 @@
                     Настройки генерации
                 </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
         </DropdownMenuContent>
     </DropdownMenu>
 </template>
