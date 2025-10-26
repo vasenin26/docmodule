@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\ExpenseSummaryController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\ProjectController;
 
 Route::get('health', function () {
     return 'ok';
@@ -73,3 +74,8 @@ Route::prefix('orchestrator')
         Route::put('projects/{projectId}/key', [\App\Http\Controllers\Api\OrchestratorController::class, 'updateProjectKey'])
             ->name('projects.key.update');
     });
+
+// Project API - generation models for project (agent access)
+Route::get('/project/{project}/generation-models', [ProjectController::class, 'generationModels'])
+    ->name('api.project.generation-models')
+    ->middleware('agent.jwt');

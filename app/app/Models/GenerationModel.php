@@ -22,5 +22,3 @@ class GenerationModel extends Model
         return $this->hasMany(ProjectGenerationModel::class, 'model_id');
     }
 }
-
-
