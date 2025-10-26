@@ -5,19 +5,18 @@
 ## Текущее содержимое страницы
 {{current_content}}
 
-{{#attached_files}}
-## Прикрепленные файлы для анализа
-{{#attached_files}}
-- {{.}}
-{{/attached_files}}
-{{/attached_files}}
 
-{{#repositories}}
-## Доступные репозитории
+## Прикрепленные файлы
+При создании техплана учти следующие файлы: {{^attached_files}} нет прикреплённых файлов {{/attached_files}}
+{{#attached_files}}
+- {{.}}
+  {{/attached_files}}
+
+## Репозитории проекта
+{{^attached_files}} нет доступных репозиториев {{/attached_files}}
 {{#repositories}}
 - {{.}}
-{{/repositories}}
-{{/repositories}}
+  {{/repositories}}
 
 ## Задача
 

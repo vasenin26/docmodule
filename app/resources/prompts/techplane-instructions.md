@@ -5,19 +5,16 @@
 ## Описание задачи
 {{task_description}}
 
-{{#attached_files}}
 ## Прикрепленные файлы
-При создании техплана учти следующие файлы:
+При создании техплана учти следующие файлы: {{^attached_files}} нет прикреплённых файлов {{/attached_files}}
 {{#attached_files}}
 - {{.}}
-{{/attached_files}}
 {{/attached_files}}
 
-{{#repositories}}
 ## Репозитории проекта
+{{^attached_files}} нет доступных репозиториев {{/attached_files}}
 {{#repositories}}
 - {{.}}
-{{/repositories}}
 {{/repositories}}
 
 ## Требования к техплану
