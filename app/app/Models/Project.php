@@ -98,4 +98,27 @@ class Project extends Model
         // Пользователь может получить доступ к проекту, если он является владельцем
         return $this->owner_id === $user->id;
     }
+
+    /**
+     * Проверяет, может ли агент получить доступ к проекту
+     *
+     * @param Agent|null $agent
+     * @return bool
+     */
+    public function canAgentAccess(?Agent $agent): bool
+    {
+        // Нет агента в запросе — доступ запрещён
+        if (is_null($agent)) {
+            return false;
+        }
+
+        // Если агент имеет глобальный доступ — разрешаем
+        if ($agent->hasCrossProjectAccess()) {
+            return true;
+        }
+
+        // Иначе доступ только к своему проекту
+        return $agent->project_id === $this->id;
+    }
+
 }
