@@ -40,6 +40,11 @@ class ExpenseSummaryRequest extends FormRequest
                 'nullable',
                 'integer',
                 'exists:projects,id'
+            ],
+            // New: model parameter to filter by agent_model
+            'model' => [
+                'nullable',
+                'string'
             ]
         ];
     }

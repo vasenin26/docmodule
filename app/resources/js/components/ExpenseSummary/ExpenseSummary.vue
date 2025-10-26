@@ -4,6 +4,7 @@
     <ExpenseSummaryFiltersComponent
       :projects="projects"
       :task-types="taskTypes"
+      :models="models"
       :loading="loading"
       @filters-changed="handleFiltersChanged"
     />
@@ -61,6 +62,7 @@ import type { ExpenseSummaryData, ExpenseSummaryFilters, ExpenseTaskType, Projec
 interface Props {
   projects: Project[];
   taskTypes: ExpenseTaskType[];
+  models?: string[];
 }
 
 const props = defineProps<Props>();

@@ -27,6 +27,9 @@ class ExpenseSummaryController extends Controller
         
         // Получаем проекты пользователя для фильтра
         $projects = $this->expenseSummaryService->getUserProjects($userId);
+
+        // Получаем список используемых моделей агентов для проектов пользователя
+        $models = $this->expenseSummaryService->getUsedModels($userId);
         
         return Inertia::render('ExpenseSummary', [
             'projects' => $projects,
@@ -35,7 +38,8 @@ class ExpenseSummaryController extends Controller
                     'value' => $type->value,
                     'label' => $type->getDescription()
                 ];
-            })->toArray()
+            })->toArray(),
+            'models' => $models
         ]);
     }
 
@@ -46,6 +50,9 @@ class ExpenseSummaryController extends Controller
     {
         $userId = Auth::id();
         
+        // Read optional model filter from validated data (client sends 'model' param)
+        $model = $request->validated('model');
+
         $data = $this->expenseSummaryService->getExpenseSummary(
             userId: $userId,
             period: $request->validated('period', 'day'),
@@ -54,7 +61,8 @@ class ExpenseSummaryController extends Controller
             dateTo: $request->validated('date_to') ? 
                 \Carbon\Carbon::parse($request->validated('date_to')) : null,
             taskType: $request->validated('task_type'),
-            projectId: $request->validated('project_id')
+            projectId: $request->validated('project_id'),
+            modelValue: $model
         );
 
         return response()->json([

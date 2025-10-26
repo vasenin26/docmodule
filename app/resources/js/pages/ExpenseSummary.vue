@@ -11,6 +11,7 @@
       <ExpenseSummary
         :projects="projects"
         :task-types="taskTypes"
+        :models="models"
       />
     </div>
   </AppLayout>
@@ -24,6 +25,7 @@ import type { BreadcrumbItem, Project, ExpenseTaskType } from '@/types';
 interface Props {
   projects: Project[];
   taskTypes: ExpenseTaskType[];
+  models: string[];
 }
 
 defineProps<Props>();
