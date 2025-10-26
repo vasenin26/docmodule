@@ -21,7 +21,8 @@ class ExpenseSummaryService
         ?Carbon $dateFrom = null,
         ?Carbon $dateTo = null,
         ?string $taskType = null,
-        ?int $projectId = null
+        ?int $projectId = null,
+        ?string $modelValue = null
     ): array {
         // Получаем ID проектов пользователя
         $userProjectIds = $this->getUserProjectIds($userId);
@@ -49,6 +50,11 @@ class ExpenseSummaryService
         // Фильтрация по конкретному проекту
         if ($projectId && in_array($projectId, $userProjectIds)) {
             $query->where('project_id', $projectId);
+        }
+
+        // Фильтрация по модели агента (agent_model)
+        if ($modelValue !== null && $modelValue !== '') {
+            $query->where('agent_model', $modelValue);
         }
 
         // Группировка по периодам
@@ -129,5 +135,25 @@ class ExpenseSummaryService
             'month' => $date->format('F Y'),
             default => $date->format('d.m.Y')
         };
+    }
+
+    /**
+     * Получить уникальные используемые модели агентов для проектов пользователя
+     */
+    public function getUsedModels(int $userId): array
+    {
+        $userProjectIds = $this->getUserProjectIds($userId);
+
+        if (empty($userProjectIds)) {
+            return [];
+        }
+
+        return AgentTask::whereIn('project_id', $userProjectIds)
+            ->whereNotNull('agent_model')
+            ->distinct()
+            ->orderBy('agent_model')
+            ->pluck('agent_model')
+            ->filter()
+            ->toArray();
     }
 }

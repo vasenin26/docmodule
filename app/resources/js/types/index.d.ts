@@ -210,7 +210,6 @@ export interface TokenStatistics {
 
 export interface Actualization {
     id: number;
-    page_id: number;
     page_version_id: number; // Новое поле
     generating: boolean
     status: 'pending' | 'processing' | 'completed' | 'failed';
@@ -263,6 +262,7 @@ export interface ExpenseSummaryFilters {
   date_to: string;
   task_type: string;
   project_id: number | null;
+  model?: string | null;
 }
 
 export interface ExpenseTaskType {

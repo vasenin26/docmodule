@@ -58,6 +58,25 @@
           </select>
         </div>
 
+        <!-- Модель агента -->
+        <div>
+          <Label for="model">Модель агента</Label>
+          <select
+            id="model"
+            v-model="filters.model"
+            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <option :value="null">Все модели</option>
+            <option
+              v-for="m in models"
+              :key="m"
+              :value="m"
+            >
+              {{ m }}
+            </option>
+          </select>
+        </div>
+
         <!-- Проект -->
         <div>
           <Label for="project_id">Проект</Label>
@@ -102,6 +121,7 @@ import type { ExpenseSummaryFilters, ExpenseTaskType, Project } from '@/types';
 interface Props {
   projects: Project[];
   taskTypes: ExpenseTaskType[];
+  models?: string[];
   loading?: boolean;
 }
 
@@ -130,7 +150,8 @@ const filters = reactive<ExpenseSummaryFilters>({
   date_from: defaultRange.from,
   date_to: defaultRange.to,
   task_type: '',
-  project_id: null
+  project_id: null,
+  model: null
 });
 
 const applyFilters = () => {
@@ -144,7 +165,8 @@ const resetFilters = () => {
     date_from: newRange.from,
     date_to: newRange.to,
     task_type: '',
-    project_id: null
+    project_id: null,
+    model: null
   });
   emit('filtersChanged', { ...filters });
 };

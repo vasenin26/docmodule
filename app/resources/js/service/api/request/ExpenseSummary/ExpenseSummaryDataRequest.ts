@@ -13,6 +13,7 @@ export class ExpenseSummaryDataRequest implements Request<ExpenseSummaryResponse
     // Формируем URL с параметрами сразу в конструкторе
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
+      // explicitly allow model as nullable string
       if (value !== null && value !== '') {
         params.append(key, value.toString());
       }
