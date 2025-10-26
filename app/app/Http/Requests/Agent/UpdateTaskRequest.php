@@ -43,19 +43,16 @@ class UpdateTaskRequest extends FormRequest
                 'nullable',
                 'integer',
                 'min:0',
-                'max:1000000', // Разумный лимит
             ],
             'stats.completion_tokens' => [
                 'nullable',
                 'integer',
                 'min:0',
-                'max:1000000',
             ],
             'stats.total_tokens' => [
                 'nullable',
                 'integer',
                 'min:0',
-                'max:2000000',
             ],
             'result' => [
                 'nullable',
