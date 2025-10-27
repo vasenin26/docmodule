@@ -34,7 +34,7 @@ class PageEditingProcessTest extends TestCase
         $response = $this->actingAs($user)
             ->post(route('pages.create-draft', $page), [
                 'title' => 'New Draft Title',
-                'content' => 'New draft content',
+                'content' => '<p>New draft content</p>',
                 'files' => [],
             ]);
 
@@ -44,7 +44,7 @@ class PageEditingProcessTest extends TestCase
         $this->assertDatabaseHas('page_versions', [
             'page_id' => $page->id,
             'title' => 'New Draft Title',
-            'content' => 'New draft content',
+            'content' => '<p>New draft content</p>',
             'is_draft' => true,
         ]);
     }
@@ -57,7 +57,7 @@ class PageEditingProcessTest extends TestCase
         $response = $this->actingAs($user)
             ->put(route('pages.update', $page), [
                 'title' => 'Updated Title',
-                'content' => 'Updated content',
+                'content' => '<p>Updated content</p>',
             ]);
 
         $response->assertForbidden();
@@ -73,13 +73,13 @@ class PageEditingProcessTest extends TestCase
             'page_id' => $page->id,
             'is_draft' => true,
             'title' => 'Draft Title',
-            'content' => 'Draft content',
+            'content' => '<p>Draft content</p>',
         ]);
 
         $response = $this->actingAs($user)
             ->put(route('pages.versions.update', [$page->id, $draft->id]), [
                 'title' => 'Updated Draft Title',
-                'content' => 'Updated draft content',
+                'content' => '<p>Updated draft content</p>',
                 'files' => [],
             ]);
 
@@ -89,7 +89,7 @@ class PageEditingProcessTest extends TestCase
         $this->assertDatabaseHas('page_versions', [
             'id' => $draft->id,
             'title' => 'Updated Draft Title',
-            'content' => 'Updated draft content',
+            'content' => '<p>Updated draft content</p>',
         ]);
     }
 }
