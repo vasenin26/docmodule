@@ -9,6 +9,8 @@ enum AgentTaskType: string
     case TASK = 'task';
     case TECH = 'tech';
     case ACTUALIZATION = 'actualization';
+    case SEARCH_RELEVANT_FILES = 'search-relevant-files';
+    case TASK_PLANING = 'task-planing';
 
     /**
      * Получить все доступные типы задач
@@ -45,6 +47,8 @@ enum AgentTaskType: string
             self::TASK => 'Генерация задачи',
             self::TECH => 'Генерация техплана',
             self::ACTUALIZATION => 'Актуализация статьи документации',
+            self::SEARCH_RELEVANT_FILES => 'Поиск связанных файлов',
+            self::TASK_PLANING => 'Планирование работы',
         };
     }
 }
