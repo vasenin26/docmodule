@@ -72,6 +72,14 @@ class Project extends Model
         return $this->hasMany(ProjectGenerationModel::class);
     }
 
+    /**
+     * Get the generation models for the project.
+     */
+    public function generationModels(): BelongsToMany
+    {
+        return $this->belongsToMany(GenerationModel::class, 'project_generation_models', 'project_id', 'model_id');
+    }
+
     public function getGenerationModelForType(string $type): ?GenerationModel
     {
         $mapping = $this->generationModelMappings()

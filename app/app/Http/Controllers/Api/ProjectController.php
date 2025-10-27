@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\GenerationModel;
 use App\Models\Project;
+use App\Models\ProjectGenerationModel;
 use Illuminate\Http\Request;
 
 class ProjectController extends Controller
@@ -25,19 +26,17 @@ class ProjectController extends Controller
             abort(403);
         }
 
-        // Получаем модели, связанные с проектом через таблицу project_generation_models
-        $models = GenerationModel::whereHas('projectMappings', function ($q) use ($project) {
-            $q->where('project_id', $project->id);
-        })->get(['id','name']);
-
-        // Формируем ответ: [{ name, generation_type }]
-        $response = $models->map(function (GenerationModel $m) use ($project) {
-            $pivot = $m->projectMappings()->where('project_id', $project->id)->first();
-            return [
-                'name' => $m->name,
-                'generation_type' => $pivot ? $pivot->generation_type : null,
-            ];
-        })->values();
+        // Получаем модели с данными из pivot таблицы
+        $response = $project->generationModels()
+            ->withPivot('generation_type')
+            ->get(['generation_models.id', 'generation_models.name'])
+            ->map(function ($model) {
+                return [
+                    'name' => $model->name,
+                    'generation_type' => $model->pivot->generation_type,
+                ];
+            })
+            ->values();
 
         return response()->json($response);
     }
