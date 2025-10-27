@@ -7,6 +7,13 @@ use Illuminate\Foundation\Http\FormRequest;
 class StorePageRequest extends FormRequest
 {
     /**
+     * NOTE: 'content' now typically contains HTML produced by the WYSIWYG editor.
+     * Legacy values may still be Markdown. Rendering layer on frontend handles
+     * both formats; ensure any server-side handling treats content as an
+     * opaque string and performs sanitization where needed on output.
+     */
+
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
