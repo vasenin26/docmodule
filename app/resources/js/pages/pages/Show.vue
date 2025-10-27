@@ -57,7 +57,7 @@
                 <Card>
                     <CardContent class="p-6">
                         <div v-if="page.content">
-                            <div v-if="sanitizedHtml">
+                            <div v-if="sanitizedHtml !== null">
                                 <div class="prose" v-html="sanitizedHtml"></div>
                             </div>
                             <div v-else>
@@ -133,60 +133,61 @@
                     </CardContent>
                 </Card>
 
-<script setup lang="ts">
-import DraftInfo from '@/components/PageInfo/DraftInfo.vue';
-import ActualizationStatus from '@/components/PageInfo/ActualizationStatus.vue';
-import ActualizationButton from '@/components/PageInfo/ActualizationButton.vue';
-import ChildPages, { ChildPage } from '@/components/PageInfo/ChildPages.vue';
-import Heading from '@/components/Heading.vue';
-import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
-import Button from '@/components/ui/button/Button.vue';
-import Card from '@/components/ui/card/Card.vue';
-import CardContent from '@/components/ui/card/CardContent.vue';
-import CardDescription from '@/components/ui/card/CardDescription.vue';
-import CardHeader from '@/components/ui/card/CardHeader.vue';
-import CardTitle from '@/components/ui/card/CardTitle.vue';
-import PagesLayout from '@/layouts/pages/PagesLayout.vue';
-import { Link, router } from '@inertiajs/vue3';
-import { computed, onMounted } from 'vue';
+                <!-- Дочерние страницы -->
+                <ChildPages :children="page.children" :parent-id="page.id" :project-id="page.project?.id || null" />
 
-import { usePageActualization } from '@/composables/usePageActualization';
-import { FileIcon } from 'lucide-vue-next';
-import { Project } from '@/types';
-import PageListButton from '@/components/PageInfo/PageListButton.vue';
+                <!-- Информация о версиях -->
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Информация о версиях</CardTitle>
+                        <CardDescription> Детали версионирования страницы</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="font-medium">Текущая версия:</span>
+                                <span class="ml-2 text-muted-foreground">{{ page.version_id }}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">Предыдущая версия:</span>
+                                <span class="ml-2 text-muted-foreground">{{ previousVersion?.id || 'Первая версия' }}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">Дата создания версии:</span>
+                                <span class="ml-2 text-muted-foreground">{{ formatDate(page.created_at) }}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">Дата создания предыдущей версии:</span>
+                                <span class="ml-2 text-muted-foreground">{{ previousVersion ? formatDate(previousVersion.created_at) : 'Первая версия' }}</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
 
-interface Creator {
-    name: string;
-}
-
-interface TaskDescription {
-    id: number;
-    content: string;
-    created_at: string;
-    creator?: Creator;
-}
-
-interface Draft {
-    id: number;
-    title: string;
-    content: string;
-    created_at: string;
-    updated_at: string;
-}
-
-interface PageData {
-    id: number;
-    title: string;
-    content: string;
-    project_files?: { id: number; url: string; description?: string | null }[];
-    created_at: string;
-    approved_at: string;
-    creator: Creator;
-    parent?: PageData & { current_version?: { title: string } };
-    project?: Project;
-    children: ChildPage[];
-    previous_version_id?: number;
-
+                <!-- Прикрепленные файлы -->
+                <Card v-if="page.project_files && page.project_files.length > 0">
+                    <CardHeader>
+                        <CardTitle>Прикрепленные файлы</CardTitle>
+                        <CardDescription> Файлы, связанные с данной страницей документации</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="space-y-2">
+                            <div v-for="a in page.project_files" :key="a.id"
+                                 class="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50">
+                                <FileIcon class="h-5 w-5 text-muted-foreground" />
+                                <div class="flex-1">
+                                    <p class="font-mono text-sm break-all">{{ getFileName(a.url) }}</p>
+                                    <p class="text-xs break-all text-muted-foreground">{{ a.url }}</p>
+                                    <p v-if="a.description" class="text-xs text-muted-foreground">— {{ a.description }}</p>
+                                </div>
+                                <Button as-child variant="outline" size="sm" v-if="isValidRepositoryUrl(a.url)">
+                                    <a :href="a.url" target="_blank" rel="noopener noreferrer"> Открыть файл </a>
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     </PagesLayout>
 </template>
@@ -212,6 +213,7 @@ import { usePageActualization } from '@/composables/usePageActualization';
 import { FileIcon } from 'lucide-vue-next';
 import { Project } from '@/types';
 import PageListButton from '@/components/PageInfo/PageListButton.vue';
+import DOMPurify from 'dompurify';
 
 interface Creator {
     name: string;
@@ -244,28 +246,6 @@ interface PageData {
     project?: Project;
     children: ChildPage[];
     previous_version_id?: number;
-    version_id?: number;
-    current: boolean;
-    currentDraft?: Draft;
-    diffDescriptions?: TaskDescription[];
-    hasActiveActualization?: boolean;
-    isActualized?: boolean;
-    created_by: any;
-}
-
-interface PreviousVersion {
-    id: number;
-    created_at: string;
-}
-
-const props = defineProps<{
-    page: PageData;
-    previousVersion?: PreviousVersion;
-}>();
-
-const canCreateTask = computed(() => {
-
-    previous_version?: number;
     version_id?: number;
     current: boolean;
     currentDraft?: Draft;
@@ -318,8 +298,6 @@ const pageForPageListButton = computed(() => ({
 
 // Simple heuristic: if content contains HTML tags, treat it as HTML
 const looksLikeHtml = (s: string) => /<[^>]+>/.test(s);
-
-import DOMPurify from 'dompurify';
 
 const sanitizedHtml = computed(() => {
     if (!page.content) return null;
