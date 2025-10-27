@@ -24,7 +24,7 @@ class PageControllerTest extends TestCase
         $this->withoutMiddleware();
         $this->post(route('pages.store'), [
             'title' => 'Initial',
-            'content' => 'Content',
+            'content' => '<p>Content</p>',
             'parent_id' => null,
             'project_id' => null,
         ]);
@@ -47,7 +47,7 @@ class PageControllerTest extends TestCase
 
         $this->post(route('pages.store'), [
             'title' => 'Initial',
-            'content' => 'Content',
+            'content' => '<p>Content</p>',
             'parent_id' => null,
             'project_id' => null,
         ]);
@@ -80,7 +80,7 @@ class PageControllerTest extends TestCase
 
         // Test without required 'title' field - валидация НЕ пройдет, контроллер НЕ выполнится
         $response = $this->post(route('drafts.approve', $draft->id), [
-            'content' => 'Some content',
+            'content' => '<p>Some content</p>',
             'createTask' => true,
         ]);
 
@@ -105,7 +105,7 @@ class PageControllerTest extends TestCase
         // Test with valid data - валидация пройдет, контроллер выполнится
         $response = $this->post(route('drafts.approve', $draft), [
             'title' => 'Valid Title',
-            'content' => 'Some content',
+            'content' => '<p>Some content</p>',
             'createTask' => true,
         ]);
 
@@ -127,7 +127,7 @@ class PageControllerTest extends TestCase
         $longTitle = str_repeat('a', 256);
         $response = $this->post(route('drafts.approve', $draft->id), [
             'title' => $longTitle,
-            'content' => 'Some content',
+            'content' => '<p>Some content</p>',
             'createTask' => true,
         ]);
 
@@ -149,7 +149,7 @@ class PageControllerTest extends TestCase
         // Test with invalid project_files structure
         $response = $this->post(route('drafts.approve', $draft->id), [
             'title' => 'Valid Title',
-            'content' => 'Some content',
+            'content' => '<p>Some content</p>',
             'project_files' => [
                 ['url' => 'not-a-valid-url', 'description' => 'Test']
             ],
