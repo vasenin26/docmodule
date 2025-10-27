@@ -65,16 +65,9 @@
                         <!-- Содержимое -->
                         <div class="space-y-2">
                             <Label for="content">Содержимое</Label>
-                            <textarea
-                                id="content"
-                                v-model="form.content"
-                                rows="15"
-                                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                placeholder="Введите содержимое страницы в формате Markdown..."
-                                :class="{ 'border-destructive': errors.content }"
-                            />
+                            <Wysiwyg v-model="form.content" :placeholder="'Введите содержимое (форматированный текст) — WYSIWYG'" />
                             <InputError v-if="errors.content" :message="errors.content" />
-                            <p class="text-xs text-muted-foreground">Поддерживается формат Markdown</p>
+                            <p class="text-xs text-muted-foreground">Введите форматированный текст. Старый Markdown по-прежнему поддерживается.</p>
 
                         </div>
 
@@ -102,7 +95,7 @@
 
             <div class="space-y-6 lg:col-span-1">
                 <!-- Предварительный просмотр -->
-                <MarkdownPreview :content="form.content" />
+                <MarkdownRenderer :content="form.content" />
             </div>
         </div>
     </PagesLayout>
@@ -112,7 +105,7 @@
 import FileLinksList from '@/components/FileLinksList.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
-import MarkdownPreview from '@/components/MarkdownPreview.vue';
+import Wysiwyg from '@/components/Wysiwyg.vue';
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
