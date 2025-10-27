@@ -1,39 +1,39 @@
-import type { LucideIcon } from 'lucide-vue-next';
-import type { Config } from 'ziggy-js';
-
-export interface Auth {
-    user: User;
 }
 
-export interface BreadcrumbItem {
-    title: string;
-    href: string;
-}
-
-export interface Breadcrumb {
-    title: string;
-    href?: string;
-}
-
-export interface NavItem {
-    title: string;
-    href: string;
-    icon?: LucideIcon;
-    isActive?: boolean;
-    projectRequired?: boolean; // НОВОЕ ПОЛЕ: требуется ли выбранный проект
-}
-
-export type AppPageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
-    name: string;
-    quote: { message: string; author: string };
-    auth: Auth;
-    ziggy: Config & { location: string };
-    sidebarOpen: boolean;
-};
-
-export interface User {
+export interface Repository {
     id: number;
-    name: string;
+    url: string;
+    options: any;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface PageVersion {
+    id: number;
+    page_id: number;
+    title: string;
+    /**
+     * Содержимое версии страницы. Обычно это HTML, сгенерированный WYSIWYG-редактором.
+     * Для обратной совместимости поле может содержать Markdown; в этом случае
+     * фронтенд использует MarkdownRenderer для рендеринга.
+     */
+    content: string;
+    previous_version_id?: number | null;
+    project_files: { id: number; url: string; description?: string | null }[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Page {
+    id: number;
+    parent_id?: number | null;
+    version_id?: number | null;
+    created_at: string;
+    created_by: number;
+    creator: User;
+    project?: Project;
+    children: Page[];
+    current_version?: PageVersion;
     email: string;
     avatar?: string;
     email_verified_at: string | null;
