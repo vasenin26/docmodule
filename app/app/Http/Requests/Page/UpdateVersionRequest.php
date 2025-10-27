@@ -7,6 +7,11 @@ use Illuminate\Foundation\Http\FormRequest;
 class UpdateVersionRequest extends FormRequest
 {
     /**
+     * NOTE: 'content' typically contains HTML produced by the WYSIWYG editor.
+     * Legacy Markdown values are still accepted and should be rendered by the frontend.
+     */
+
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
