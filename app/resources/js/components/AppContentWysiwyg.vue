@@ -26,8 +26,6 @@ import {
 } from 'ckeditor5';
 import { Ckeditor } from '@ckeditor/ckeditor5-vue';
 
-import 'ckeditor5/ckeditor5.css';
-
 interface Props {
     modelValue?: string | null;
     placeholder?: string;
