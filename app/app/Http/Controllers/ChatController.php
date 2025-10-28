@@ -6,6 +6,7 @@ use App\Common\Enums\AgentTaskType;
 use App\Http\Requests\Chat\SendMessageRequest;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
+use App\Models\AgentTask;
 use App\Models\LLMChat;
 use Illuminate\Support\Facades\Auth;
 use Vasenin26\Conversation\Interface\ConversationFactoryInterface;
@@ -51,13 +52,16 @@ class ChatController extends Controller
         // Запускаем задачу для генерации
         $handler = $handlerFactory->createChatHandler($chat);
 
+        //это лютый хак, нужно пренести весь контекст в чат, том числе и тип выполняемой задачи
+        $lastTask = AgentTask::where(['chat_id' => $chat->id])->latest()->first();
+
         $agentTaskManager->createTask(
             $handler,
             $request->user()->id,
             $chat->project_id,
             $chat->id,
             false,
-            $chat->type,
+            AgentTaskType::tryFrom($lastTask->type),
         );
 
         $chat->update([

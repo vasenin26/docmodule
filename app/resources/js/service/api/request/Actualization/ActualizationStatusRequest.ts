@@ -6,14 +6,7 @@ export interface ActualizationStatusResponse {
         id: number;
         status: string;
         content: string;
-        chat: {
-            id: number;
-            messages: any[];
-        } | null;
-        has_active_agent_task: boolean;
-        created_at: string;
-        updated_at: string;
-        created_by: string;
+        chat_id: int|null;
     };
 }
 
@@ -24,8 +17,7 @@ export class ActualizationStatusRequest implements Request<ActualizationStatusRe
 
     constructor(actualizationId: number) {
         this.method = Method.GET;
-        // @ts-ignore
-        this.url = typeof route === 'function' ? route('actualizations.status-with-chat', actualizationId) : `/actualizations/${actualizationId}/status-with-chat`;
+        this.url = route('actualization.status', actualizationId);
         this.body = null;
     }
 

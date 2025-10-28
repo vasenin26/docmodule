@@ -2,18 +2,13 @@
     <FullScreenLayout>
         <template #context-actions>
             <div class="flex items-center gap-2">
-                <ChatButton
-                    :showCondition="true"
-                    @click="showChat = true"
-                />
+                <ChatButton :showCondition="true" @click="showChat = true" />
                 <Button @click="restartGeneration" variant="outline">
                     <RefreshCw :class="{ 'animate-spin': isRestarting }" class="mr-2 h-4 w-4" />
                     Перезапустить
                 </Button>
                 <Button>
-                    <Link :href="route('pages.versions.edit', [version.page_id, version.id])">
-                        Редактировать
-                    </Link>
+                    <Link :href="route('pages.versions.edit', [version.page_id, version.id])"> Редактировать</Link>
                 </Button>
                 <Button as-child variant="outline">
                     <Link :href="route('pages.show', version.page_id)"> Назад к странице</Link>
@@ -21,7 +16,7 @@
             </div>
         </template>
 
-        <div class="mx-auto max-w-4xl flex flex-col gap-2">
+        <div class="mx-auto flex max-w-4xl flex-col gap-2">
             <!-- Статус актуализации -->
             <Card>
                 <CardHeader>
@@ -75,12 +70,10 @@
             <Card>
                 <CardHeader>
                     <CardTitle>Обновленное содержимое</CardTitle>
-                    <CardDescription> Результат актуализации документации на основе прикрепленных файлов
-                    </CardDescription>
+                    <CardDescription> Результат актуализации документации на основе прикрепленных файлов </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div class="ck-content" v-html="version.content">
-                    </div>
+                    <div class="ck-content" v-html="version.content"></div>
                 </CardContent>
             </Card>
         </div>
@@ -91,7 +84,6 @@
                 :chatId="chat.id"
             />
         </SidePanel>
-
     </FullScreenLayout>
 </template>
 
@@ -112,7 +104,8 @@ import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import SmartAgentChat from '@/components/AgentChat/SmartAgentChat.vue';
 import { useChatAgent } from '@/composables/useChatAgent';
 import { RestartGeneration } from '@/service/api/request/Actualization/RestartGenerationRequest';
-import {createApi} from '@/service/api/Api'
+import { createApi } from '@/service/api/Api';
+import { ActualizationStatusRequest } from '@/service/api/request/Actualization/ActualizationStatusRequest';
 
 interface User {
     id: number;
@@ -157,7 +150,7 @@ const formatDate = (date: string) => {
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
     });
 };
 
@@ -166,22 +159,45 @@ const getStatusText = (status: string) => {
         pending: 'Ожидает обработки',
         processing: 'Обрабатывается',
         completed: 'Завершена',
-        failed: 'Ошибка'
+        failed: 'Ошибка',
     };
     return statusMap[status] || status;
 };
 
-const { reset, startPoling } = useChatAgent(props.chat.id);
+const { setChatId, reset, startPoling, stopPoling } = useChatAgent(props.chat.id);
 const api = createApi();
 
 async function restartGeneration() {
-    isRestarting.value = true
-    const response = await new RestartGeneration(props.actualization.id).call(api);
-    isRestarting.value = false
+    stopPoling();
 
-    if(response.success) {
-        reset();
-        startPoling();
+    isRestarting.value = true;
+    const response = await new RestartGeneration(props.actualization.id).call(api);
+
+    if (!response.success) {
+        return;
     }
+
+    do {
+        const info = await new ActualizationStatusRequest(props.actualization.id).call(api);
+
+        if (info.data.status === 'restarting') {
+            await async function () {
+                return new Promise((r) => setTimeout(r, 400));
+            };
+
+            continue;
+        }
+
+        setChatId(info.data.chat_id)
+
+        break;
+    } while (true);
+
+    isRestarting.value = false;
+
+    console.log('reset')
+
+    reset();
+    startPoling();
 }
 </script>

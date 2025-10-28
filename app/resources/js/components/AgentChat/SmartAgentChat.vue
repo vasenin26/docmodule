@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, onDeactivated} from 'vue'
+import { onMounted, onDeactivated, watch } from 'vue';
 import AgentChat from '@/components/AgentChat/AgentChat.vue';
 import { useChatAgent } from '@/composables/useChatAgent';
 
@@ -23,6 +23,8 @@ const {
 
 onMounted(startPoling);
 onDeactivated(stopPoling);
+
+watch(status, () => console.log(status.value))
 
 </script>
 

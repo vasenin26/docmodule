@@ -94,16 +94,15 @@ class ActualizationController extends Controller
         }
     }
 
-    /**
-     * Получить статус актуализации для страницы
-     */
-    public function status(Request $request, Page $page): JsonResponse
+    public function status(Actualization $actualization): JsonResponse
     {
-        $status = $this->actualizationService->getStatus($page);
-
         return response()->json([
             'success' => true,
-            'data' => $status
+            'data' => [
+                'id' => $actualization->id,
+                'status' => $actualization->status,
+                'chat_id' => $actualization->llm_chat_id,
+            ]
         ]);
     }
 

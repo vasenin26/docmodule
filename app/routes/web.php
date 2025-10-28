@@ -75,8 +75,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('pages/{page}/create-task', [PageController::class, 'createTask'])->name('pages.create-task');
 
     // Маршруты актуализации
-    Route::get('pages/{page}/actualization/status', [ActualizationController::class, 'status'])
-        ->name('pages.actualization.status');
+    Route::get('actualization/{actualization}/status', [ActualizationController::class, 'status'])
+        ->name('actualization.status');
     Route::get('pages/{page}/actualizations', [ActualizationController::class, 'index'])
         ->name('pages.actualizations.index');
     Route::get('actualizations/{actualization}', [ActualizationController::class, 'show'])

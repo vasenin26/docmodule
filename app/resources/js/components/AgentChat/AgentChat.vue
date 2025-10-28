@@ -18,7 +18,7 @@
             <div v-else class="space-y-4">
                 <Message v-for="(message, index) in visibleMessages" :key="index" :message="message" :index="index" />
 
-                <div class="rounded-lg border border-gray-200 bg-gray-50 p-3" v-if="status != 'completed'">
+                <div class="rounded-lg border border-gray-200 bg-gray-50 p-3" v-if="status !== 'completed'">
                     <div class="flex items-center">
                         <span class="text-xs font-medium flex-grow">Ответ генерируется{{ loadingDots }}</span>
                         <Button size="sm" variant="outline" @click="stopGenerating">Стоп</Button>
@@ -89,7 +89,7 @@ const loadingDots = computed(() => {
     if (!props.requestCount || props.requestCount === 0) {
         return '';
     }
-    
+
     // Циклический счетчик: 1-4 точки, затем сброс к 1
     const dotCount = ((props.requestCount - 1) % 4) + 1;
     return '.'.repeat(dotCount);

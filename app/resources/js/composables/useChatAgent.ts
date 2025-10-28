@@ -2,16 +2,25 @@ import { createApi } from '@/service/api/Api';
 import { GetChatState, SendMessage, StopChatGeneration } from '@/service/api/request/Chat/requests';
 import { ref } from 'vue';
 
-export function useChatAgent(chatId: int) {
-    const messages = ref<LLMMessage[]>([]);
-    const status = ref<string>('loading');
-    const sending = ref<boolean>(false);
-    const requestCount = ref<number>(0);
-    const totalTokens = ref<number>(0);
-    const contextFill = ref<number>(0);
-    const polingState = ref<boolean>(false);
+const chatId = ref<int>(null);
+const messages = ref<LLMMessage[]>([]);
+const status = ref<string>('loading');
+const sending = ref<boolean>(false);
+const requestCount = ref<number>(0);
+const totalTokens = ref<number>(0);
+const contextFill = ref<number>(0);
+const polingState = ref<boolean>(false);
+
+export function useChatAgent(targetChatId: number) {
+    console.log('creating', targetChatId)
+    chatId.value = targetChatId
 
     const api = createApi();
+
+    function setChatId(target: number) {
+        console.log(target)
+        chatId.value = target;
+    }
 
     function startPoling() {
         polingState.value = true;
@@ -23,13 +32,13 @@ export function useChatAgent(chatId: int) {
     }
 
     async function stopGeneration() {
-        const result = await new StopChatGeneration(chatId).call(api);
+        const result = await new StopChatGeneration(chatId.value).call(api);
         if (result.status === 'ok') stopPoling();
     }
 
     async function sendMessage(message: string) {
         sending.value = true;
-        const result = await new SendMessage(chatId, message).call(api);
+        const result = await new SendMessage(chatId.value, message).call(api);
         sending.value = false;
 
         if (result.status === 'ok') {
@@ -45,7 +54,7 @@ export function useChatAgent(chatId: int) {
     }
 
     async function poling() {
-        const result = await new GetChatState(chatId).call(api);
+        const result = await new GetChatState(chatId.value).call(api);
 
         status.value = result.status;
         messages.value = result.messages;
@@ -68,6 +77,7 @@ export function useChatAgent(chatId: int) {
         totalTokens,
         contextFill,
         polingState,
+        setChatId,
         startPoling,
         stopPoling,
         stopGeneration,

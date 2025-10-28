@@ -77,6 +77,10 @@ class ProcessPageActualizationJob implements ShouldQueue
         $handler = $agentResultHandlerFactory->createActualizationResultHandler($actualization);
 
         $agentTaskManager->createTask($handler, $actualization->created_by, $page->project_id, $chat->id, true, AgentTaskType::ACTUALIZATION);
+
+        $actualization->llm_chat_id = $chat->id;
+        $actualization->status = Actualization::STATUS_PENDING;
+        $actualization->save();
     }
 
     /**

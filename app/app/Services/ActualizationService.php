@@ -9,6 +9,7 @@ use App\Models\Page;
 use App\Models\PageVersion;
 use App\Models\User;
 use App\Jobs\ProcessPageActualizationJob;
+use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Support\Facades\Log;
 
 class ActualizationService
@@ -89,27 +90,6 @@ class ActualizationService
 
         // Запустить актуализацию для созданного черновика
         return $this->initiate($draft, $user);
-    }
-
-    /**
-     * Получить статус актуализации для страницы
-     */
-    public function getStatus(Page $page): ?array
-    {
-        $latestActualization = $page->latestActualization;
-
-        if (!$latestActualization) {
-            return null;
-        }
-
-        return [
-            'id' => $latestActualization->id,
-            'status' => $latestActualization->status,
-            'created_at' => $latestActualization->created_at,
-            'updated_at' => $latestActualization->updated_at,
-            'created_by' => $latestActualization->createdBy->name ?? 'Unknown',
-            'has_chat' => !is_null($latestActualization->llm_chat_id),
-        ];
     }
 
     /**
@@ -205,7 +185,7 @@ class ActualizationService
         $actualization->llmChat->stopGeneration($agentTaskManager);
 
         $actualization->update([
-            'status' => Actualization::STATUS_PENDING,
+            'status' => Actualization::STATUS_RESTARTING,
         ]);
 
         // Запустить фоновую задачу

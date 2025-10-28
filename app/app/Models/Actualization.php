@@ -17,6 +17,7 @@ class Actualization extends Model
     const STATUS_PROCESSING = 'processing';
     const STATUS_COMPLETED = 'completed';
     const STATUS_FAILED = 'failed';
+    const STATUS_RESTARTING = 'restarting';
 
     /**
      * The attributes that are mass assignable.
