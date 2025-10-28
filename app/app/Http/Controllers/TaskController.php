@@ -361,7 +361,7 @@ class TaskController extends Controller implements HasMiddleware
                 // Получаем или создаем чат
                 $chat = $task->llmChat;
                 if (!$chat) {
-                    $chat = LLMChat::create(['messages' => []]);
+                    $chat = LLMChat::create(['project_id' => $task->project_id, 'messages' => []]);
                 }
 
                 // Используем фабрику для создания чата из существующих сообщений
@@ -470,7 +470,7 @@ class TaskController extends Controller implements HasMiddleware
         if ($description) {
             $chat->addMessage(new UserMessage("[TASK_DESCRIPTION]\n" . trim($description)));
         }
-        $chat = LLMChat::create(['messages' => $chat->serialize()]);
+        $chat = LLMChat::create(['project_id' => $project->id, 'messages' => $chat->serialize()]);
 
         $task = VersionDiffTask::create([
             'project_id' => $project->id,

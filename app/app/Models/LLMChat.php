@@ -18,6 +18,7 @@ class LLMChat extends Model
     protected $table = 'llm_chats';
 
     protected $fillable = [
+        'project_id',
         'messages',
         'context',
         'context_fill',

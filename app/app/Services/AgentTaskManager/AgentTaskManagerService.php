@@ -281,6 +281,7 @@ class AgentTaskManagerService implements AgentTaskManagerInterface
 
             // Создаём новый пустой чат
             $chat = LLMChat::create([
+                'project_id' => $projectId,
                 'messages' => [],
                 'context_fill' => null,
             ]);

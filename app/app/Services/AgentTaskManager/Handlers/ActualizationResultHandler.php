@@ -53,7 +53,7 @@ class ActualizationResultHandler implements AgentResultHandlerInterface
 
         $actualization = Actualization::findOrFail($actualizationId);
 
-        return new static($actualization);
+        return new static($actualization, app()->get(HtmlToMdInterface::class));
     }
 
     public function getTargetResource(): ?DisplayableResource

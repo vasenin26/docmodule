@@ -12,11 +12,11 @@ interface LLMChatFactoryInterface
 {
     public function createChatForGenerateDescription(PromptProviderInterface $promptProvider, VersionDiffTask $task): LLMChat;
 
-    public function createChatForTechplane(PromptProviderInterface $promptProvider, string $taskDescription, GeneratorContextDTO $context): LLMChat;
+    public function createChatForTechplane(PromptProviderInterface $promptProvider, int $projectId, string $taskDescription, GeneratorContextDTO $context): LLMChat;
 
-    public function createChatForActualization(PromptProviderInterface $promptProvider, string $currentContent, ActualizationContextDTO $context): LLMChat;
+    public function createChatForActualization(PromptProviderInterface $promptProvider, int $projectId, string $currentContent, ActualizationContextDTO $context): LLMChat;
 
-    public function createChatForImplementation(PromptProviderInterface $promptProvider, string $techplaneContent, GeneratorContextDTO $context): LLMChat;
+    public function createChatForImplementation(PromptProviderInterface $promptProvider, int $projectId, string $techplaneContent, GeneratorContextDTO $context): LLMChat;
 
     public function createChatForUpdatedTask(PromptProviderInterface $promptProvider, VersionDiffTask $task): LLMChat;
 }

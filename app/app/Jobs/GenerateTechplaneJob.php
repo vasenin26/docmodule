@@ -72,6 +72,7 @@ class GenerateTechplaneJob implements ShouldQueue
 
         $chat = $chatFactory->createChatForTechplane(
             $promptProvider,
+            $task->project_id,
             $taskDescription,
             $context
         );

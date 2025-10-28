@@ -25,9 +25,10 @@ class ChatFactory implements LLMChatFactoryInterface
     {
     }
 
-    private function createChat(array $messages): LLMChat
+    private function createChat(int $projectId, array $messages): LLMChat
     {
         return LLMChat::create([
+            'project_id' => $projectId,
             'messages' => $messages,
             'prompt_tokens' => 0,
             'completion_tokens' => 0,
@@ -73,10 +74,10 @@ class ChatFactory implements LLMChatFactoryInterface
                 ));
         }
 
-        return $this->createChat($conversation->serialize());
+        return $this->createChat($task->project_id, $conversation->serialize());
     }
 
-    public function createChatForTechplane(PromptProviderInterface $promptProvider, string $taskDescription, GeneratorContextDTO $context): LLMChat
+    public function createChatForTechplane(PromptProviderInterface $promptProvider, int $projectId, string $taskDescription, GeneratorContextDTO $context): LLMChat
     {
         $prompt = $promptProvider->getTechplaneGeneratorInstructions($taskDescription, $context);
         $role = $promptProvider->getTechLeadRole();
@@ -85,10 +86,10 @@ class ChatFactory implements LLMChatFactoryInterface
         $conversation->addMessage(new SystemMessage($role));
         $conversation->addMessage(new UserTaskMessage($prompt));
 
-        return $this->createChat($conversation->serialize());
+        return $this->createChat($projectId, $conversation->serialize());
     }
 
-    public function createChatForActualization(PromptProviderInterface $promptProvider, string $currentContent, ActualizationContextDTO $context): LLMChat
+    public function createChatForActualization(PromptProviderInterface $promptProvider, int $projectId, string $currentContent, ActualizationContextDTO $context): LLMChat
     {
         $prompt = $promptProvider->getActualizationInstructions($currentContent, $context);
         $role = $promptProvider->getDocumentationSpecialistRole();
@@ -97,10 +98,10 @@ class ChatFactory implements LLMChatFactoryInterface
         $conversation->addMessage(new SystemMessage($role));
         $conversation->addMessage(new UserTaskMessage($prompt));
 
-        return $this->createChat($conversation->serialize());
+        return $this->createChat($projectId, $conversation->serialize());
     }
 
-    public function createChatForImplementation(PromptProviderInterface $promptProvider, string $techplaneContent, GeneratorContextDTO $context): LLMChat
+    public function createChatForImplementation(PromptProviderInterface $promptProvider, int $projectId, string $techplaneContent, GeneratorContextDTO $context): LLMChat
     {
         $prompt = $promptProvider->getImplementationInstructions($techplaneContent, $context);
         $role = $promptProvider->getDeveloperRole();
@@ -109,7 +110,7 @@ class ChatFactory implements LLMChatFactoryInterface
         $conversation->addMessage(new SystemMessage($role));
         $conversation->addMessage(new UserTaskMessage($prompt));
 
-        return $this->createChat($conversation->serialize());
+        return $this->createChat($projectId, $conversation->serialize());
     }
 
     public function createChatForUpdatedTask(PromptProviderInterface $promptProvider, VersionDiffTask $task): LLMChat
@@ -137,6 +138,6 @@ class ChatFactory implements LLMChatFactoryInterface
             $conversation->addMessage(new GitFileMessage($file));
         }
 
-        return $this->createChat($conversation->serialize());
+        return $this->createChat($task->project_id, $conversation->serialize());
     }
 }

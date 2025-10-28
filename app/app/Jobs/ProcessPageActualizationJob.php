@@ -66,6 +66,7 @@ class ProcessPageActualizationJob implements ShouldQueue
 
         $chat = $chatFactory->createChatForActualization(
             $promptProvider,
+            $page->project_id,
             $currentContent,
             $context
         );

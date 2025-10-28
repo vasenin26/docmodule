@@ -41,6 +41,7 @@ class ActualizationService
         if ($actualization) {
             // Переиспользуем запись: переводим в pending и создаем новый чат
             $chat = new \App\Models\LLMChat();
+            $chat->project_id = $page->project_id;
             $chat->messages = [];
             $chat->save();
 

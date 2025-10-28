@@ -39,7 +39,7 @@ class CalculateVersionDifferenceJob implements ShouldQueue
         $newVersion = PageVersion::findOrFail($this->newVersionId);
 
         // Create chat and VersionDiffTask record
-        $chat = \App\Models\LLMChat::create(['messages' => []]);
+        $chat = \App\Models\LLMChat::create(['project_id' => $newVersion->page->project_id, 'messages' => []]);
 
         $versionDiffTask = VersionDiffTask::create([
             'project_id' => $newVersion->page->project_id,

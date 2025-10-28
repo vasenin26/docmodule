@@ -49,6 +49,7 @@ class ProcessImplementationJob implements ShouldQueue
         // Создаем чат для реализации
         $chat = $chatFactory->createChatForImplementation(
             $promptProvider,
+            $task->project_id,
             $techplane->content, // Содержимое техплана
             $context
         );

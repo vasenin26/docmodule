@@ -53,7 +53,7 @@ class ChatController extends Controller
 
         $agentTaskManager->createTask(
             $handler,
-            $request->user->id,
+            $request->user()->id,
             $chat->project_id,
             $chat->id,
             false,

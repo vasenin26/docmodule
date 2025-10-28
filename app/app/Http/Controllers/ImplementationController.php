@@ -103,7 +103,7 @@ class ImplementationController extends Controller
                 // Получаем или создаем чат
                 $chat = $implementation->llmChat;
                 if (!$chat) {
-                    $chat = LLMChat::create(['messages' => []]);
+                    $chat = LLMChat::create(['project_id' => $implementation->techplane->project_id, 'messages' => []]);
                 }
 
                 // Используем фабрику для создания чата из существующих сообщений
