@@ -8,7 +8,6 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectPagesController;
 use App\Http\Controllers\ProjectPromptController;
-use App\Http\Controllers\ProjectSettingsController;
 use App\Http\Controllers\ProjectGenerationModelController;
 use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\TaskController;
@@ -17,11 +16,8 @@ use App\Http\Controllers\AgentTaskController;
 use App\Http\Controllers\PageSearchController;
 use App\Http\Controllers\TechplaneController;
 use App\Http\Controllers\ExpenseSummaryController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Models\Page;
-use App\Models\VersionDiffTask;
 
 
 Route::get('/', function () {
@@ -189,7 +185,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/api/projects', [ProjectController::class, 'apiIndex'])->name('api.projects.index');
     // API маршрут для получения проекта
     Route::get('/api/projects/{project}', [ProjectController::class, 'apiShow'])->name('api.projects.show');
-    
+
     // API маршрут для получения плоских страниц проекта
     Route::get('/api/projects/{projectId}/flat-pages', [\App\Http\Controllers\Api\PageController::class, 'getFlatPages'])
         ->name('api.projects.flat-pages');
@@ -211,7 +207,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('projects.agents.regenerate-token');
     Route::post('projects/{project}/agents/{agent}/start', [AgentController::class, 'startAgent'])
         ->name('projects.agents.start');
-    
+
     // Сводка расходов
     Route::get('/expense-summary', [ExpenseSummaryController::class, 'index'])
         ->name('expense-summary');
