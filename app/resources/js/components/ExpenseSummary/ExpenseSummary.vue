@@ -57,7 +57,8 @@ import ExpenseSummaryFiltersComponent from './ExpenseSummaryFilters.vue';
 import ExpenseSummaryChart from './ExpenseSummaryChart.vue';
 import { createWebApi } from '@/service/api/Api';
 import { ExpenseSummaryDataRequest } from '@/service/api/request/ExpenseSummary/ExpenseSummaryDataRequest';
-import type { ExpenseSummaryData, ExpenseSummaryFilters, ExpenseTaskType, Project } from '@/types';
+import type { ExpenseSummaryData, ExpenseSummaryFilters, ExpenseTaskType, Project, RawApiItem } from '@/types';
+import { mergeApiDataWithGenerated, MAX_POINTS, type PeriodType } from '@/helpers/expensePeriods';
 
 interface Props {
   projects: Project[];
@@ -119,7 +120,10 @@ const loadData = async () => {
     const response = await request.call(api);
     
     if (response.success) {
-      chartData.value = response.data;
+      const apiData = (response.data ?? []) as RawApiItem[];
+      const period = currentFilters.value.period as PeriodType;
+      const merged = mergeApiDataWithGenerated(period, currentFilters.value.date_from, currentFilters.value.date_to, apiData);
+      chartData.value = merged as unknown as ExpenseSummaryData[];
     }
   } catch (error) {
     console.error('Ошибка загрузки данных:', error);
