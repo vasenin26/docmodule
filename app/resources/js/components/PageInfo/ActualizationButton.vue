@@ -1,5 +1,5 @@
 <template>
-    <Button v-if="canActualize" @click="makeActualisation" :disabled="isActualizing" variant="outline">
+    <Button @click="makeActualisation" :disabled="isActualizing" variant="outline">
         <RefreshCw :class="{ 'animate-spin': isActualizing }" class="mr-2 h-4 w-4" />
         Актуализировать
     </Button>
@@ -13,7 +13,6 @@ import { router } from '@inertiajs/vue3';
 
 interface Props {
     versionId: number | null;
-    canActualize: boolean;
 }
 
 const props = defineProps<Props>();

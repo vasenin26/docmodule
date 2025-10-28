@@ -246,7 +246,7 @@ class PageController extends Controller
         $page->load(['project']);
         $version->load(['projectFiles']);
 
-        $actualization = $version->getActiveActualization();
+        $actualization = $version->actualisation;
 
         return Inertia::render('pages/Edit', [
             'pageVersion' => $version,

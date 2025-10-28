@@ -2,19 +2,8 @@
     <PagesLayout>
         <template #context-actions>
             <div class="flex items-center gap-2">
-                <Button
-                    type="button"
-                    @click="showActualizeDialog"
-                    variant="outline"
-                    :disabled="actualizationButtonDisabled"
-                >
-                    Актуализировать
-                </Button>
-                <ChatButton
-                    :show-condition="!!(actualization && actualization.llm_chat)"
-                    @click="openChatModal"
-                    variant="default"
-                    size="sm"
+                <ActualizationButton
+                    :versionId="page.current_version.id"
                 />
 
                 <Button as-child variant="outline">
@@ -156,13 +145,12 @@ import { ConfirmDialog } from '@/components/ui/dialog';
 import Input from '@/components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
 import PagesLayout from '@/layouts/pages/PagesLayout.vue';
-import { Actualization, Page } from '@/types/index';
+import { Actualization, Page } from '@/types';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import ActualizationStatus from '@/components/PageInfo/ActualizationStatus.vue';
 import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import AgentChat from '@/components/AgentChat/AgentChat.vue';
-import ChatButton from '@/components/ChatButton.vue';
 import type { LLMChat } from '@/types';
 import { useActualizationChat } from '@/composables/useActualizationChat';
 import { createApi } from '@/service/api/Api';
