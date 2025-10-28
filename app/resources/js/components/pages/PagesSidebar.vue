@@ -4,19 +4,6 @@ import ProjectPagesTree from '@/components/pages/ProjectPagesTree.vue';
 
 <template>
     <div class="pages-sidebar">
-        <slot>
-            <div class="sidebar-card">
-                <div class="sidebar-title">Раздел: Страницы</div>
-                <div class="sidebar-body">
-                    <!-- Временно статический контент для тестовой реализации -->
-                    <ul class="sidebar-list">
-                        <li>Навигация по страницам</li>
-                        <li>Фильтры и состояние</li>
-                        <li>Справочная информация</li>
-                    </ul>
-                </div>
-            </div>
-        </slot>
         <div class="mt-3">
             <ProjectPagesTree />
         </div>
