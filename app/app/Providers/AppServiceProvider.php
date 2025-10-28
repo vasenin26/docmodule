@@ -11,12 +11,14 @@ use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Interfaces\GitRepoProviderInterface;
+use App\Interfaces\HtmlToMdInterface;
 use App\Interfaces\PageContextServiceFactoryInterface;
 use App\Interfaces\TaskTrackerInterface;
 use App\Models\Project;
 use App\Policies\ProjectPolicy;
 use App\Services\AgentTaskManager\AgentTaskManagerService;
 use App\Services\DiffGenerator\DiffGeneratorService;
+use App\Services\HtmlToMdConvertor;
 use App\Services\PromptProvider\Interface\PromptSourceFactoryInterface;
 use App\Services\PromptProvider\Interface\PromptTemplateRendererInterface;
 use App\Services\PromptProvider\PromptSourceFactory;
@@ -69,6 +71,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Регистрация фабрики чатов
         $this->app->bind(LLMChatFactoryInterface::class, ChatFactory::class);
+
+        $this->app->bind(HtmlToMdInterface::class, HtmlToMdConvertor::class);
     }
 
     /**

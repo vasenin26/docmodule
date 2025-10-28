@@ -44,7 +44,8 @@ const config = computed( () => {
                 'bulletedList', 'numberedList'
             ],
             shouldNotGroupWhenFull: false
-        }
+        },
+        height: 400,
 
     };
 } );

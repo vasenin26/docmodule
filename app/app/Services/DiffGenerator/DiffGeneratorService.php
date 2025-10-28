@@ -4,13 +4,22 @@ namespace App\Services\DiffGenerator;
 
 use App\Common\DTO\DifferenceDataDTO;
 use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
+use App\Interfaces\HtmlToMdInterface;
 use App\Models\PageVersion;
 
 class DiffGeneratorService implements DiffGeneratorInterface
 {
+    public function __construct(
+        private HtmlToMdInterface $converter
+    )
+    {
+    }
+
     public function createDifferenceDataDTO(PageVersion $currentVersion): DifferenceDataDTO
     {
         $previousVersion = $currentVersion->previousVersion;
+
+        $newContentMD = $this->converter->toMd($currentVersion->content);
 
         if (!$previousVersion) {
             // Новая страница
@@ -21,7 +30,7 @@ class DiffGeneratorService implements DiffGeneratorInterface
                 titleChanged: false,
                 contentChanged: false,
                 newVersionId: $currentVersion->id,
-                newVersionContent: $currentVersion->content,
+                newVersionContent: $newContentMD,
                 previousVersionId: null,
                 previousVersionTitle: null,
                 previousVersionContent: null
@@ -32,10 +41,15 @@ class DiffGeneratorService implements DiffGeneratorInterface
         $titleChanged = $currentVersion->title !== $previousVersion->title;
         $contentChanged = $currentVersion->content !== $previousVersion->content;
 
+        $oldVersionMD = $this->converter->toMd($previousVersion->content);
+
         // Генерируем diff если есть изменения
         $diffOutput = null;
         if ($titleChanged || $contentChanged) {
-            $diffOutput = $this->generateDiff($previousVersion->content, $currentVersion->content);
+            $diffOutput = $this->generateDiff(
+                $oldVersionMD,
+                $newContentMD,
+            );
         }
 
         return new DifferenceDataDTO(
@@ -45,10 +59,10 @@ class DiffGeneratorService implements DiffGeneratorInterface
             titleChanged: $titleChanged,
             contentChanged: $contentChanged,
             newVersionId: $currentVersion->id,
-            newVersionContent: $currentVersion->content,
+            newVersionContent: $newContentMD,
             previousVersionId: $previousVersion->id,
             previousVersionTitle: $previousVersion->title,
-            previousVersionContent: $previousVersion->content
+            previousVersionContent: $oldVersionMD
         );
     }
 
@@ -86,8 +100,12 @@ class DiffGeneratorService implements DiffGeneratorInterface
         }
 
         // Handle content changes
-        $oldLines = array_filter($oldLines, function($line) { return $line !== ''; });
-        $newLines = array_filter($newLines, function($line) { return $line !== ''; });
+        $oldLines = array_filter($oldLines, function ($line) {
+            return $line !== '';
+        });
+        $newLines = array_filter($newLines, function ($line) {
+            return $line !== '';
+        });
 
         $deletedLines = array_diff($oldLines, $newLines);
         $addedLines = array_diff($newLines, $oldLines);
@@ -104,8 +122,6 @@ class DiffGeneratorService implements DiffGeneratorInterface
 
         return $diffOutput;
     }
-
-
 
 
     /**
