@@ -3,6 +3,7 @@
 namespace App\Services\AgentTaskManager\Handlers;
 
 use App\Interfaces\DisplayableResource;
+use App\Interfaces\HtmlToMdInterface;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\AgentTask;
 use App\Models\Actualization;
@@ -13,7 +14,10 @@ class ActualizationResultHandler implements AgentResultHandlerInterface
 {
     const OPTION_ACTUALIZATION_ID = 'actualization_id';
 
-    public function __construct(private Actualization $actualization)
+    public function __construct(
+        private Actualization $actualization,
+        private HtmlToMdInterface $converter,
+    )
     {
     }
 
@@ -27,7 +31,7 @@ class ActualizationResultHandler implements AgentResultHandlerInterface
     public function handleResult(?string $result): void
     {
         if($result !== null) {
-            $this->actualization?->pageVersion?->update(['content' => $result]);
+            $this->actualization?->pageVersion?->update(['content' => $this->converter->toHtml($result)]);
         }
 
         Log::info('Actualization completed', [

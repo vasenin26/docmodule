@@ -21,6 +21,7 @@
     "require": {
         "php": "^8.2",
         "czproject/git-php": "^4.5",
+        "fastvolt/markdown": "^0.2.4",
         "firebase/php-jwt": "^6.11",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^12.0",
