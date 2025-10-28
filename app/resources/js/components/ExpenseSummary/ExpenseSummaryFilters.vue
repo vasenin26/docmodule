@@ -5,79 +5,7 @@
     </CardHeader>
     <CardContent>
       <form @submit.prevent="applyFilters" class="space-y-4">
-        <!-- Период группировки -->
-        <div>
-          <Label for="period">Период группировки</Label>
-          <select
-            id="period"
-            v-model="filters.period"
-            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <option value="day">День</option>
-            <option value="week">Неделя</option>
-            <option value="month">Месяц</option>
-          </select>
-        </div>
-
-        <!-- Диапазон дат -->
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <Label for="date_from">От</Label>
-            <Input
-              id="date_from"
-              v-model="filters.date_from"
-              type="date"
-            />
-          </div>
-          <div>
-            <Label for="date_to">До</Label>
-            <Input
-              id="date_to"
-              v-model="filters.date_to"
-              type="date"
-            />
-          </div>
-        </div>
-
-        <!-- Тип задач -->
-        <div>
-          <Label for="task_type">Тип задач</Label>
-          <select
-            id="task_type"
-            v-model="filters.task_type"
-            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <option value="">Все типы</option>
-            <option
-              v-for="type in taskTypes"
-              :key="type.value"
-              :value="type.value"
-            >
-              {{ type.label }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Модель агента -->
-        <div>
-          <Label for="model">Модель агента</Label>
-          <select
-            id="model"
-            v-model="filters.model"
-            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <option :value="null">Все модели</option>
-            <option
-              v-for="m in models"
-              :key="m"
-              :value="m"
-            >
-              {{ m }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Проект -->
+        <!-- Проект: первая строка (отдельный блок) -->
         <div>
           <Label for="project_id">Проект</Label>
           <select
@@ -94,6 +22,82 @@
               {{ project.title }}
             </option>
           </select>
+        </div>
+
+        <!-- Период и диапазон дат: вторая строка — 3 колонки -->
+        <div class="grid grid-cols-3 gap-4">
+          <!-- Период группировки -->
+          <div>
+            <Label for="period">Период группировки</Label>
+            <select
+              id="period"
+              v-model="filters.period"
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="day">День</option>
+              <option value="week">Неделя</option>
+              <option value="month">Месяц</option>
+            </select>
+          </div>
+
+          <!-- Диапазон дат: От -->
+          <div>
+            <Label for="date_from">От</Label>
+            <Input
+              id="date_from"
+              v-model="filters.date_from"
+              type="date"
+            />
+          </div>
+
+          <!-- Диапазон дат: До -->
+          <div>
+            <Label for="date_to">До</Label>
+            <Input
+              id="date_to"
+              v-model="filters.date_to"
+              type="date"
+            />
+          </div>
+        </div>
+
+        <!-- Тип задач и Модель агента: третья строка — 2 колонки -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <Label for="task_type">Тип задач</Label>
+            <select
+              id="task_type"
+              v-model="filters.task_type"
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="">Все типы</option>
+              <option
+                v-for="type in taskTypes"
+                :key="type.value"
+                :value="type.value"
+              >
+                {{ type.label }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <Label for="model">Модель агента</Label>
+            <select
+              id="model"
+              v-model="filters.model"
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option :value="null">Все модели</option>
+              <option
+                v-for="m in models"
+                :key="m"
+                :value="m"
+              >
+                {{ m }}
+              </option>
+            </select>
+          </div>
         </div>
 
         <!-- Кнопки -->
@@ -151,7 +155,7 @@ const filters = reactive<ExpenseSummaryFilters>({
   date_to: defaultRange.to,
   task_type: '',
   project_id: null,
-  model: null
+  model: null,
 });
 
 const applyFilters = () => {
@@ -166,7 +170,7 @@ const resetFilters = () => {
     date_to: newRange.to,
     task_type: '',
     project_id: null,
-    model: null
+    model: null,
   });
   emit('filtersChanged', { ...filters });
 };
