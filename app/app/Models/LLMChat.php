@@ -38,7 +38,7 @@ class LLMChat extends Model
     {
         $activeAgentTasks = AgentTask::where('chat_id', $this->id)
             ->whereIn('status', [AgentTask::STATUS_WAIT, AgentTask::STATUS_PROCESSING])
-            ->all();
+            ->get();
 
         $activeAgentTasks->each(function (AgentTask $agentTask) use ($agentTaskManager) {
             $agentTaskManager->stopTask($agentTask->id);

@@ -6,13 +6,17 @@
                     :showCondition="true"
                     @click="showChat = true"
                 />
+                <Button @click="restartGeneration" variant="outline">
+                    <RefreshCw :class="{ 'animate-spin': isRestarting }" class="mr-2 h-4 w-4" />
+                    Перезапустить
+                </Button>
                 <Button>
                     <Link :href="route('pages.versions.edit', [version.page_id, version.id])">
                         Редактировать
                     </Link>
                 </Button>
                 <Button as-child variant="outline">
-                    <Link :href="route('pages.show', version.page_id)"> Назад к странице </Link>
+                    <Link :href="route('pages.show', version.page_id)"> Назад к странице</Link>
                 </Button>
             </div>
         </template>
@@ -25,7 +29,7 @@
                         <RefreshCw :class="{ 'animate-spin': actualization.status === 'processing' }" class="h-5 w-5" />
                         Статус актуализации
                     </CardTitle>
-                    <CardDescription> Информация о процессе актуализации документации </CardDescription>
+                    <CardDescription> Информация о процессе актуализации документации</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div class="grid grid-cols-2 gap-4">
@@ -71,7 +75,8 @@
             <Card>
                 <CardHeader>
                     <CardTitle>Обновленное содержимое</CardTitle>
-                    <CardDescription> Результат актуализации документации на основе прикрепленных файлов </CardDescription>
+                    <CardDescription> Результат актуализации документации на основе прикрепленных файлов
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div class="ck-content" v-html="version.content">
@@ -91,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref} from 'vue';
+import { ref } from 'vue';
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
@@ -101,10 +106,13 @@ import CardTitle from '@/components/ui/card/CardTitle.vue';
 import { Link } from '@inertiajs/vue3';
 import ChatButton from '@/components/ChatButton.vue';
 import { PageVersion } from '@/types';
-import {RefreshCw} from 'lucide-vue-next';
+import { RefreshCw } from 'lucide-vue-next';
 import FullScreenLayout from '@/layouts/fullscreen/FullScreenLayout.vue';
 import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import SmartAgentChat from '@/components/AgentChat/SmartAgentChat.vue';
+import { useChatAgent } from '@/composables/useChatAgent';
+import { RestartGeneration } from '@/service/api/request/Actualization/RestartGenerationRequest';
+import {createApi} from '@/service/api/Api'
 
 interface User {
     id: number;
@@ -133,7 +141,7 @@ interface Actualization {
     created_by: User;
 }
 
-defineProps<{
+const props = defineProps<{
     project_id: number;
     actualization: Actualization;
     version: PageVersion;
@@ -141,6 +149,7 @@ defineProps<{
 }>();
 
 const showChat = ref<bool>(true);
+const isRestarting = ref<bool>(false);
 
 const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('ru-RU', {
@@ -148,7 +157,7 @@ const formatDate = (date: string) => {
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit',
+        minute: '2-digit'
     });
 };
 
@@ -157,8 +166,22 @@ const getStatusText = (status: string) => {
         pending: 'Ожидает обработки',
         processing: 'Обрабатывается',
         completed: 'Завершена',
-        failed: 'Ошибка',
+        failed: 'Ошибка'
     };
     return statusMap[status] || status;
 };
+
+const { reset, startPoling } = useChatAgent(props.chat.id);
+const api = createApi();
+
+async function restartGeneration() {
+    isRestarting.value = true
+    const response = await new RestartGeneration(props.actualization.id).call(api);
+    isRestarting.value = false
+
+    if(response.success) {
+        reset();
+        startPoling();
+    }
+}
 </script>

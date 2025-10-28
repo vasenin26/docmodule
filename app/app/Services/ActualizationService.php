@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Interfaces\AgentTaskManagerInterface;
 use App\Models\Actualization;
 use App\Models\AgentTask;
 use App\Models\Page;
@@ -192,5 +193,26 @@ class ActualizationService
             'updated_at' => $actualization->updated_at,
             'created_by' => $actualization->createdBy->name ?? 'Unknown',
         ];
+    }
+
+    public function restart(
+        Actualization $actualization,
+        User $user,
+        AgentTaskManagerInterface $agentTaskManager
+    ): void
+    {
+        $actualization->llmChat->stopGeneration($agentTaskManager);
+
+        $actualization->update([
+            'status' => Actualization::STATUS_PENDING,
+        ]);
+
+        // Запустить фоновую задачу
+        ProcessPageActualizationJob::dispatch($actualization->id);
+
+        Log::info('Actualization restarter', [
+            'actualization_id' => $actualization->id,
+            'user_id' => $user->id,
+        ]);
     }
 }

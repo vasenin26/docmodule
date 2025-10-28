@@ -6,7 +6,7 @@ export type StopGenerationResponse = {
 
 export class StopChatGeneration implements Request<StopGenerationResponse> {
     body: any = {};
-    method: Method = Method.CREATE;
+    method: Method = Method.DELETE;
     url: string;
 
     constructor(chatId: int) {

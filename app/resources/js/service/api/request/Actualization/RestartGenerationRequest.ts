@@ -1,0 +1,36 @@
+import { Method, type ApiInterface, type Request } from '@/service/api/Api';
+
+export interface ActualizationStatusResponse {
+    success: boolean;
+    data: {
+        id: number;
+        status: string;
+        content: string;
+        chat: {
+            id: number;
+            messages: any[];
+        } | null;
+        has_active_agent_task: boolean;
+        created_at: string;
+        updated_at: string;
+        created_by: string;
+    };
+}
+
+export class RestartGeneration implements Request<ActualizationStatusResponse> {
+    public readonly method: Method;
+    public readonly url: string;
+    public readonly body: any;
+
+    constructor(actualizationId: number) {
+        this.method = Method.CREATE;
+        this.url = route('actualizations.restart', actualizationId);
+        this.body = null;
+    }
+
+    public async call(api: ApiInterface): Promise<ActualizationStatusResponse> {
+        return api.execute<ActualizationStatusResponse>(this);
+    }
+}
+
+

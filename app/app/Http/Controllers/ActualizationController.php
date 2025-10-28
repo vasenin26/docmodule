@@ -42,7 +42,7 @@ class ActualizationController extends Controller
             abort(403);
         }
 
-        if($version->hasActualization()) {
+        if ($version->hasActualization()) {
             return response()->json([
                 'success' => true,
                 'message' => 'version_have_actualisation',
@@ -121,33 +121,6 @@ class ActualizationController extends Controller
     }
 
     /**
-     * Отменить актуализацию
-     */
-    public function cancel(Request $request, Actualization $actualization): JsonResponse
-    {
-        try {
-            $this->actualizationService->cancel($actualization);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Актуализация отменена',
-            ]);
-
-        } catch (\RuntimeException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Произошла ошибка при отмене актуализации',
-            ], 500);
-        }
-    }
-
-    /**
      * Получить список актуализаций для страницы
      */
     public function index(Request $request, Page $page): JsonResponse
@@ -171,6 +144,52 @@ class ActualizationController extends Controller
             'success' => true,
             'data' => $actualizations
         ]);
+    }
+
+    public function restart(Request $request, Actualization $actualization, AgentTaskManagerInterface $agentTaskManager): JsonResponse
+    {
+        if (!$actualization->page->project->canAccess(Auth::user())) {
+            abort(403);
+        }
+
+        try {
+            $this->actualizationService->restart($actualization, $request->user(), $agentTaskManager);
+            $actualizationDTO = ActualizationDTO::fromModel($actualization);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Актуализация успешно запущена для черновика',
+                'data' => $actualizationDTO->toArray()
+            ]);
+
+        } catch (\RuntimeException $e) {
+            Log::error('Actualization runtime error for draft', [
+                'message' => $e->getMessage(),
+                'actualisation_id' => $actualization->id,
+                'user_id' => $request->user()->id ?? 'no user',
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'actualisation_id' => $actualization->id,
+                'message' => $e->getMessage(),
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('Actualization error for draft', [
+                'actualisation_id' => $actualization->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $request->user()->id ?? 'no user',
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'actualisation_id' => $actualization->id,
+                'message' => 'Произошла ошибка при запуске актуализации',
+                'debug' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 
     /**

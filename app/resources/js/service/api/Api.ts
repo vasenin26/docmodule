@@ -118,6 +118,9 @@ export function createApi(): Api {
 
 let cachedWebApi: Api | null = null;
 
+/**
+ * @deprecated использовать createApi
+ */
 export function createWebApi(): Api {
     if (cachedWebApi) {
         return cachedWebApi;

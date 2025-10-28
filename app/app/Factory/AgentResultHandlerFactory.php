@@ -3,6 +3,7 @@
 namespace App\Factory;
 
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
+use App\Interfaces\HtmlToMdInterface;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\AgentTask;
 use App\Models\Actualization;
@@ -17,6 +18,13 @@ use Illuminate\Support\Facades\Log;
 
 class AgentResultHandlerFactory implements AgentResultHandlerFactoryInterface
 {
+
+    public function __construct(
+        private HtmlToMdInterface $converter
+    )
+    {
+    }
+
     public function createTaskHandler(AgentTask $task): ?AgentResultHandlerInterface
     {
         $handlerClass = $task->handler;
@@ -57,7 +65,7 @@ class AgentResultHandlerFactory implements AgentResultHandlerFactoryInterface
 
     public function createActualizationResultHandler(Actualization $actualization): AgentResultHandlerInterface
     {
-        return new ActualizationResultHandler($actualization);
+        return new ActualizationResultHandler($actualization, $this->converter);
     }
 
     public function createImplementationResultHandler(Implementation $implementation): AgentResultHandlerInterface

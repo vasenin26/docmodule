@@ -81,8 +81,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('pages.actualizations.index');
     Route::get('actualizations/{actualization}', [ActualizationController::class, 'show'])
         ->name('actualizations.show');
-    Route::delete('actualizations/{actualization}', [ActualizationController::class, 'cancel'])
-        ->name('actualizations.cancel');
+    Route::post('actualizations/{actualization}/restart', [ActualizationController::class, 'restart'])
+        ->name('actualizations.restart');
 
     // Новый маршрут для актуализации конкретного черновика
     Route::post('/page/version/{version}/actualize', [ActualizationController::class, 'start'])->name('pages.versions.actualise');
