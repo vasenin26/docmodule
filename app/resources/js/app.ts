@@ -16,7 +16,7 @@ createInertiaApp({
     setup({ el, App, props, plugin }) {
         const app = createApp({ render: () => h(App, props) });
         const pinia = createPinia();
-        
+
         app.use(pinia);
         app.use(plugin);
         app.use(ZiggyVue);

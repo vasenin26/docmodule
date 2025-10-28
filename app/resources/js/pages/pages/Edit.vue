@@ -63,13 +63,8 @@
                             <!-- Содержимое -->
                             <div class="space-y-2">
                                 <Label for="content">Содержимое</Label>
-                                <textarea
-                                    id="content"
+                                <AppContentWysiwyg
                                     v-model="form.content"
-                                    rows="15"
-                                    class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                    placeholder="Введите содержимое страницы в формате Markdown..."
-                                    :class="{ 'border-destructive': errors?.content }"
                                 />
                                 <InputError v-if="errors?.content" :message="errors.content" />
                                 <p class="text-xs text-muted-foreground">Поддерживается формат Markdown</p>
@@ -110,11 +105,6 @@
                     </CardContent>
                 </Card>
             </div>
-
-            <div class="space-y-6 lg:col-span-1">
-                <!-- Предварительный просмотр -->
-                <MarkdownPreview :content="form.content" />
-            </div>
         </div>
 
         <!-- Диалог подтверждения актуализации -->
@@ -154,7 +144,6 @@
 import FileLinksList from '@/components/FileLinksList.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
-import MarkdownPreview from '@/components/MarkdownPreview.vue';
 import PageListButton from '@/components/PageInfo/PageListButton.vue';
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
@@ -179,6 +168,7 @@ import { useActualizationChat } from '@/composables/useActualizationChat';
 import { createApi } from '@/service/api/Api';
 import { ActualizationStatusRequest } from '@/service/api/request/Actualization/ActualizationStatusRequest';
 import { StartActualizationForDraftRequest } from '@/service/api/request/Actualization/StartActualizationForDraftRequest';
+import AppContentWysiwyg from '@/components/AppContentWysiwyg.vue';
 
 type PageVersion = {
     id: number;
@@ -375,7 +365,7 @@ const fetchActualizationStatus = async () => {
             requestCount.value++;
             actualizationProcessStatus.value = data.data.status;
             hasActiveAgentTask.value = !!data.data.has_active_agent_task;
-            
+
             // Отладочная информация
             console.log('Статус актуализации:', data.data.status, 'Содержимое:', data.data.content ? 'есть' : 'нет');
             if (data.data.chat) {
@@ -394,7 +384,7 @@ const fetchActualizationStatus = async () => {
                 (chat.value as any).total_tokens = (data.data.chat as any).total_tokens ?? (chat.value as any)?.total_tokens ?? 0;
                 (chat.value as any).context = (data.data.chat as any).context ?? (chat.value as any)?.context ?? null;
             }
-            
+
             // Обновляем содержимое черновика при завершении актуализации
             if (data.data.status === 'success' && data.data.content && !contentUpdated.value) {
                 form.content = data.data.content;
@@ -402,7 +392,7 @@ const fetchActualizationStatus = async () => {
                 // Показываем уведомление пользователю
                 console.log('Содержимое черновика обновлено после актуализации');
             }
-            
+
             if (['success', 'failed'].includes(actualizationProcessStatus.value)) {
                 stopPolling();
             }
