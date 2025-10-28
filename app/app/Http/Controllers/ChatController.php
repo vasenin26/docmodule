@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Common\Enums\AgentTaskType;
+use App\Http\Requests\Chat\SendMessageRequest;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Models\LLMChat;
@@ -31,7 +32,7 @@ class ChatController extends Controller
         ]);
     }
 
-    public function send(
+    public function sendMessage(
         LLMChat $chat,
         AgentTaskManagerInterface $agentTaskManager,
         ConversationFactoryInterface $conversationFactory,
@@ -46,6 +47,10 @@ class ChatController extends Controller
         // Добавляем новое пользовательское сообщение
         $userMessage = new UserMessage($request->getMessage());
         $conversation->addMessage($userMessage);
+
+        $chat->update([
+            'messages' => $conversation->serialize()
+        ]);
 
         // Запускаем задачу для генерации
         $handler = $handlerFactory->createChatHandler($chat);

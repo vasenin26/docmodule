@@ -31,6 +31,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use App\Models\VersionDiffTask;
 use App\Models\PageVersion;
+use Vasenin26\Conversation\Factory\ConversationFactory;
+use Vasenin26\Conversation\Interface\ConversationFactoryInterface;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -66,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PromptTemplateRendererInterface::class, PromptTemplateRenderer::class);
         $this->app->bind(PromptSourceFactoryInterface::class, PromptSourceFactory::class);
         $this->app->bind(PromptProviderFactory::class, PromptProviderFactory::class);
+        $this->app->bind(ConversationFactoryInterface::class, ConversationFactory::class);
 
         $this->app->bind(AgentResultHandlerFactoryInterface::class, AgentResultHandlerFactory::class);
 

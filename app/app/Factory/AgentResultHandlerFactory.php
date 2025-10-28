@@ -7,6 +7,7 @@ use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\AgentTask;
 use App\Models\Actualization;
 use App\Models\Implementation;
+use App\Models\LLMChat;
 use App\Models\Techplane;
 use App\Services\AgentTaskManager\Handlers\ActualizationResultHandler;
 use App\Services\AgentTaskManager\Handlers\ImplementationResultHandler;
@@ -20,7 +21,7 @@ class AgentResultHandlerFactory implements AgentResultHandlerFactoryInterface
     {
         $handlerClass = $task->handler;
 
-        if(empty($handlerClass)) {
+        if (empty($handlerClass)) {
             return null;
         }
 
@@ -30,7 +31,7 @@ class AgentResultHandlerFactory implements AgentResultHandlerFactoryInterface
             return null;
         }
 
-        if(in_array(AgentResultHandlerInterface::class, $implementationClass)) {
+        if (in_array(AgentResultHandlerInterface::class, $implementationClass)) {
             try {
                 return $handlerClass::createFromTask($task);
             } catch (\Exception $e) {
@@ -62,5 +63,16 @@ class AgentResultHandlerFactory implements AgentResultHandlerFactoryInterface
     public function createImplementationResultHandler(Implementation $implementation): AgentResultHandlerInterface
     {
         return new ImplementationResultHandler($implementation);
+    }
+
+    public function createChatHandler(LLMChat $chat): AgentResultHandlerInterface
+    {
+        $lastTask = AgentTask::where(['chat_id' => $chat->id])->latest()->first();
+
+        if (empty($lastTask)) {
+            throw new \Exception('Chat have no task');
+        }
+
+        return $this->createTaskHandler($lastTask);
     }
 }

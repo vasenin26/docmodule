@@ -217,6 +217,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Чат ЛЛМ
     Route::post('/chat/{chat}', [ChatController::class, 'state'])->name('chat.state');
     Route::delete('/chat/{chat}', [ChatController::class, 'stop'])->name('chat.stop');
+    Route::post('/chat/{chat}/message', [ChatController::class, 'sendMessage'])->name('chat.message.send');
 });
 
 

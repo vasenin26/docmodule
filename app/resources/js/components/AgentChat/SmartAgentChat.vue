@@ -5,6 +5,7 @@ import type { LLMMessage } from '@/types';
 import { createApi } from '@/service/api/Api';
 import { GetChatState } from '@/service/api/request/Chat/GetChatState';
 import { StopChatGeneration } from '@/service/api/request/Chat/StopChatGeneration';
+import { SendMessage } from '@/service/api/request/Chat/SendMessage';
 
 const props = defineProps<{
     chatId: number | null;
@@ -12,6 +13,7 @@ const props = defineProps<{
 
 const messages = ref<LLMMessage[]>([]);
 const status = ref<string>('loading');
+const sending = ref<boolean>(false);
 const requestCount = ref<number>(0);
 const totalTokens = ref<number>(0);
 const contextFill = ref<number>(0);
@@ -36,6 +38,16 @@ async function stopGeneration() {
     if (result.status === 'ok') stopPoling();
 }
 
+async function sendMessage(message: string) {
+    sending.value = true;
+    const result = await new SendMessage(props.chatId, message).call(api);
+    sending.value = false;
+
+    if (result.status === 'ok') {
+        startPoling();
+    }
+}
+
 async function poling() {
     const result = await new GetChatState(props.chatId).call(api);
 
@@ -56,12 +68,14 @@ async function poling() {
 <template>
     <AgentChat
         :status
+        :sending
         :messages
         :requestCount
         :totalTokens
         :contextFill
         :loading="polingState"
         @stop="stopGeneration"
+        @sendMessage="sendMessage"
     />
 </template>
 
