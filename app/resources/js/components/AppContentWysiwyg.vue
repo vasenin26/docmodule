@@ -10,27 +10,41 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ClassicEditor, Essentials, Paragraph, Strikethrough, BlockQuote, CodeBlock, Bold, Italic, Heading, List, Link } from 'ckeditor5';
+import {
+    ClassicEditor,
+    Essentials,
+    Paragraph,
+    Strikethrough,
+    BlockQuote,
+    CodeBlock,
+    Bold,
+    Italic,
+    Heading,
+    List,
+    Link,
+    Table
+} from 'ckeditor5';
 import { Ckeditor } from '@ckeditor/ckeditor5-vue';
 
 import 'ckeditor5/ckeditor5.css';
+
 interface Props {
     modelValue?: string | null;
     placeholder?: string;
 }
+
 const props = defineProps<Props>();
 const emit = defineEmits(['update:modelValue']);
 const internalValue = computed<string>({
     get: () => props.modelValue ?? '',
-    set: (v: string) => emit('update:modelValue', v),
+    set: (v: string) => emit('update:modelValue', v)
 });
 
 
-
-const config = computed( () => {
+const config = computed(() => {
     return {
         licenseKey: 'GPL', // Or 'GPL'.
-        plugins: [ Essentials, Paragraph, Bold, Italic, Heading, List, Strikethrough, BlockQuote, CodeBlock, Link ],
+        plugins: [Essentials, Paragraph, Bold, Italic, Heading, List, Strikethrough, BlockQuote, CodeBlock, Link, Table],
         toolbar: {
             items: [
                 'undo', 'redo',
@@ -41,14 +55,16 @@ const config = computed( () => {
                 '|',
                 'link', 'blockQuote', 'codeBlock',
                 '|',
-                'bulletedList', 'numberedList'
+                'bulletedList', 'numberedList',
+                '|',
+                'insertTable', 'tableColumn', 'tableRow', 'mergeTableCells'
             ],
             shouldNotGroupWhenFull: false
         },
-        height: 400,
+        height: 400
 
     };
-} );
+});
 </script>
 
 <style scoped>
