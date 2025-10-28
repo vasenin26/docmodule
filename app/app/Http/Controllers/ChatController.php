@@ -48,10 +48,6 @@ class ChatController extends Controller
         $userMessage = new UserMessage($request->getMessage());
         $conversation->addMessage($userMessage);
 
-        $chat->update([
-            'messages' => $conversation->serialize()
-        ]);
-
         // Запускаем задачу для генерации
         $handler = $handlerFactory->createChatHandler($chat);
 
@@ -63,5 +59,13 @@ class ChatController extends Controller
             false,
             $chat->type,
         );
+
+        $chat->update([
+            'messages' => $conversation->serialize()
+        ]);
+
+        return response()->json([
+            'status' => 'ok'
+        ]);
     }
 }

@@ -91,10 +91,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Статус актуализации с чатом и отправка сообщений
     Route::get('actualizations/{actualization}/status-with-chat', [ActualizationController::class, 'getStatusWithChat'])
         ->name('actualizations.status-with-chat');
-    Route::post('actualizations/{actualization}/send-message', [ActualizationController::class, 'sendMessage'])
-        ->name('actualizations.send-message');
-    Route::put('actualizations/{actualization}/stop-generating', [ActualizationController::class, 'stopGenerating'])
-        ->name('actualizations.stop-generating');
 
     // Маршруты для задач
     Route::get('tasks', [TaskController::class, 'index'])->name('tasks.index');
