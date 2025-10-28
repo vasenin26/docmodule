@@ -169,6 +169,7 @@ import { createApi } from '@/service/api/Api';
 import { ActualizationStatusRequest } from '@/service/api/request/Actualization/ActualizationStatusRequest';
 import { StartActualizationForDraftRequest } from '@/service/api/request/Actualization/StartActualizationForDraftRequest';
 import AppContentWysiwyg from '@/components/AppContentWysiwyg.vue';
+import ActualizationButton from '@/components/PageInfo/ActualizationButton.vue';
 
 type PageVersion = {
     id: number;

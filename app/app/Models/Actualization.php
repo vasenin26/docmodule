@@ -31,8 +31,6 @@ class Actualization extends Model
         'created_by',
     ];
 
-
-
     /**
      * Черновик (версия страницы), для которого выполняется актуализация
      */
