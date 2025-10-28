@@ -5,7 +5,6 @@
                 <ActualizationButton
                     :versionId="page.current_version.id"
                 />
-
                 <Button as-child variant="outline">
                     <Link :href="route('pages.show', pageVersion?.page_id)"> Просмотр</Link>
                 </Button>
@@ -108,23 +107,6 @@
             @confirm="confirmActualizeDraft"
             @cancel="cancelActualization"
         />
-
-        <!-- Chat modal placed after main template to avoid slot constraints -->
-        <SidePanel v-model:open="isChatModalOpen">
-            <AgentChat
-                v-if="chat"
-                :messages="chat.messages"
-                :loading="isPolling"
-                :status="actualizationProcessStatus"
-                :sending="isSending"
-                :requestCount="requestCount"
-                :contextFill="chat?.context_fill ?? 0"
-                :totalTokens="chat?.total_tokens ?? 0"
-                :context="chat?.context"
-                @sendMessage="sendMessageToChat"
-                @stop="sendStopGenerating"
-            />
-        </SidePanel>
     </PagesLayout>
 </template>
 
@@ -147,12 +129,9 @@ import Label from '@/components/ui/label/Label.vue';
 import PagesLayout from '@/layouts/pages/PagesLayout.vue';
 import { Actualization, Page } from '@/types';
 import { Link, router, useForm } from '@inertiajs/vue3';
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import ActualizationStatus from '@/components/PageInfo/ActualizationStatus.vue';
-import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
-import AgentChat from '@/components/AgentChat/AgentChat.vue';
 import type { LLMChat } from '@/types';
-import { useActualizationChat } from '@/composables/useActualizationChat';
 import { createApi } from '@/service/api/Api';
 import { ActualizationStatusRequest } from '@/service/api/request/Actualization/ActualizationStatusRequest';
 import { StartActualizationForDraftRequest } from '@/service/api/request/Actualization/StartActualizationForDraftRequest';
@@ -201,7 +180,6 @@ const showActualizeConfirm = ref(false);
 const actualizationLoading = ref(false);
 
 // Управление модальным окном чата и состояние чата
-const isChatModalOpen = ref<boolean>(false);
 const chat = ref<LLMChat | null>(props.actualization?.llm_chat || null);
 const actualizationProcessStatus = ref<string>(props.actualization?.status || 'unknown');
 const isPolling = ref<boolean>(false);
@@ -212,12 +190,6 @@ const contentUpdated = ref<boolean>(false);
 
 // API и composable для чата
 const api = createApi();
-const {
-    sendMessage,
-    stopGenerating,
-    updateChatMessages,
-    isSending,
-} = useActualizationChat(props.actualization?.id || 0);
 
 // Метод для создания черновика
 const createDraft = () => {
@@ -290,11 +262,6 @@ const cancel = () => {
     router.visit(route('pages.show', props.pageVersion.page_id));
 };
 
-// Показать диалог подтверждения актуализации
-const showActualizeDialog = () => {
-    showActualizeConfirm.value = true;
-};
-
 // Подтвердить актуализацию черновика
 const confirmActualizeDraft = () => {
     actualizationLoading.value = true;
@@ -323,25 +290,6 @@ const confirmActualizeDraft = () => {
 // Отменить актуализацию
 const cancelActualization = () => {
     showActualizeConfirm.value = false;
-};
-
-// Открыть модальное окно чата
-const openChatModal = () => {
-    isChatModalOpen.value = true;
-    if (props.actualization) {
-        startPolling();
-    }
-};
-
-// Отправить сообщение в чат актуализации
-const sendMessageToChat = async (message: string) => {
-    if (!props.actualization || props.actualization.generating) return;
-
-    startPolling();
-    const response = await sendMessage(message);
-    if (response && response.chat) {
-        updateChatMessages(chat.value, response.chat.messages);
-    }
 };
 
 // Получить статус актуализации с чатом
@@ -410,21 +358,12 @@ const stopPolling = () => {
     isPolling.value = false;
 };
 
-const actualizationButtonDisabled = computed(() => {
-    return !!props.actualization && props.actualization.generating;
-});
-
 // Lifecycle hooks
 onMounted(() => {
     if (props.actualization) {
         fetchActualizationStatus();
     }
 });
-
-const sendStopGenerating = async () => {
-    await stopGenerating();
-    actualizationProcessStatus.value = 'completed';
-};
 
 onUnmounted(() => {
     stopPolling();

@@ -12,13 +12,11 @@ const contextFill = ref<number>(0);
 const polingState = ref<boolean>(false);
 
 export function useChatAgent(targetChatId: number) {
-    console.log('creating', targetChatId)
     chatId.value = targetChatId
 
     const api = createApi();
 
     function setChatId(target: number) {
-        console.log(target)
         chatId.value = target;
     }
 

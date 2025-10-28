@@ -88,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
@@ -164,9 +164,12 @@ const getStatusText = (status: string) => {
     return statusMap[status] || status;
 };
 
-const { setChatId, reset, startPoling, stopPoling } = useChatAgent(props.chat.id);
+const { setChatId, reset, startPoling, stopPoling, status } = useChatAgent(props.chat.id);
 const api = createApi();
 
+watch(status, () => {
+    if(status.value === 'completed') checkUpdates()
+})
 async function restartGeneration() {
     stopPoling();
 
@@ -200,4 +203,9 @@ async function restartGeneration() {
     reset();
     startPoling();
 }
+
+function checkUpdates() {
+
+}
+
 </script>
