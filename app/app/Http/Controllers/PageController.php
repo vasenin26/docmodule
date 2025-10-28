@@ -294,60 +294,6 @@ class PageController extends Controller
     }
 
     /**
-     * Запустить актуализацию для страницы (создает черновик из текущей версии)
-     * Используется на странице просмотра (Show.vue)
-     */
-    public function actualizeContent(ActualizationService $actualizationService, Request $request, Page $page): JsonResponse
-    {
-        // Бизнес-валидация: проверяем правила актуализации
-        $validationErrors = $this->validatePageForActualization($page);
-        if (!empty($validationErrors)) {
-            return response()->json([
-                'success' => false,
-                'message' => implode(', ', $validationErrors)
-            ], 422);
-        }
-
-        try {
-            // Создаем черновик из текущей версии и запускаем актуализацию
-            $actualization = $actualizationService->initiateForCurrentVersion($page, $request->user());
-            $actualizationDTO = ActualizationDTO::fromModel($actualization);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Актуализация успешно запущена. Создан черновик.',
-                'data' => $actualizationDTO->toArray()
-            ]);
-
-        } catch (\RuntimeException $e) {
-            Log::error('Actualization runtime error', [
-                'message' => $e->getMessage(),
-                'page_id' => $page->id,
-                'user_id' => $request->user()->id ?? 'no user',
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
-
-        } catch (\Exception $e) {
-            Log::error('Actualization error', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'page_id' => $page->id,
-                'user_id' => $request->user()->id ?? 'no user',
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Произошла ошибка при запуске актуализации',
-                'debug' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
-        }
-    }
-
-    /**
      * Show a specific version of the page.
      */
     public function showVersion(Page $page, PageVersion $version)
@@ -557,30 +503,5 @@ class PageController extends Controller
             newVersionId: $currentVersion->id,
             oldVersionId: $oldVersionId
         );
-    }
-
-
-    /**
-     * Валидация бизнес-правил для актуализации страницы
-     *
-     * @param Page $page
-     * @return array Массив ошибок валидации
-     */
-    private function validatePageForActualization(Page $page): array
-    {
-        $errors = [];
-
-        // Проверяем, что у страницы нет активной актуализации
-        if ($page->hasActiveActualization()) {
-            $errors[] = 'Page have active actualization';
-        }
-
-        if (!$page->currentVersion) {
-            $errors[] = 'Page have no current version';
-        } elseif ($page->currentVersion->projectFiles()->count() === 0) {
-            $errors[] = 'Page have no files';
-        }
-
-        return $errors;
     }
 }

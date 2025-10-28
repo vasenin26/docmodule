@@ -59,7 +59,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Новый маршрут для создания черновика
     Route::post('pages/{page}/create-draft', [PageController::class, 'createDraft'])->name('pages.create-draft');
-    Route::post('pages/{page}/actualize', [PageController::class, 'actualizeContent'])->name('pages.actualize');
 
     // Маршруты для работы с версиями страниц
     Route::get('pages/{page}/versions/{version}', [PageController::class, 'showVersion'])->name('pages.versions.show');
@@ -84,6 +83,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('actualizations/{actualization}', [ActualizationController::class, 'cancel'])
         ->name('actualizations.cancel');
 
+    // Новый маршрут для актуализации конкретного черновика
+    Route::post('/page/version/{version}/actualize', [ActualizationController::class, 'start'])->name('pages.versions.actualise');
+
+
     // Статус актуализации с чатом и отправка сообщений
     Route::get('actualizations/{actualization}/status-with-chat', [ActualizationController::class, 'getStatusWithChat'])
         ->name('actualizations.status-with-chat');
@@ -91,10 +94,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('actualizations.send-message');
     Route::put('actualizations/{actualization}/stop-generating', [ActualizationController::class, 'stopGenerating'])
         ->name('actualizations.stop-generating');
-
-    // Новый маршрут для актуализации конкретного черновика
-    Route::post('/drafts/{draft}/actualize', [ActualizationController::class, 'storeForDraft'])
-        ->name('drafts.actualize');
 
     // Маршруты для задач
     Route::get('tasks', [TaskController::class, 'index'])->name('tasks.index');

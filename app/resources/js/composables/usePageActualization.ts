@@ -1,7 +1,7 @@
 import { router } from '@inertiajs/vue3';
 import { computed, onUnmounted, ref } from 'vue';
 import { createApi } from '@/service/api/Api';
-import { CancelActualizationRequest, GetActualizationHistoryRequest, GetActualizationStatusRequest, StartActualizationRequest } from '@/service/api/request/Page/PageActualizationRequests';
+import { CancelActualizationRequest, GetActualizationHistoryRequest, GetActualizationStatusRequest, StartVersionActualizationRequest } from '@/service/api/request/Page/PageActualizationRequests';
 
 export interface ActualizationStatus {
     id: number;
@@ -21,7 +21,7 @@ export function usePageActualization(pageId: number) {
     /**
      * Запустить процесс актуализации
      */
-    const startActualization = async (): Promise<void> => {
+    const startActualization = async (versionId: int): Promise<number|null> => {
         if (isActualizing.value || hasActiveActualization.value) {
             return;
         }
@@ -29,12 +29,10 @@ export function usePageActualization(pageId: number) {
         isActualizing.value = true;
 
         try {
-            const result = await new StartActualizationRequest(pageId).call(api);
+            const result = await new StartVersionActualizationRequest(versionId).call(api);
 
             if (result.success) {
-                // Сразу начинаем проверку статуса
-                await checkStatus();
-                startStatusChecking();
+                return result.data.id
             } else {
                 throw new Error(result.message || 'Ошибка при запуске актуализации');
             }

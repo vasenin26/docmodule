@@ -11,8 +11,8 @@
                 </Button>
 
                 <ActualizationButton
-                    :page-id="page.id"
-                    :can-actualize="canActualize"
+                    :versionId="page.version_id"
+                    :canActualize="canActualize"
                 />
 
                 <Button as-child variant="outline">
@@ -33,17 +33,6 @@
             <div class="space-y-6 lg:col-span-1">
                 <!-- Информация о черновике -->
                 <DraftInfo v-if="page.currentDraft" :draft="page.currentDraft" :page-id="page.id" />
-
-                <!-- Статус актуализации -->
-                <ActualizationStatusAny
-                    v-if="actualizationStatus"
-                    :actualization-status="actualizationStatus"
-                    :has-active-actualization="hasActiveActualization ?? false"
-                    :status-text="statusText"
-                    :status-color="statusColor"
-                    :can-cancel-actualization="canCancelActualization"
-                    :on-cancel-actualization="cancelActualization"
-                />
 
                 <!-- Родительская страница -->
                 <div v-if="page.parent" class="rounded-lg bg-muted/50 p-4">
@@ -191,7 +180,6 @@
 
 <script setup lang="ts">
 import DraftInfo from '@/components/PageInfo/DraftInfo.vue';
-import ActualizationStatus from '@/components/PageInfo/ActualizationStatus.vue';
 import ActualizationButton from '@/components/PageInfo/ActualizationButton.vue';
 import ChildPages, { ChildPage } from '@/components/PageInfo/ChildPages.vue';
 import Heading from '@/components/Heading.vue';
@@ -270,14 +258,8 @@ const canCreateTask = computed(() => {
 
 // Логика актуализации (для статуса и кнопки)
 const {
-    actualizationStatus,
-    statusText,
-    statusColor,
     canStartActualization,
-    canCancelActualization,
-    cancelActualization,
     checkStatus,
-    hasActiveActualization
 } = usePageActualization(props.page.id);
 
 // Проверяем статус при загрузке компонента
@@ -297,7 +279,6 @@ const createTask = () => {
     router.post(route('pages.create-task', props.page.id));
 };
 
-const ActualizationStatusAny = ActualizationStatus as any;
 const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('ru-RU', {
         year: 'numeric',

@@ -3,6 +3,9 @@ import { Method, type ApiInterface, type Request } from '@/service/api/Api';
 export interface ActualizationStartResponse {
     success: boolean;
     message?: string;
+    data: {
+        id: number | null;
+    };
 }
 
 export interface ActualizationStatusData {
@@ -19,13 +22,13 @@ export interface ActualizationStatusResponse {
     data: ActualizationStatusData;
 }
 
-export class StartActualizationRequest implements Request<ActualizationStartResponse> {
+export class StartVersionActualizationRequest implements Request<ActualizationStartResponse> {
     public readonly method: Method = Method.CREATE;
     public readonly url: string;
     public readonly body: any = null;
 
-    constructor(pageId: number) {
-        this.url = `/pages/${pageId}/actualize`;
+    constructor(versionId: number) {
+        this.url = route('pages.versions.actualise', versionId);
     }
 
     public async call(api: ApiInterface): Promise<ActualizationStartResponse> {
@@ -74,5 +77,3 @@ export class GetActualizationHistoryRequest implements Request<{ success: boolea
         return api.execute<{ success: boolean; data: ActualizationStatusData[] }>(this);
     }
 }
-
-

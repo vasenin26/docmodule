@@ -17,6 +17,7 @@ use App\Models\PageVersion;
 use App\Services\ActualizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -28,16 +29,33 @@ class ActualizationController extends Controller
 {
     public function __construct(
         private ActualizationService $actualizationService
-    ) {
+    )
+    {
     }
 
     /**
      * Запустить актуализацию для конкретного черновика
      */
-    public function storeForDraft(StartPageActualizationRequest $request, PageVersion $draft): JsonResponse
+    public function start(StartPageActualizationRequest $request, PageVersion $version): JsonResponse
     {
+        if (!$version->page->project->canAccess(Auth::user())) {
+            abort(403);
+        }
+
+        if($version->hasActualization()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'version_have_actualisation',
+                'data' => ActualizationDTO::fromModel($version->actualisation)->toArray()
+            ]);
+        }
+
+        if (!$version->is_draft) {
+            $version = $version->createNewVersion();
+        }
+
         try {
-            $actualization = $this->actualizationService->initiate($draft, $request->user());
+            $actualization = $this->actualizationService->initiate($version, $request->user());
             $actualizationDTO = ActualizationDTO::fromModel($actualization);
 
             return response()->json([
@@ -49,8 +67,8 @@ class ActualizationController extends Controller
         } catch (\RuntimeException $e) {
             Log::error('Actualization runtime error for draft', [
                 'message' => $e->getMessage(),
-                'draft_id' => $draft->id,
-                'page_id' => $draft->page_id,
+                'draft_id' => $version->id,
+                'page_id' => $version->page_id,
                 'user_id' => $request->user()->id ?? 'no user',
             ]);
 
@@ -63,8 +81,8 @@ class ActualizationController extends Controller
             Log::error('Actualization error for draft', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'draft_id' => $draft->id,
-                'page_id' => $draft->page_id,
+                'draft_id' => $version->id,
+                'page_id' => $version->page_id,
                 'user_id' => $request->user()->id ?? 'no user',
             ]);
 
@@ -173,16 +191,17 @@ class ActualizationController extends Controller
      * Отправить сообщение в чат актуализации
      */
     public function sendMessage(
-        SendActualizationMessageRequest $request,
-        Actualization $actualization,
-        ConversationFactory $conversationFactory,
+        SendActualizationMessageRequest    $request,
+        Actualization                      $actualization,
+        ConversationFactory                $conversationFactory,
         AgentResultHandlerFactoryInterface $handlerFactory,
-        AgentTaskManagerInterface $agentTaskManager
-    ): JsonResponse {
+        AgentTaskManagerInterface          $agentTaskManager
+    ): JsonResponse
+    {
         try {
             $dto = SendActualizationMessageDTO::fromRequest($request, $actualization);
 
-            if($actualization->isGenerating()) {
+            if ($actualization->isGenerating()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Есть запущенная актуализация'

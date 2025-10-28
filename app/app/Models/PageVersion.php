@@ -47,6 +47,11 @@ class PageVersion extends Model
         return $this->belongsTo(Page::class);
     }
 
+    public  function actualisation(): HasOne
+    {
+        return $this->hasOne(Actualization::class, 'page_version_id');
+    }
+
     /**
      * Предыдущая версия
      */
@@ -69,14 +74,6 @@ class PageVersion extends Model
     public function versionDiffTasks(): HasMany
     {
         return $this->hasMany(VersionDiffTask::class, 'page_version_id');
-    }
-
-    /**
-     * Для обратной совместимости
-     */
-    public function diffDescriptions(): HasMany
-    {
-        return $this->versionDiffTasks();
     }
 
     /**
@@ -118,34 +115,19 @@ class PageVersion extends Model
         return $newVersion;
     }
 
-    /**
-     * Проверить, есть ли активная актуализация для этой версии
-     * Ищем актуализации, привязанные непосредственно к этой версии
-     */
-    public function hasActiveActualization(): bool
+    public function hasActualization(): bool
     {
-        $actualization = Actualization::where('page_version_id', $this->id)->first();
-        return $actualization ? $actualization->isGenerating() : false;
+        return Actualization::where('page_version_id', $this->id)->exists();
     }
 
     /**
      * Получить активную актуализацию для этой версии
+     * @deprecated только одна актуализация на версию
      */
     public function getActiveActualization(): ?Actualization
     {
         return Actualization::where('page_version_id', $this->id)
             ->with(['pageVersion', 'createdBy', 'llmChat'])
-            ->first();
-    }
-
-    /**
-     * Получить завершенную актуализацию для этой версии
-     */
-    public function getCompletedActualization(): ?Actualization
-    {
-        return Actualization::where('page_version_id', $this->id)
-            ->where('status', Actualization::STATUS_COMPLETED)
-            ->with(['pageVersion', 'llmChat'])
             ->first();
     }
 
@@ -192,14 +174,5 @@ class PageVersion extends Model
     {
         $ids = $source->projectFiles()->pluck('project_files.id')->all();
         $this->projectFiles()->sync($ids);
-    }
-
-    /**
-     * Backward-compatible accessor: вернуть массив URL прикрепленных файлов
-     */
-    public function getFilesAttribute(): array
-    {
-        // Возвращаем список URL из связанной коллекции projectFiles
-        return $this->projectFiles()->pluck('url')->all();
     }
 }
