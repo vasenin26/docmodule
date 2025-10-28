@@ -112,12 +112,11 @@ class ActualizationController extends Controller
      */
     public function show(Request $request, Actualization $actualization): Response
     {
-        $details = $this->actualizationService->getDetails($actualization);
-
         return Inertia::render('pages/ActualizationShow', [
-            'actualization' => $details,
-            'page' => $details['page'],
-            'chat' => $details['chat'],
+            'project_id' => $actualization->page->project_id,
+            'actualization' => $actualization,
+            'version' => $actualization->pageVersion,
+            'chat' => $actualization->llmChat,
         ]);
     }
 

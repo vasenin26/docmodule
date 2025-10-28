@@ -3,7 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useProjectStore } from '@/stores/project';
 import { type NavItem } from '@/types';
-import { FileText, LayoutGrid, List, MessageSquare, Bot, Settings } from 'lucide-vue-next';
+import { FileText, LayoutGrid, List, MessageSquare, Settings } from 'lucide-vue-next';
 
 const page = usePage();
 const projectStore = useProjectStore();
