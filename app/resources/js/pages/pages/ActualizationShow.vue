@@ -4,6 +4,7 @@
             <div class="flex items-center gap-2">
                 <ChatButton
                     :showCondition="true"
+                    @click="showChat = true"
                 />
                 <Button>
                     <Link :href="route('pages.versions.edit', [version.page_id, version.id])">
@@ -77,12 +78,20 @@
                     </div>
                 </CardContent>
             </Card>
-
         </div>
+
+        <!-- Модальное окно чата -->
+        <SidePanel v-model:open="showChat">
+            <SmartAgentChat
+                :chatId="chat.id"
+            />
+        </SidePanel>
+
     </FullScreenLayout>
 </template>
 
 <script setup lang="ts">
+import {ref} from 'vue';
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
@@ -94,6 +103,8 @@ import ChatButton from '@/components/ChatButton.vue';
 import { PageVersion } from '@/types';
 import {RefreshCw} from 'lucide-vue-next';
 import FullScreenLayout from '@/layouts/fullscreen/FullScreenLayout.vue';
+import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
+import SmartAgentChat from '@/components/AgentChat/SmartAgentChat.vue';
 
 interface User {
     id: number;
@@ -128,6 +139,8 @@ defineProps<{
     version: PageVersion;
     chat?: Chat;
 }>();
+
+const showChat = ref<bool>(true);
 
 const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('ru-RU', {

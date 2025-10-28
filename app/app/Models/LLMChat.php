@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Interfaces\AgentTaskManagerInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,6 +22,28 @@ class LLMChat extends Model
         'context',
         'context_fill',
     ];
+
+    public function getStatus(): string
+    {
+        $activeAgentTaskCount = AgentTask::where('chat_id', $this->id)
+            ->whereIn('status', [AgentTask::STATUS_WAIT, AgentTask::STATUS_PROCESSING])
+            ->count();
+
+        return $activeAgentTaskCount ? 'processing' : 'completed';
+    }
+
+    public function stopGeneration(
+        AgentTaskManagerInterface $agentTaskManager,
+    )
+    {
+        $activeAgentTasks = AgentTask::where('chat_id', $this->id)
+            ->whereIn('status', [AgentTask::STATUS_WAIT, AgentTask::STATUS_PROCESSING])
+            ->all();
+
+        $activeAgentTasks->each(function (AgentTask $agentTask) use ($agentTaskManager) {
+            $agentTaskManager->stopTask($agentTask->id);
+        });
+    }
 
     protected function casts(): array
     {
@@ -43,7 +66,7 @@ class LLMChat extends Model
     public function isTokensCalculated(): bool
     {
         // Токены теперь хранятся в связанных задачах (agent_tasks)
-        return (int) $this->agentTasks()->sum('total_tokens') > 0;
+        return (int)$this->agentTasks()->sum('total_tokens') > 0;
     }
 
     /**
@@ -56,17 +79,17 @@ class LLMChat extends Model
     {
         // Получаем только корневые задачи (без parent_id)
         $rootTasks = $this->agentTasks()->whereNull('parent_id')->get();
-        
+
         $totalTokens = 0;
-        
+
         foreach ($rootTasks as $rootTask) {
             // Добавляем токены самой корневой задачи
             $totalTokens += $rootTask->getPromptTokensOrZero();
-            
+
             // Добавляем токены всех дочерних задач рекурсивно
             $totalTokens += $this->getSubtasksPromptTokensRecursive($rootTask);
         }
-        
+
         return $totalTokens;
     }
 
@@ -80,17 +103,17 @@ class LLMChat extends Model
     {
         // Получаем только корневые задачи (без parent_id)
         $rootTasks = $this->agentTasks()->whereNull('parent_id')->get();
-        
+
         $totalTokens = 0;
-        
+
         foreach ($rootTasks as $rootTask) {
             // Добавляем токены самой корневой задачи
             $totalTokens += $rootTask->getCompletionTokensOrZero();
-            
+
             // Добавляем токены всех дочерних задач рекурсивно
             $totalTokens += $this->getSubtasksCompletionTokensRecursive($rootTask);
         }
-        
+
         return $totalTokens;
     }
 
@@ -104,20 +127,20 @@ class LLMChat extends Model
     {
         // Получаем только корневые задачи (без parent_id)
         $rootTasks = $this->agentTasks()->whereNull('parent_id')->get();
-        
+
         $totalTokens = 0;
-        
+
         foreach ($rootTasks as $rootTask) {
             // Добавляем токены самой корневой задачи
             $totalTokens += $rootTask->getTotalTokensOrZero();
-            
+
             // Добавляем токены всех дочерних задач рекурсивно
             $totalTokens += $this->getSubtasksTokensRecursive($rootTask);
         }
-        
+
         return $totalTokens;
     }
-    
+
     /**
      * Рекурсивный подсчет токенов для дочерних задач
      *
@@ -127,18 +150,18 @@ class LLMChat extends Model
     private function getSubtasksTokensRecursive(AgentTask $task): int
     {
         $subtasksTokens = 0;
-        
+
         foreach ($task->children as $child) {
             // Добавляем токены дочерней задачи
             $subtasksTokens += $child->getTotalTokensOrZero();
-            
+
             // Рекурсивно добавляем токены её дочерних задач
             $subtasksTokens += $this->getSubtasksTokensRecursive($child);
         }
-        
+
         return $subtasksTokens;
     }
-    
+
     /**
      * Рекурсивный подсчет prompt токенов для дочерних задач
      *
@@ -148,18 +171,18 @@ class LLMChat extends Model
     private function getSubtasksPromptTokensRecursive(AgentTask $task): int
     {
         $subtasksTokens = 0;
-        
+
         foreach ($task->children as $child) {
             // Добавляем prompt токены дочерней задачи
             $subtasksTokens += $child->getPromptTokensOrZero();
-            
+
             // Рекурсивно добавляем prompt токены её дочерних задач
             $subtasksTokens += $this->getSubtasksPromptTokensRecursive($child);
         }
-        
+
         return $subtasksTokens;
     }
-    
+
     /**
      * Рекурсивный подсчет completion токенов для дочерних задач
      *
@@ -169,15 +192,15 @@ class LLMChat extends Model
     private function getSubtasksCompletionTokensRecursive(AgentTask $task): int
     {
         $subtasksTokens = 0;
-        
+
         foreach ($task->children as $child) {
             // Добавляем completion токены дочерней задачи
             $subtasksTokens += $child->getCompletionTokensOrZero();
-            
+
             // Рекурсивно добавляем completion токены её дочерних задач
             $subtasksTokens += $this->getSubtasksCompletionTokensRecursive($child);
         }
-        
+
         return $subtasksTokens;
     }
 

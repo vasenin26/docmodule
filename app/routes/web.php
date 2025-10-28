@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActualizationController;
 use App\Http\Controllers\AgentController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImplementationController;
 use App\Http\Controllers\PageController;
@@ -212,6 +213,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('expense-summary');
     Route::get('/expense-summary/data', [ExpenseSummaryController::class, 'getData'])
         ->name('expense-summary.data');
+
+    // Чат ЛЛМ
+    Route::post('/chat/{chat}', [ChatController::class, 'state'])->name('chat.state');
+    Route::delete('/chat/{chat}', [ChatController::class, 'stop'])->name('chat.stop');
 });
 
 
