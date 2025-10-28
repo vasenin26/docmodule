@@ -1,5 +1,5 @@
 // app/resources/js/__tests__/helpers/expensePeriods.spec.ts
-import { mergeApiDataWithGenerated, MAX_POINTS } from '@/helpers/expensePeriods';
+import { mergeApiDataWithGenerated, MAX_POINTS } from '@/utils/expensePeriods';
 
 describe('expensePeriods helper', () => {
   test('generates missing day periods', () => {

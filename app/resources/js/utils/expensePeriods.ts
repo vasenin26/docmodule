@@ -128,9 +128,9 @@ function formatPeriodLabelFromStart(startYmd: string, period: PeriodType): strin
 
 function mapApiItem(apiItem: RawApiItem, period: PeriodType): { start: string; item: ExpenseSummaryItem } {
   const start = normalizePeriodStart(apiItem.period, period);
-  const totalCost = (typeof apiItem.total_cost === 'number') ? apiItem.total_cost : 0;
-  const taskCount = (typeof apiItem.task_count === 'number') ? apiItem.task_count : 0;
-  const periodLabel = apiItem.period_label || formatPeriodLabelFromStart(start, period);
+  const totalCost = (typeof apiItem.totalCost === 'number') ? apiItem.totalCost : 0;
+  const taskCount = (typeof apiItem.taskCount === 'number') ? apiItem.taskCount : 0;
+  const periodLabel = apiItem.periodLabel || formatPeriodLabelFromStart(start, period);
 
   return {
     start,

@@ -58,7 +58,7 @@ import ExpenseSummaryChart from './ExpenseSummaryChart.vue';
 import { createWebApi } from '@/service/api/Api';
 import { ExpenseSummaryDataRequest } from '@/service/api/request/ExpenseSummary/ExpenseSummaryDataRequest';
 import type { ExpenseSummaryData, ExpenseSummaryFilters, ExpenseTaskType, Project, RawApiItem } from '@/types';
-import { mergeApiDataWithGenerated, MAX_POINTS, type PeriodType } from '@/helpers/expensePeriods';
+import { mergeApiDataWithGenerated, type PeriodType } from '@/utils/expensePeriods';
 
 interface Props {
   projects: Project[];
@@ -66,7 +66,7 @@ interface Props {
   models?: string[];
 }
 
-const props = defineProps<Props>();
+defineProps<Props>();
 
 const loading = ref(false);
 const chartData = ref<ExpenseSummaryData[]>([]);
@@ -76,7 +76,7 @@ const getDefaultDateRange = () => {
   const today = new Date();
   const monthAgo = new Date();
   monthAgo.setMonth(today.getMonth() - 1);
-  
+
   return {
     from: monthAgo.toISOString().split('T')[0],
     to: today.toISOString().split('T')[0]
@@ -114,11 +114,11 @@ const handleFiltersChanged = async (filters: ExpenseSummaryFilters) => {
 
 const loadData = async () => {
   loading.value = true;
-  
+
   try {
     const request = new ExpenseSummaryDataRequest(currentFilters.value);
     const response = await request.call(api);
-    
+
     if (response.success) {
       const apiData = (response.data ?? []) as RawApiItem[];
       const period = currentFilters.value.period as PeriodType;
