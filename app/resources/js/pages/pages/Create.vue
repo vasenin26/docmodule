@@ -65,13 +65,8 @@
                         <!-- Содержимое -->
                         <div class="space-y-2">
                             <Label for="content">Содержимое</Label>
-                            <textarea
-                                id="content"
+                            <AppContentWysiwyg
                                 v-model="form.content"
-                                rows="15"
-                                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                placeholder="Введите содержимое страницы в формате Markdown..."
-                                :class="{ 'border-destructive': errors.content }"
                             />
                             <InputError v-if="errors.content" :message="errors.content" />
                             <p class="text-xs text-muted-foreground">Поддерживается формат Markdown</p>
@@ -124,6 +119,7 @@ import Label from '@/components/ui/label/Label.vue';
 import PagesLayout from '@/layouts/pages/PagesLayout.vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import AppContentWysiwyg from '@/components/AppContentWysiwyg.vue';
 
 interface ParentPage {
     id: number;
