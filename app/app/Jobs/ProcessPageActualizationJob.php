@@ -8,6 +8,7 @@ use App\Factory\PromptProviderFactory;
 use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Interfaces\Factory\LLMChatFactoryInterface;
+use App\Interfaces\HtmlToMdInterface;
 use App\Models\Actualization;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -46,6 +47,7 @@ class ProcessPageActualizationJob implements ShouldQueue
         AgentResultHandlerFactoryInterface $agentResultHandlerFactory,
         AgentTaskManagerInterface $agentTaskManager,
         LLMChatFactoryInterface $chatFactory,
+        HtmlToMdInterface $converter,
     ): void {
         $actualization = Actualization::with(['pageVersion.page', 'page'])->findOrFail($this->actualizationId);
         $draft = $actualization->pageVersion;
@@ -53,7 +55,7 @@ class ProcessPageActualizationJob implements ShouldQueue
 
         $promptProvider = $promptProviderFactory->createProjectPromptService($page->project_id);
 
-        $currentContent = $draft->content ?? '';
+        $currentContent = $converter->toMd($draft->content ?? '');
 
         // Создаем контекст для актуализации
         $context = new ActualizationContextDTO(
