@@ -2,7 +2,7 @@ import { createApi } from '@/service/api/Api';
 import { GetChatState, SendMessage, StopChatGeneration } from '@/service/api/request/Chat/requests';
 import { ref } from 'vue';
 
-const chatId = ref<int>(null);
+const chatId = ref<int|null>(null);
 const messages = ref<LLMMessage[]>([]);
 const status = ref<string>('loading');
 const sending = ref<boolean>(false);
@@ -11,8 +11,8 @@ const totalTokens = ref<number>(0);
 const contextFill = ref<number>(0);
 const polingState = ref<boolean>(false);
 
-export function useChatAgent(targetChatId: number) {
-    chatId.value = targetChatId
+export function useChatAgent(targetChatId: number | null) {
+    chatId.value = targetChatId;
 
     const api = createApi();
 
@@ -30,11 +30,13 @@ export function useChatAgent(targetChatId: number) {
     }
 
     async function stopGeneration() {
+        if(chatId.value === null) return;
         const result = await new StopChatGeneration(chatId.value).call(api);
         if (result.status === 'ok') stopPoling();
     }
 
     async function sendMessage(message: string) {
+        if(chatId.value === null) return;
         sending.value = true;
         const result = await new SendMessage(chatId.value, message).call(api);
         sending.value = false;
@@ -52,6 +54,7 @@ export function useChatAgent(targetChatId: number) {
     }
 
     async function poling() {
+        if(chatId.value === null) return;
         const result = await new GetChatState(chatId.value).call(api);
 
         status.value = result.status;

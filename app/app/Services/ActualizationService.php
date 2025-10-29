@@ -31,34 +31,19 @@ class ActualizationService
         // Найти существующую актуализацию по page_version_id
         $actualization = Actualization::where('page_version_id', $draft->id)->first();
 
-        // Если существует и уже генерируется — ошибка
-        if ($actualization && $actualization->isGenerating()) {
+        if ($actualization) {
             throw new \RuntimeException('Для этого черновика уже есть активная актуализация');
         }
 
         // Получить страницу для логирования
         $page = $draft->page;
 
-        if ($actualization) {
-            // Переиспользуем запись: переводим в pending и создаем новый чат
-            $chat = new \App\Models\LLMChat();
-            $chat->project_id = $page->project_id;
-            $chat->messages = [];
-            $chat->save();
-
-            $actualization->update([
-                'status' => Actualization::STATUS_PENDING,
-                'llm_chat_id' => $chat->id,
-            ]);
-        } else {
-            // Создаем новую запись
-            $actualization = Actualization::create([
-                'page_id' => $page->id,
-                'page_version_id' => $draft->id,
-                'status' => Actualization::STATUS_PENDING,
-                'created_by' => $user->id,
-            ]);
-        }
+        $actualization = Actualization::create([
+            'page_id' => $page->id,
+            'page_version_id' => $draft->id,
+            'status' => Actualization::STATUS_INIT,
+            'created_by' => $user->id,
+        ]);
 
         // Запустить фоновую задачу
         ProcessPageActualizationJob::dispatch($actualization->id);

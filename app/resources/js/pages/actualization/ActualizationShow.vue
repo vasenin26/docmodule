@@ -80,50 +80,35 @@
 
         <!-- Модальное окно чата -->
         <SidePanel v-model:open="showChat">
-            <SmartAgentChat
-                :chatId="chat.id"
-            />
+            <SmartAgentChat :chatId="chat_id" />
         </SidePanel>
     </FullScreenLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import Button from '@/components/ui/button/Button.vue';
-import Card from '@/components/ui/card/Card.vue';
-import CardContent from '@/components/ui/card/CardContent.vue';
-import CardDescription from '@/components/ui/card/CardDescription.vue';
-import CardHeader from '@/components/ui/card/CardHeader.vue';
-import CardTitle from '@/components/ui/card/CardTitle.vue';
-import { Link } from '@inertiajs/vue3';
-import ChatButton from '@/components/ChatButton.vue';
-import { PageVersion } from '@/types';
-import { RefreshCw } from 'lucide-vue-next';
-import FullScreenLayout from '@/layouts/fullscreen/FullScreenLayout.vue';
-import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import SmartAgentChat from '@/components/AgentChat/SmartAgentChat.vue';
+import ChatButton from '@/components/ChatButton.vue';
+import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import { useChatAgent } from '@/composables/useChatAgent';
-import { RestartGeneration } from '@/service/api/request/Actualization/RestartGenerationRequest';
+import FullScreenLayout from '@/layouts/fullscreen/FullScreenLayout.vue';
 import { createApi } from '@/service/api/Api';
 import { ActualizationStatusRequest } from '@/service/api/request/Actualization/ActualizationStatusRequest';
+import { RestartGeneration } from '@/service/api/request/Actualization/RestartGenerationRequest';
+import { PageVersion } from '@/types';
+import { Link } from '@inertiajs/vue3';
+import { RefreshCw } from 'lucide-vue-next';
+import { ref, watch } from 'vue';
+import Button from '../../components/ui/button/Button.vue';
+import Card from '../../components/ui/card/Card.vue';
+import CardContent from '../../components/ui/card/CardContent.vue';
+import CardDescription from '../../components/ui/card/CardDescription.vue';
+import CardHeader from '../../components/ui/card/CardHeader.vue';
+import CardTitle from '../../components/ui/card/CardTitle.vue';
 
 interface User {
     id: number;
     name: string;
     email: string;
-}
-
-interface ChatMessage {
-    role: 'user' | 'assistant' | 'system';
-    content: string;
-}
-
-interface Chat {
-    id: number;
-    messages: ChatMessage[];
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
 }
 
 interface Actualization {
@@ -138,7 +123,7 @@ const props = defineProps<{
     project_id: number;
     actualization: Actualization;
     version: PageVersion;
-    chat?: Chat;
+    chat_id: number | null;
 }>();
 
 const showChat = ref<bool>(true);
@@ -164,12 +149,22 @@ const getStatusText = (status: string) => {
     return statusMap[status] || status;
 };
 
-const { setChatId, reset, startPoling, stopPoling, status } = useChatAgent(props.chat.id);
+const { setChatId, reset, startPoling, stopPoling, status } = useChatAgent(props.chat_id);
 const api = createApi();
 
+if (props.chat_id) {
+    setChatId(props.chat_id);
+} else {
+    (async () => {
+        const chatId = await waitChat();
+        setChatId(chatId)
+    })()
+}
+
 watch(status, () => {
-    if(status.value === 'completed') checkUpdates()
-})
+    if (status.value === 'completed') checkUpdates();
+});
+
 async function restartGeneration() {
     stopPoling();
 
@@ -181,7 +176,7 @@ async function restartGeneration() {
     }
 
     do {
-        const info = await new ActualizationStatusRequest(props.actualization.id).call(api);
+        const info = await loadInfo(props.actualization.id);
 
         if (info.data.status === 'restarting') {
             await async function () {
@@ -191,21 +186,32 @@ async function restartGeneration() {
             continue;
         }
 
-        setChatId(info.data.chat_id)
+        setChatId(info.data.chat_id);
 
         break;
     } while (true);
 
     isRestarting.value = false;
 
-    console.log('reset')
+    console.log('reset');
 
     reset();
     startPoling();
 }
 
-function checkUpdates() {
-
+async function loadInfo() {
+    return new ActualizationStatusRequest(props.actualization.id).call(api);
 }
 
+async function waitChat(): int {
+    let chatId = null;
+
+    while ((chatId = (await loadInfo()).data.chat_id) === null) {
+        await sleep(500);
+    }
+
+    return chatId;
+}
+
+function checkUpdates() {}
 </script>

@@ -109,13 +109,13 @@ class ActualizationController extends Controller
     /**
      * Показать результаты актуализации
      */
-    public function show(Request $request, Actualization $actualization): Response
+    public function show(Actualization $actualization): Response
     {
-        return Inertia::render('pages/ActualizationShow', [
+        return Inertia::render('actualization/ActualizationShow', [
             'project_id' => $actualization->page->project_id,
             'actualization' => $actualization,
             'version' => $actualization->pageVersion,
-            'chat' => $actualization->llmChat,
+            'chat_id' => $actualization->llmChat?->id,
         ]);
     }
 
