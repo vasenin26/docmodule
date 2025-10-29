@@ -13,7 +13,7 @@
 {{/attached_files}}
 
 ## Репозитории проекта
-{{^attached_files}} нет доступных репозиториев {{/attached_files}}
+{{^repositories}} нет доступных репозиториев {{/repositories}}
 {{#repositories}}
 - {{.}}
 {{/repositories}}

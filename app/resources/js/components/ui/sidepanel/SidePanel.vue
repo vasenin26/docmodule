@@ -40,6 +40,7 @@ const model = defineModel<boolean>('open');
         flex-wrap: nowrap;
         transition: ease-in 200ms;
         justify-content: stretch;
+        z-index: 1000;
         &.closed {
             width: 0;
         }
