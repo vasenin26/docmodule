@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property LLMChat $llmChat
+ */
 class Actualization extends Model implements DisplayableResource
 {
     use HasFactory;
@@ -124,5 +127,20 @@ class Actualization extends Model implements DisplayableResource
     public function viewPage(): string
     {
         return route('actualizations.show', $this->id);
+    }
+
+    public function getGenerationStatus()
+    {
+        if ($this->status !== self::STATUS_COMPLETED) {
+            return $this->status;
+        }
+
+        $chatStatus = $this->llmChat?->getStatus();
+
+        if ($chatStatus) {
+            return $chatStatus;
+        }
+
+        return $this->status;
     }
 }

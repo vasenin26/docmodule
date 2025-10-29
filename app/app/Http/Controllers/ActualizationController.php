@@ -100,8 +100,9 @@ class ActualizationController extends Controller
             'success' => true,
             'data' => [
                 'id' => $actualization->id,
-                'status' => $actualization->status,
+                'status' => $actualization->getGenerationStatus(),
                 'chat_id' => $actualization->llm_chat_id,
+                'content' => $actualization->pageVersion->content
             ]
         ]);
     }

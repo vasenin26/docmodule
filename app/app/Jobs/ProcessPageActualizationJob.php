@@ -49,7 +49,6 @@ class ProcessPageActualizationJob implements ShouldQueue
         LLMChatFactoryInterface $chatFactory,
         HtmlToMdInterface $converter,
     ): void {
-        sleep(30);
         $actualization = Actualization::with(['pageVersion.page', 'page'])->findOrFail($this->actualizationId);
         $draft = $actualization->pageVersion;
         $page = $actualization->page;
@@ -71,9 +70,6 @@ class ProcessPageActualizationJob implements ShouldQueue
             $currentContent,
             $context
         );
-
-        $actualization->llm_chat_id = $chat->id;
-        $actualization->save();
 
         $handler = $agentResultHandlerFactory->createActualizationResultHandler($actualization);
 

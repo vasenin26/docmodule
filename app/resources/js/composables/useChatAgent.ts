@@ -46,7 +46,7 @@ export function useChatAgent(targetChatId: number | null) {
         }
     }
 
-    async function reset() {
+    function reset() {
         status.value = 'loading';
         sending.value = false;
         messages.value = [];
@@ -67,7 +67,7 @@ export function useChatAgent(targetChatId: number | null) {
         if (status.value === 'completed') stopPoling();
         if (!polingState.value) return;
 
-        setTimeout(() => poling(), 500);
+        setTimeout(() => poling(), 700);
     }
 
     return {

@@ -34,14 +34,14 @@
                                 <span
                                     class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                                     :class="{
-                                        'bg-gray-100 text-gray-800': actualization.status === 'init',
-                                        'bg-blue-100 text-blue-800': actualization.status === 'pending',
-                                        'bg-yellow-100 text-yellow-800': actualization.status === 'processing',
-                                        'bg-green-100 text-green-800': actualization.status === 'completed',
-                                        'bg-red-100 text-red-800': actualization.status === 'failed',
+                                        'bg-gray-100 text-gray-800': actualisationStatus === 'init',
+                                        'bg-blue-100 text-blue-800': actualisationStatus === 'pending',
+                                        'bg-yellow-100 text-yellow-800': actualisationStatus === 'processing',
+                                        'bg-green-100 text-green-800': actualisationStatus === 'completed',
+                                        'bg-red-100 text-red-800': actualisationStatus === 'failed',
                                     }"
                                 >
-                                    {{ getStatusText(actualization.status) }}
+                                    {{ getStatusText(actualisationStatus) }}
                                 </span>
                             </div>
                         </div>
@@ -70,18 +70,21 @@
             <!-- Обновленное содержимое -->
             <Card>
                 <CardHeader>
-                    <CardTitle>Обновленное содержимое</CardTitle>
+                    <CardTitle class="flex gap-2 items-center">Обновленное содержимое <span v-if="loading">(загрузка...)</span></CardTitle>
                     <CardDescription> Результат актуализации документации на основе прикрепленных файлов </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div class="ck-content" v-html="version.content"></div>
+                    <div class="ck-content" v-html="content"></div>
                 </CardContent>
             </Card>
         </div>
 
         <!-- Модальное окно чата -->
         <SidePanel v-model:open="showChat">
-            <SmartAgentChat :chatId="chat_id" />
+            <SmartAgentChat
+                :chatId="chat_id"
+                @updated="checkUpdates"
+            />
         </SidePanel>
     </FullScreenLayout>
 </template>
@@ -93,7 +96,6 @@ import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import { useChatAgent } from '@/composables/useChatAgent';
 import FullScreenLayout from '@/layouts/fullscreen/FullScreenLayout.vue';
 import { createApi } from '@/service/api/Api';
-import { ActualizationStatusRequest } from '@/service/api/request/Actualization/ActualizationStatusRequest';
 import { RestartGeneration } from '@/service/api/request/Actualization/RestartGenerationRequest';
 import { PageVersion } from '@/types';
 import { Link } from '@inertiajs/vue3';
@@ -106,6 +108,7 @@ import CardDescription from '../../components/ui/card/CardDescription.vue';
 import CardHeader from '../../components/ui/card/CardHeader.vue';
 import CardTitle from '../../components/ui/card/CardTitle.vue';
 import {sleep} from  '@/utils/utils'
+import { ActualizationStatusRequest } from '@/service/api/request/Actualization/ActualizationStatusRequest';
 
 interface User {
     id: number;
@@ -129,8 +132,12 @@ const props = defineProps<{
 }>();
 
 const showChat = ref<bool>(false);
+const loading = ref<bool>(false);
 const isRestarting = ref<bool>(false);
 const isWaiting = ref<bool>(false);
+
+const content = ref<string>('');
+const actualisationStatus = ref<string>('');
 
 const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('ru-RU', {
@@ -156,6 +163,10 @@ const { setChatId, reset, startPoling, stopPoling, status } = useChatAgent(props
 const api = createApi();
 
 onMounted(() => {
+
+    content.value = props.version.content
+    status.value = props.actualization.status
+
     reset()
 
     if (props.chat_id) {
@@ -201,8 +212,6 @@ async function restartGeneration() {
 
     isRestarting.value = false;
 
-    console.log('reset');
-
     reset();
     startPoling();
 }
@@ -224,5 +233,14 @@ async function waitChat(): int {
     return chatId;
 }
 
-function checkUpdates() {}
+async function checkUpdates() {
+    loading.value = true;
+
+    const info = (await loadInfo())
+
+    content.value = info.data.content
+    actualisationStatus.value = info.data.status
+
+    loading.value = false;
+}
 </script>
