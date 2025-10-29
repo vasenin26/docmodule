@@ -3,7 +3,8 @@
         <template #context-actions>
             <div class="flex items-center gap-2">
                 <ActualizationButton
-                    :versionId="page.current_version.id"
+                    :versionId="pageVersion.id"
+                    :has="actualization !== null"
                 />
                 <Button as-child variant="outline">
                     <Link :href="route('pages.show', pageVersion?.page_id)"> Просмотр</Link>
@@ -11,10 +12,6 @@
                 <PageListButton :page="page" />
             </div>
         </template>
-
-        <div class="space-y-2">
-            <Heading title="Редактировать страницу" />
-        </div>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <!-- Основное содержимое -->

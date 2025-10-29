@@ -1,6 +1,5 @@
 <template>
     <div
-        v-if="actualizationStatus"
         class="rounded-lg border p-4"
         :class="{
             'border-blue-200 bg-blue-50': statusColor === 'blue',
@@ -10,13 +9,12 @@
         }"
     >
         <div class="flex items-start gap-3">
-            <RefreshCw :class="{ 'animate-spin': hasActiveActualization }" class="mt-0.5 h-4 w-4 flex-shrink-0" />
             <div class="flex w-full items-center justify-between">
                 <div>
                     <strong>Статус актуализации:</strong> {{ statusText }}
                     <br />
                     <span class="text-sm text-muted-foreground">
-                        Обновлено: {{ formatDate(actualizationStatus.updated_at) }}
+                        Обновлено: {{ formatDate(actualization.updated_at) }}
                     </span>
                 </div>
                 <div class="flex gap-2">
@@ -24,12 +22,12 @@
                         Отменить
                     </Button>
                     <Button
-                        v-if="actualizationStatus.has_chat && actualizationStatus.status === 'completed'"
+                        v-if="actualization.has_chat && actualization.status === 'completed'"
                         as-child
                         variant="outline"
                         size="sm"
                     >
-                        <Link :href="route('actualizations.show', actualizationStatus.id)"> Подробности </Link>
+                        <Link :href="route('actualizations.show', actualization.id)"> Подробности </Link>
                     </Button>
                 </div>
             </div>
@@ -40,18 +38,19 @@
 <script setup lang="ts">
 import Button from '@/components/ui/button/Button.vue';
 import { Link } from '@inertiajs/vue3';
-import { RefreshCw } from 'lucide-vue-next';
 import { Actualization } from '@/types';
+import { computed } from 'vue';
 
-interface Props {
+const props = defineProps<{
     actualization: Actualization
-}
-
-const props = defineProps<Props>();
+}>();
 
 const cancelActualization = () => {
     props.onCancelActualization();
 };
+
+const canCancelActualization = computed(() => false)
+const statusColor = computed(() => 'yellow')
 
 const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('ru-RU', {
