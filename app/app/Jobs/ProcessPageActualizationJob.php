@@ -50,24 +50,23 @@ class ProcessPageActualizationJob implements ShouldQueue
         HtmlToMdInterface $converter,
     ): void {
         $actualization = Actualization::with(['pageVersion.page', 'page'])->findOrFail($this->actualizationId);
-        $draft = $actualization->pageVersion;
+        $pageVersion = $actualization->pageVersion;
         $page = $actualization->page;
 
         $promptProvider = $promptProviderFactory->createProjectPromptService($page->project_id);
 
-        $currentContent = $converter->toMd($draft->content ?? '');
+        $currentContent = $converter->toMd($pageVersion->content ?? '');
 
         // Создаем контекст для актуализации
         $context = new ActualizationContextDTO(
-            attachedFiles: $draft->files ?? [],
+            attachedFiles: $pageVersion->projectFiles->toArray(),
             repositories: $page->project->repositories->pluck('url')->toArray(),
             projectId: $page->project_id
         );
 
         $chat = $chatFactory->createChatForActualization(
             $promptProvider,
-            $page->project_id,
-            $currentContent,
+            $pageVersion,
             $context
         );
 

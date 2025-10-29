@@ -16,6 +16,19 @@ class PromptTemplateRenderer implements PromptTemplateRendererInterface
 
     public function render(string $template, array $variables): string
     {
-        return $this->mustache->render($template, $variables);
+        try {
+            return $this->mustache->render($template, $variables);
+        } catch (\Throwable $e) {
+            $map = [];
+
+            foreach ($variables as $key => $value) {
+                $map[] = "[$key] => " . print_r($value, true);
+            }
+
+            return join("\n",  [
+                'Broken template: ' . $e->getMessage(),
+                "Available variables: \n\n" . join("\n---\n", $map),
+            ]);
+        }
     }
 }

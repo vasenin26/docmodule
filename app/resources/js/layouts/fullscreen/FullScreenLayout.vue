@@ -44,6 +44,7 @@ import ProjectMenu from '@/components/ProjectMenu.vue';
         right: 0;
         padding-right: $main-padding;
         padding-left: $main-padding;
+        z-index: 100;
         .profile {
             flex-grow: 1;
             display: flex;

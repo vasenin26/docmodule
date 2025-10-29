@@ -9,6 +9,8 @@ use App\Interfaces\ContentGenerator\DiffGeneratorInterface;
 use App\Interfaces\Factory\LLMChatFactoryInterface;
 use App\Interfaces\LLM\PromptProviderInterface;
 use App\Models\LLMChat;
+use App\Models\PageVersion;
+use App\Models\ProjectFile;
 use App\Models\VersionDiffTask;
 use Vasenin26\Conversation\Chat;
 use Vasenin26\Conversation\Messages\GitFileMessage;
@@ -89,16 +91,25 @@ class ChatFactory implements LLMChatFactoryInterface
         return $this->createChat($projectId, $conversation->serialize());
     }
 
-    public function createChatForActualization(PromptProviderInterface $promptProvider, int $projectId, string $currentContent, ActualizationContextDTO $context): LLMChat
+    public function createChatForActualization(PromptProviderInterface $promptProvider, PageVersion $pageVersion, ActualizationContextDTO $context): LLMChat
     {
-        $prompt = $promptProvider->getActualizationInstructions($currentContent, $context);
+        $prompt = $promptProvider->getActualizationInstructions($pageVersion->content, $context);
         $role = $promptProvider->getDocumentationSpecialistRole();
 
         $conversation = new Chat();
         $conversation->addMessage(new SystemMessage($role));
         $conversation->addMessage(new UserTaskMessage($prompt));
 
-        return $this->createChat($projectId, $conversation->serialize());
+        foreach ($pageVersion->projectFiles as $file) {
+            $conversation->addMessage(
+                new GitFileMessage(
+                    ExtractRepoUrl::extractRepoUrl($file->url),
+                    ExtractRepoUrl::extractFilePath($file->url),
+                    $file->description
+                ));
+        }
+
+        return $this->createChat($pageVersion->page->project_id, $conversation->serialize());
     }
 
     public function createChatForImplementation(PromptProviderInterface $promptProvider, int $projectId, string $techplaneContent, GeneratorContextDTO $context): LLMChat

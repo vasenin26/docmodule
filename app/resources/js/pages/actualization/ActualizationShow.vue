@@ -51,18 +51,6 @@
                                 {{ formatDate(actualization.created_at) }}
                             </p>
                         </div>
-                        <div>
-                            <p class="text-sm font-medium">Обновлена</p>
-                            <p class="mt-1 text-sm text-muted-foreground">
-                                {{ formatDate(actualization.updated_at) }}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium">Инициатор</p>
-                            <p class="mt-1 text-sm text-muted-foreground">
-                                {{ actualization.created_by.name }}
-                            </p>
-                        </div>
                     </div>
                 </CardContent>
             </Card>

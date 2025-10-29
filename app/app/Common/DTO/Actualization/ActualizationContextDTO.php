@@ -14,10 +14,18 @@ readonly class ActualizationContextDTO
     public function toArray(): array
     {
         return [
-            'attached_files' => $this->attachedFiles,
+            'attached_files' => $this->getFileList(),
             'repositories' => $this->repositories,
             'project_id' => $this->projectId,
             'additional_context' => $this->additionalContext,
         ];
+    }
+
+    private function getFileList()
+    {
+        return array_map(fn($f) => [
+            'url' => $f['url'],
+            'description' => $f['description'],
+        ], $this->attachedFiles);
     }
 }

@@ -6,6 +6,7 @@ use App\Common\DTO\Actualization\ActualizationContextDTO;
 use App\Common\DTO\GeneratorContextDTO;
 use App\Interfaces\LLM\PromptProviderInterface;
 use App\Models\LLMChat;
+use App\Models\PageVersion;
 use App\Models\VersionDiffTask;
 
 interface LLMChatFactoryInterface
@@ -14,7 +15,7 @@ interface LLMChatFactoryInterface
 
     public function createChatForTechplane(PromptProviderInterface $promptProvider, int $projectId, string $taskDescription, GeneratorContextDTO $context): LLMChat;
 
-    public function createChatForActualization(PromptProviderInterface $promptProvider, int $projectId, string $currentContent, ActualizationContextDTO $context): LLMChat;
+    public function createChatForActualization(PromptProviderInterface $promptProvider, PageVersion $pageVersion, ActualizationContextDTO $context): LLMChat;
 
     public function createChatForImplementation(PromptProviderInterface $promptProvider, int $projectId, string $techplaneContent, GeneratorContextDTO $context): LLMChat;
 
