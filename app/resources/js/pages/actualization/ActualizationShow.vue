@@ -2,7 +2,7 @@
     <FullScreenLayout>
         <template #context-actions>
             <div class="flex items-center gap-2">
-                <ChatButton :showCondition="true" @click="showChat = true" />
+                <ChatButton :showCondition="!isWaiting" @click="showChat = true" />
                 <Button @click="restartGeneration" variant="outline">
                     <RefreshCw :class="{ 'animate-spin': isRestarting }" class="mr-2 h-4 w-4" />
                     Перезапустить
@@ -21,7 +21,7 @@
             <Card>
                 <CardHeader>
                     <CardTitle class="flex items-center gap-2">
-                        <RefreshCw :class="{ 'animate-spin': actualization.status === 'processing' }" class="h-5 w-5" />
+                        <RefreshCw :class="{ 'animate-spin': isWaiting }" class="h-5 w-5" />
                         Статус актуализации
                     </CardTitle>
                     <CardDescription> Информация о процессе актуализации документации</CardDescription>
@@ -97,7 +97,7 @@ import { RestartGeneration } from '@/service/api/request/Actualization/RestartGe
 import { PageVersion } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { RefreshCw } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import Button from '../../components/ui/button/Button.vue';
 import Card from '../../components/ui/card/Card.vue';
 import CardContent from '../../components/ui/card/CardContent.vue';
@@ -127,8 +127,9 @@ const props = defineProps<{
     chat_id: number | null;
 }>();
 
-const showChat = ref<bool>(true);
+const showChat = ref<bool>(false);
 const isRestarting = ref<bool>(false);
+const isWaiting = ref<bool>(false);
 
 const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('ru-RU', {
@@ -153,14 +154,19 @@ const getStatusText = (status: string) => {
 const { setChatId, reset, startPoling, stopPoling, status } = useChatAgent(props.chat_id);
 const api = createApi();
 
-if (props.chat_id) {
-    setChatId(props.chat_id);
-} else {
-    (async () => {
-        const chatId = await waitChat();
-        setChatId(chatId)
-    })()
-}
+onMounted(() => {
+    reset()
+
+    if (props.chat_id) {
+        setChatId(props.chat_id);
+    } else {
+        (async () => {
+            const chatId = await waitChat();
+            setChatId(chatId)
+            startPoling()
+        })()
+    }
+})
 
 watch(status, () => {
     if (status.value === 'completed') checkUpdates();
@@ -206,10 +212,13 @@ async function loadInfo() {
 
 async function waitChat(): int {
     let chatId = null;
+    isWaiting.value = true;
 
     while ((chatId = (await loadInfo()).data.chat_id) === null) {
         await sleep(500);
     }
+
+    isWaiting.value = false;
 
     return chatId;
 }

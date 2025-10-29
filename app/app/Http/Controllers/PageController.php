@@ -234,6 +234,7 @@ class PageController extends Controller
             'is_current_version' => true,
             'errors' => (object)[],
             'project_id' => $page->project_id,
+            'actualization' => null
         ]);
     }
 
