@@ -58,6 +58,6 @@ class ActualizationResultHandler implements AgentResultHandlerInterface
 
     public function getTargetResource(): ?DisplayableResource
     {
-        return $this->actualization?->page;
+        return $this->actualization;
     }
 }

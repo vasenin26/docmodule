@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use App\Interfaces\DisplayableResource;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Actualization extends Model
+class Actualization extends Model implements DisplayableResource
 {
     use HasFactory;
 
@@ -118,5 +119,10 @@ class Actualization extends Model
     public function isGenerating(): bool
     {
         return in_array($this->generationStatus(), [self::STATUS_PROCESSING, self::STATUS_PENDING]);
+    }
+
+    public function viewPage(): string
+    {
+        return route('actualizations.show', $this->id);
     }
 }

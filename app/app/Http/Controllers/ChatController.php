@@ -8,7 +8,6 @@ use App\Interfaces\AgentTaskManagerInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Models\AgentTask;
 use App\Models\LLMChat;
-use Illuminate\Support\Facades\Auth;
 use Vasenin26\Conversation\Interface\ConversationFactoryInterface;
 use Vasenin26\Conversation\Messages\UserMessage;
 
@@ -16,9 +15,10 @@ class ChatController extends Controller
 {
     public function state(LLMChat $chat)
     {
+
         return response()->json([
             'messages' => $chat->messages,
-            'totalTokens' => $chat->total_tokens,
+            'totalTokens' => $chat->getTotalTokensOrZero(),
             'contextFill' => $chat->context_fill,
             'status' => $chat->getStatus(),
         ]);
