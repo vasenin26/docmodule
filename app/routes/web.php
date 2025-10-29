@@ -139,6 +139,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // НОВЫЕ маршруты в рамках проекта
     Route::prefix('projects/{project}')->group(function () {
         Route::get('/pages', [ProjectPagesController::class, 'index'])->name('projects.pages.index');
+        Route::delete('/pages/{page}', [ProjectPagesController::class, 'destroy'])->name('projects.pages.destroy');
         Route::get('/tasks', [TaskController::class, 'index'])->name('projects.tasks.index');
         // Новый маршрут формы создания задачи в проекте
         Route::get('/tasks/create', [TaskController::class, 'create'])->name('projects.tasks.create');
@@ -215,7 +216,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/chat/{chat}', [ChatController::class, 'stop'])->name('chat.stop');
     Route::post('/chat/{chat}/message', [ChatController::class, 'sendMessage'])->name('chat.message.send');
 });
-
 
 
 require __DIR__.'/settings.php';

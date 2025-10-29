@@ -29,7 +29,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="page in pages.data" :key="page.id" class="border-b">
+                            <tr v-for="page in pagesData.data" :key="page.id" class="border-b">
                                 <td class="p-4">
                                     <div class="flex items-center gap-2">
                                         <span class="font-medium">{{ page.current_version?.title }}</span>
@@ -82,11 +82,13 @@
                                         <Button as-child size="sm" variant="outline">
                                             <Link :href="route('pages.versions', page.id)"> Версии </Link>
                                         </Button>
-                                        <Button size="sm" variant="destructive" @click="deletePage(page.id)"> Удалить </Button>
+
+                                        <!-- Удаление: показываем кнопку только если есть право -->
+                                        <Button v-if="page.canDelete" size="sm" variant="destructive" @click.prevent="confirmDelete(page)"> Удалить </Button>
                                     </div>
                                 </td>
                             </tr>
-                            <tr v-if="pages.data.length === 0">
+                            <tr v-if="pagesData.data.length === 0">
                                 <td :colspan="project ? 5 : 6" class="p-8 text-center text-muted-foreground">
                                     <div v-if="searchQuery">Страницы не найдены по запросу "{{ searchQuery }}"</div>
                                     <div v-else>Страницы не найдены</div>
@@ -99,10 +101,10 @@
         </Card>
 
         <!-- Пагинация -->
-        <div v-if="pages.links && pages.links.length > 3" class="flex justify-center">
+        <div v-if="pagesData.links && pagesData.links.length > 3" class="flex justify-center">
             <nav class="flex items-center gap-1">
                 <Link
-                    v-for="link in pages.links"
+                    v-for="link in pagesData.links"
                     :key="link.label"
                     :href="link.url"
                     :class="[
@@ -112,6 +114,18 @@
                     v-html="link.label"
                 />
             </nav>
+        </div>
+
+        <!-- Модальное подтверждение удаления -->
+        <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+                <h3 class="text-lg font-medium">Подтвердите удаление</h3>
+                <p class="mt-2 text-sm text-muted-foreground">Вы действительно хотите удалить страницу "{{ deletingPage?.current_version?.title ?? deletingPage?.title }}"? Это действие можно отменить, восстановив страницу.</p>
+                <div class="mt-4 flex justify-end gap-2">
+                    <Button variant="outline" @click="showDeleteModal = false">Отмена</Button>
+                    <Button variant="destructive" :loading="isDeleting" @click="performDelete">Удалить</Button>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -123,6 +137,7 @@ import CardContent from '@/components/ui/card/CardContent.vue';
 import Input from '@/components/ui/input/Input.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import axios from 'axios';
 
 interface Project {
     id: number;
@@ -195,7 +210,13 @@ const props = withDefaults(defineProps<Props>(), {
     showCreateButton: false,
 });
 
+// Локальная копия pages для управления удалением без изменения prop напрямую
+const pagesData = ref(JSON.parse(JSON.stringify(props.pages)) as PagesData);
+
 const searchQuery = ref(props.filters.search || '');
+const showDeleteModal = ref(false);
+const deletingPage = ref(null as null | any);
+const isDeleting = ref(false);
 
 const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('ru-RU', {
@@ -237,10 +258,43 @@ const clearSearch = () => {
     );
 };
 
-const deletePage = (pageId: number) => {
-    if (confirm('Вы уверены, что хотите удалить эту страницу?')) {
-        const deleteRoute = props.project ? route('projects.pages.destroy', [props.project.id, pageId]) : route('pages.destroy', pageId);
-        router.delete(deleteRoute);
+function confirmDelete(page: Page) {
+    deletingPage.value = page;
+    showDeleteModal.value = true;
+}
+
+async function performDelete() {
+    if (!deletingPage.value) return;
+    isDeleting.value = true;
+
+    try {
+        const projectId = props.project?.id;
+        const url = projectId
+            ? route('projects.pages.destroy', [projectId, deletingPage.value.id])
+            : route('pages.destroy', deletingPage.value.id);
+
+        await axios.delete(url);
+
+        // Удаляем из локального списка
+        const idx = pagesData.value.data.findIndex(p => p.id === deletingPage.value.id);
+        if (idx !== -1) {
+            pagesData.value.data.splice(idx, 1);
+        }
+
+        // Можно показать уведомление при необходимости
+    } catch (err: any) {
+        if (err.response && err.response.status === 403) {
+            alert('У вас нет прав на удаление этой страницы');
+        } else if (err.response && err.response.status === 404) {
+            alert('Страница не найдена');
+        } else {
+            alert('Произошла ошибка при удалении страницы');
+        }
+    } finally {
+        isDeleting.value = false;
+        showDeleteModal.value = false;
+        deletingPage.value = null;
     }
-};
+}
+
 </script>

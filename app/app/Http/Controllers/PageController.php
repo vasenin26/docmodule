@@ -397,14 +397,40 @@ class PageController extends Controller
      */
     public function destroy(Page $page)
     {
-        // Удаляем все версии страницы
-        $page->versions()->delete();
+        // Soft delete by default: set deleted_by and call delete().
+        $user = Auth::user();
+        if ($user) {
+            $page->update(['deleted_by' => $user->id]);
+        }
 
-        // Удаляем страницу
         $page->delete();
 
         return redirect()->route('pages.index')
             ->with('success', 'Страница успешно удалена.');
+    }
+
+    /**
+     * Force delete: remove all versions and permanently delete the page.
+     * Restricted to admin/authorized actions only. Not wired to public routes by default.
+     */
+    public function forceDestroy(Page $page)
+    {
+        // Authorization: only admin/owner (business decision). Используем authorize если есть политика.
+        try {
+            $this->authorize('forceDelete', $page);
+        } catch (\Exception $e) {
+            // fallback: только владелец проекта
+            if ($page->project && $page->project->owner_id !== Auth::id()) {
+                abort(403);
+            }
+        }
+
+        // Удаляем версии и навсегда удаляем страницу
+        $page->versions()->delete();
+        $page->forceDelete();
+
+        return redirect()->route('pages.index')
+            ->with('success', 'Страница окончательно удалена.');
     }
 
     /**
