@@ -13,7 +13,7 @@ const { expandedMessages, isLongMessage, getTruncatedContent, toggleMessageExpan
 const { isLongText, getTruncatedText, toggleTextExpansion, isTextExpanded } = useTextExpansion();
 
 function getServiceKey(): string {
-    return props.message.message.key || 'service';
+    return props.message.message.key || 'services';
 }
 
 function getServiceMessage(): string | undefined {
@@ -57,11 +57,11 @@ function mapStatus(): 'success' | 'error' | 'processing' | 'wait' {
             <!-- Сообщение -->
             <div v-if="getServiceMessage()" class="space-y-1">
                 <div class="text-xs font-medium text-gray-600">Сообщение:</div>
-                <div v-if="isLongText(getServiceMessage(), 200) && !isTextExpanded('service-message-' + props.index)" class="space-y-1">
+                <div v-if="isLongText(getServiceMessage(), 200) && !isTextExpanded('services-message-' + props.index)" class="space-y-1">
                     <div class="text-sm bg-white p-2 rounded border overflow-x-auto whitespace-pre-wrap">
                         {{ getTruncatedText(getServiceMessage(), 200) }}
                     </div>
-                    <button @click="toggleTextExpansion('service-message-' + props.index)" class="text-xs font-medium text-blue-600 hover:text-blue-800">
+                    <button @click="toggleTextExpansion('services-message-' + props.index)" class="text-xs font-medium text-blue-600 hover:text-blue-800">
                         Показать полностью
                     </button>
                 </div>
@@ -71,7 +71,7 @@ function mapStatus(): 'success' | 'error' | 'processing' | 'wait' {
                     </div>
                     <button
                         v-if="isLongText(getServiceMessage(), 200)"
-                        @click="toggleTextExpansion('service-message-' + props.index)"
+                        @click="toggleTextExpansion('services-message-' + props.index)"
                         class="text-xs font-medium text-blue-600 hover:text-blue-800"
                     >
                         Свернуть

@@ -10,9 +10,9 @@ export interface SendMessageResponse {
     };
 }
 
-import { createApi } from '@/service/api/Api';
-import { TaskSendMessageRequest } from '@/service/api/request/Task/TaskSendMessageRequest';
-import { TaskSendStopGenerating } from '@/service/api/request/Task/TaskSendStopGenerating';
+import { createApi } from '@/services/api/Api';
+import { TaskSendMessageRequest } from '@/services/api/request/Task/TaskSendMessageRequest';
+import { TaskSendStopGenerating } from '@/services/api/request/Task/TaskSendStopGenerating';
 
 export function useTaskChat(taskId: number) {
     const isSending = ref(false);

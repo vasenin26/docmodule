@@ -1,5 +1,5 @@
-import { createApi } from '@/service/api/Api';
-import { GetChatState, SendMessage, StopChatGeneration } from '@/service/api/request/Chat/requests';
+import { createApi } from '@/services/api/Api';
+import { GetChatState, SendMessage, StopChatGeneration } from '@/services/api/request/Chat/requests';
 import { ref } from 'vue';
 
 const chatId = ref<int|null>(null);

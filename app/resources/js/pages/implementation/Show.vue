@@ -100,8 +100,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import { useImplementationChat } from '@/composables/useImplementationChat';
 import type { LLMChat } from '@/types';
-import { createApi } from '@/service/api/Api';
-import { ImplementationStatusRequest } from '@/service/api/request/Implementation/ImplementationStatusRequest';
+import { createApi } from '@/services/api/Api';
+import { ImplementationStatusRequest } from '@/services/api/request/Implementation/ImplementationStatusRequest';
 
 interface ImplementationData {
     id: number;

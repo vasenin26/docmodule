@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue';
-import { createApi } from '@/service/api/Api';
-import { SendImplementationMessageRequest } from '@/service/api/request/Implementation/SendImplementationMessageRequest';
-import { ImplementationStopGeneratingRequest } from '@/service/api/request/Implementation/ImplementationStopGeneratingRequest';
+import { createApi } from '@/services/api/Api';
+import { SendImplementationMessageRequest } from '@/services/api/request/Implementation/SendImplementationMessageRequest';
+import { ImplementationStopGeneratingRequest } from '@/services/api/request/Implementation/ImplementationStopGeneratingRequest';
 import type { LLMChat } from '@/types';
 
 export interface SendMessageResponse {

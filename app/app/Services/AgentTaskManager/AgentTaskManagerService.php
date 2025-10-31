@@ -20,7 +20,7 @@ use App\Services\Pricing\PricingService;
 class AgentTaskManagerService implements AgentTaskManagerInterface
 {
     /**
-     * Pricing service used to calculate task costs based on GenerationModel
+     * Pricing services used to calculate task costs based on GenerationModel
      */
     protected PricingService $pricingService;
 

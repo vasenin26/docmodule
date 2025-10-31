@@ -83,8 +83,8 @@ import ChatButton from '@/components/ChatButton.vue';
 import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import { useChatAgent } from '@/composables/useChatAgent';
 import FullScreenLayout from '@/layouts/fullscreen/FullScreenLayout.vue';
-import { createApi } from '@/service/api/Api';
-import { RestartGeneration } from '@/service/api/request/Actualization/RestartGenerationRequest';
+import { createApi } from '@/services/api/Api';
+import { RestartGeneration } from '@/services/api/request/Actualization/RestartGenerationRequest';
 import { PageVersion } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { RefreshCw } from 'lucide-vue-next';
@@ -96,7 +96,7 @@ import CardDescription from '../../components/ui/card/CardDescription.vue';
 import CardHeader from '../../components/ui/card/CardHeader.vue';
 import CardTitle from '../../components/ui/card/CardTitle.vue';
 import {sleep} from  '@/utils/utils'
-import { ActualizationStatusRequest } from '@/service/api/request/Actualization/ActualizationStatusRequest';
+import { ActualizationStatusRequest } from '@/services/api/request/Actualization/ActualizationStatusRequest';
 
 interface User {
     id: number;

@@ -2,9 +2,9 @@ import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import type { Project } from '@/types';
-import { createApi } from '@/service/api/Api';
-import { ProjectGetByIdRequest } from '@/service/api/request/Project/ProjectGetByIdRequest';
-import { ProjectListRequest } from '@/service/api/request/Project/ProjectListRequest';
+import { createApi } from '@/services/api/Api';
+import { ProjectGetByIdRequest } from '@/services/api/request/Project/ProjectGetByIdRequest';
+import { ProjectListRequest } from '@/services/api/request/Project/ProjectListRequest';
 
 export const useProjectStore = defineStore('project', () => {
     // Кеш проектов для оптимизации

@@ -16,7 +16,7 @@ function effectiveStatus(): 'success' | 'error' | 'processing' | 'wait' {
 function themeCircleClass(): string {
     const theme = props.theme || 'orange';
     const status = effectiveStatus();
-    // If error, prefer red unless theme explicitly indigo (service styling keeps indigo)
+    // If error, prefer red unless theme explicitly indigo (services styling keeps indigo)
     if (status === 'error' && theme !== 'indigo') return 'bg-red-500';
     switch (theme) {
         case 'indigo': return 'bg-indigo-500';

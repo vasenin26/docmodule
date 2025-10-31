@@ -60,7 +60,7 @@ const props = defineProps<{
         :index="index"
     />
     <ServiceMessage
-        v-else-if="message.type === 'service' || message.type === 'slice'"
+        v-else-if="message.type === 'services' || message.type === 'slice'"
         :message="message"
         :index="index"
     />

@@ -42,7 +42,7 @@ export interface User {
 }
 
 export interface LLMMessage {
-    type: 'user' | 'assistant' | 'system' | 'tool' | 'git-file' | 'page-version' | 'info' | 'service' | 'user-task';
+    type: 'user' | 'assistant' | 'system' | 'tool' | 'git-file' | 'page-version' | 'info' | 'services' | 'user-task';
     message: {
         content?: string | null;
         timestamp?: string;
@@ -69,7 +69,7 @@ export interface LLMMessage {
         // Поля для page-version сообщений:
         versionId?: string;        // ID версии страницы
 
-        // Поля для service сообщений:
+        // Поля для services сообщений:
         key?: string;              // Ключ события сервиса
         payload?: {                // Полезная нагрузка сервиса
             message?: string;      // Текстовое сообщение

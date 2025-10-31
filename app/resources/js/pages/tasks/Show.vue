@@ -192,9 +192,9 @@ import { Link } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import { useTaskChat } from '@/composables/useTaskChat';
-import { createApi } from '@/service/api/Api';
-import { TaskStatusRequest } from '@/service/api/request/Task/TaskStatusRequest';
-import { TaskRestartGenerationRequest } from '@/service/api/request/Task/TaskRestartGenerationRequest';
+import { createApi } from '@/services/api/Api';
+import { TaskStatusRequest } from '@/services/api/request/Task/TaskStatusRequest';
+import { TaskRestartGenerationRequest } from '@/services/api/request/Task/TaskRestartGenerationRequest';
 
 interface TechplaneData {
     id: number;

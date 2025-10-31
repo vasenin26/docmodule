@@ -5,7 +5,7 @@ import type { Page, PagesData, FlatPage, TreeNode } from '@/types';
 import ProjectPagesSubtree from '@/components/pages/ProjectPagesSubtree.vue';
 import { usePage } from '@inertiajs/vue3';
 import { normalizeToFlat, buildTree, sortTreeByTitle } from '@/utils/normalizeToFlat';
-import { FlatPagesService } from '@/service/FlatPagesService';
+import { FlatPagesService } from '@/services/FlatPagesService';
 
 defineOptions({ name: 'ProjectPagesTree' });
 

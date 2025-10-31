@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { createApi } from '@/service/api/Api';
-import { TechplaneMarkDoneRequest, type TechplaneMarkDoneResponse } from '@/service/api/request/Techplane/TechplaneMarkDoneRequest';
+import { createApi } from '@/services/api/Api';
+import { TechplaneMarkDoneRequest, type TechplaneMarkDoneResponse } from '@/services/api/request/Techplane/TechplaneMarkDoneRequest';
 
 const props = defineProps<{
   techplaneId: number;

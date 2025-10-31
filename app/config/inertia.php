@@ -9,7 +9,7 @@ return [
     |
     | These options configure if and how Inertia uses Server Side Rendering
     | to pre-render every initial visit made to your application's pages
-    | automatically. A separate rendering service should be available.
+    | automatically. A separate rendering services should be available.
     |
     | See: https://inertiajs.com/server-side-rendering
     |

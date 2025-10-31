@@ -55,8 +55,8 @@ import { ref, computed, onMounted } from 'vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ExpenseSummaryFiltersComponent from './ExpenseSummaryFilters.vue';
 import ExpenseSummaryChart from './ExpenseSummaryChart.vue';
-import { createWebApi } from '@/service/api/Api';
-import { ExpenseSummaryDataRequest } from '@/service/api/request/ExpenseSummary/ExpenseSummaryDataRequest';
+import { createWebApi } from '@/services/api/Api';
+import { ExpenseSummaryDataRequest } from '@/services/api/request/ExpenseSummary/ExpenseSummaryDataRequest';
 import type { ExpenseSummaryData, ExpenseSummaryFilters, ExpenseTaskType, Project, RawApiItem } from '@/types';
 import { mergeApiDataWithGenerated, type PeriodType } from '@/utils/expensePeriods';
 

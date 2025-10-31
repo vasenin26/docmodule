@@ -1,9 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createApi } from '@/service/api/Api';
-import { AgentTasksCheckRequest } from '@/service/api/request/Task/AgentTasksCheckRequest';
-import * as poller from '@/services/agentTasksPoller';
+import { createApi } from '@/services/api/Api';
+import { AgentTasksCheckRequest } from '@/services/api/request/Task/AgentTasksCheckRequest';
 
-vi.mock('@/service/api/Api');
+vi.mock('@/services/api/Api');
 
 describe('AgentTasks poller', () => {
     it('sends POST with ids from localStorage and schedules next call after promise resolves', async () => {

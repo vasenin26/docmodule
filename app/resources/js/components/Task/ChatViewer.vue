@@ -48,10 +48,10 @@
                             </Button>
                         </div>
                     </div>
-                    
+
                     <div class="bg-muted rounded-lg p-4 max-h-96 overflow-auto">
                         <!-- JSON Viewer -->
-                        <JsonViewer 
+                        <JsonViewer
                             v-if="viewMode === 'json' && parsedContent"
                             :value="parsedContent"
                             copyable
@@ -60,7 +60,7 @@
                             theme="light"
                             @onKeyClick="handleKeyClick"
                         />
-                        
+
                         <!-- Текстовый вид -->
                         <pre v-else class="text-sm whitespace-pre-wrap">{{ formattedContent }}</pre>
                     </div>
@@ -82,8 +82,8 @@ import Button from '@/components/ui/button/Button.vue';
 import { X, AlertCircle, Copy, MessageSquare, Eye } from 'lucide-vue-next';
 import { JsonViewer } from 'vue3-json-viewer';
 import 'vue3-json-viewer/dist/vue3-json-viewer.css';
-import { createApi } from '@/service/api/Api';
-import { AgentTaskChatContentRequest } from '@/service/api/request/Task/AgentTaskChatContentRequest';
+import { createApi } from '@/services/api/Api';
+import { AgentTaskChatContentRequest } from '@/services/api/request/Task/AgentTaskChatContentRequest';
 
 interface Props {
     taskId: number | null;
@@ -103,7 +103,7 @@ const viewMode = ref<'text' | 'json'>('text');
 
 const formattedContent = computed(() => {
     if (!chatContent.value) return '';
-    
+
     try {
         const parsed = JSON.parse(chatContent.value);
         return JSON.stringify(parsed, null, 2);
@@ -114,7 +114,7 @@ const formattedContent = computed(() => {
 
 const parsedContent = computed(() => {
     if (!chatContent.value) return null;
-    
+
     try {
         return JSON.parse(chatContent.value);
     } catch {
@@ -124,10 +124,10 @@ const parsedContent = computed(() => {
 
 const loadChatContent = async () => {
     if (!props.taskId) return;
-    
+
     loading.value = true;
     error.value = null;
-    
+
     try {
         const api = createApi();
         const request = new AgentTaskChatContentRequest(props.taskId);
@@ -143,7 +143,7 @@ const loadChatContent = async () => {
 
 const copyToClipboard = async () => {
     if (!chatContent.value) return;
-    
+
     try {
         await navigator.clipboard.writeText(chatContent.value);
         // Можно добавить уведомление об успешном копировании

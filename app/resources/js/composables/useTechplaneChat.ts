@@ -1,8 +1,8 @@
 import { ref, computed } from 'vue';
 import type { LLMChat } from '@/types';
-import { createApi } from '@/service/api/Api';
-import { TechplaneSendMessageRequest } from '@/service/api/request/Techplane/TechplaneSendMessageRequest';
-import { TechplaneStopGeneratingRequest } from '@/service/api/request/Techplane/TechplaneStopGeneratingRequest';
+import { createApi } from '@/services/api/Api';
+import { TechplaneSendMessageRequest } from '@/services/api/request/Techplane/TechplaneSendMessageRequest';
+import { TechplaneStopGeneratingRequest } from '@/services/api/request/Techplane/TechplaneStopGeneratingRequest';
 
 export interface SendMessageResponse {
     success: boolean;

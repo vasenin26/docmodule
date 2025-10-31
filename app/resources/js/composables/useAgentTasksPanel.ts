@@ -1,15 +1,15 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { createApi } from '@/service/api/Api';
-import { AgentTasksCheckRequest } from '@/service/api/request/Task/AgentTasksCheckRequest';
-import { useAgentTasksPanelStore } from '@/stores/agentTasksPanelStore';
+import { createApi } from '@/services/api/Api';
+import {AgentTasksCheckRequest, AgentTasksCheckResponseItem} from '@/services/api/request/Task/AgentTasksCheckRequest';
 
 const POLL_INTERVAL = 5000;
 const MAX_IDS = 50;
 
+const api = createApi();
 export function useAgentTasksPanel() {
-    const store = useAgentTasksPanelStore();
     const stopped = ref(true);
     const isRunning = ref(false);
+    const items = ref<AgentTasksCheckResponseItem[]>([])
     let timeoutHandle: any = null;
 
     function readLocalIds(): Array<string> {
@@ -27,31 +27,29 @@ export function useAgentTasksPanel() {
 
     async function fetchOnce(): Promise<void> {
         if (stopped.value) return;
+
         if (isRunning.value) {
             timeoutHandle = setTimeout(fetchOnce, POLL_INTERVAL);
             return;
         }
+
         isRunning.value = true;
 
         try {
             const ids = readLocalIds().slice(0, MAX_IDS);
-            const api = createApi();
             const req = new AgentTasksCheckRequest(ids);
             const data = await req.call(api);
 
             // normalize items into panel shape
             const normalized = data.map((it) => ({
-                id: String(it.id),
                 chat_id: it.chat_id,
                 agent_task_id: it.agent_task_id,
-                url: it.url,
                 raw_status: it.raw_status,
-                updated_at: it.updated_at,
                 hidden: !!localStorage.getItem('agent_tasks_panel_hidden_' + String(it.chat_id)),
             }));
 
-            // apply status rules per chat
             const byChat = new Map();
+
             normalized.forEach((it) => {
                 const chatId = String(it.chat_id ?? '');
                 if (!byChat.has(chatId)) byChat.set(chatId, []);
@@ -59,7 +57,8 @@ export function useAgentTasksPanel() {
             });
 
             const merged: any[] = [];
-            byChat.forEach((list, chatId) => {
+
+            byChat.forEach((list) => {
                 // if any processing/wait -> processing
                 const hasActive = list.some(l => ['processing', 'wait'].includes(l.raw_status));
                 const finalStatus = hasActive ? 'processing' : 'completed';
@@ -69,9 +68,6 @@ export function useAgentTasksPanel() {
                 merged.push(rep);
             });
 
-            // update store
-            store.mergeItems(merged);
-            window.dispatchEvent(new CustomEvent('agent_tasks_panel.updated', { detail: merged }));
         } catch (e) {
             console.error('useAgentTasksPanel: fetch error', e);
         } finally {
@@ -97,19 +93,15 @@ export function useAgentTasksPanel() {
     }
 
     onMounted(() => {
-        // lazy init store
-        store.init();
         start();
     });
 
     onBeforeUnmount(() => {
         stop();
-        store.dispose();
     });
 
     return {
-        start,
-        stop,
+        items,
         isRunning,
     };
 }
