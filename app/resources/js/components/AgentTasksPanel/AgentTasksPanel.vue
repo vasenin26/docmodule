@@ -18,10 +18,13 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useAgentTasksPanel } from '@/composables/useAgentTasksPanel';
 import agentTasksPoller from '@/services/agentTasksPoller';
 
-// Set component name for devtools
-// @ts-ignore - defineOptions may not be typed in all setups
+// register composable which handles store init and poller lifecycle
+const panel = useAgentTasksPanel();
+
+// Set component name for devtools (optional)
 if (typeof defineOptions === 'function') defineOptions({ name: 'AgentTasksPanel' });
 
 const items = ref([]);
@@ -29,16 +32,27 @@ const visible = computed(() => items.value.length > 0);
 
 function refresh() {
   const list = agentTasksPoller.getPanelItems() || [];
-  const filtered = (list || []).filter((it) => !it.hidden);
+  const filtered = list.filter((it) => !it.hidden);
   items.value = filtered;
 }
 
 function onUpdated(e) {
   const detail = e?.detail ?? e;
+  // prefer new event shape from useAgentTasksPanel (agent_tasks_panel.updated)
   if (detail && Array.isArray(detail.items)) {
     items.value = detail.items.filter((it) => !it.hidden);
   } else if (Array.isArray(detail)) {
     items.value = detail.filter((it) => !it.hidden);
+  } else {
+    refresh();
+  }
+}
+
+function onLegacyUpdated(e) {
+  // legacy poller dispatched agent_tasks.updated with { detail: { items } }
+  const detail = e?.detail ?? e;
+  if (detail && Array.isArray(detail.items)) {
+    items.value = detail.items.filter((it) => !it.hidden);
   } else {
     refresh();
   }
@@ -73,14 +87,17 @@ function statusColor(status) {
 }
 
 onMounted(() => {
-  agentTasksPoller.startPoller();
+  // composable already handles starting poller via lifecycle hooks
   refresh();
-  window.addEventListener('agent_tasks.updated', onUpdated);
+  window.addEventListener('agent_tasks_panel.updated', onUpdated);
+  // keep backward compatibility with older poller event
+  window.addEventListener('agent_tasks.updated', onLegacyUpdated);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('agent_tasks.updated', onUpdated);
-  agentTasksPoller.stopPoller();
+  window.removeEventListener('agent_tasks_panel.updated', onUpdated);
+  window.removeEventListener('agent_tasks.updated', onLegacyUpdated);
+  // composable will handle stopping and disposing
 });
 </script>
 
