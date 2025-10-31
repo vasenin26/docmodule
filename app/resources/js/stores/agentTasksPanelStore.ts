@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { startPoller, stopPoller, isPollerRunning } from '@/services/agentTasksPoller';
+import { startPoller, stopPoller } from '@/services/agentTasksPoller';
 
 export interface AgentTasksPanelItem {
     id: string;
@@ -9,6 +9,7 @@ export interface AgentTasksPanelItem {
     url?: string | null;
     raw_status?: string | null;
     updated_at?: string | null;
+    hidden?: boolean;
 }
 
 export const useAgentTasksPanelStore = defineStore('agentTasksPanel', () => {
@@ -18,40 +19,32 @@ export const useAgentTasksPanelStore = defineStore('agentTasksPanel', () => {
     function mergeItems(newItems: AgentTasksPanelItem[]) {
         const map = new Map(items.value.map((i) => [i.id, i]));
         newItems.forEach((ni) => {
-            map.set(ni.id, { ...(map.get(ni.id) ?? {}), ...ni });
+            const existing = map.get(ni.id) ?? {};
+            // preserve hidden flag if exists on existing
+            const hidden = existing.hidden ?? ni.hidden ?? false;
+            map.set(ni.id, { ...existing, ...ni, hidden });
         });
         items.value = Array.from(map.values());
-    }
-
-    function onWindowUpdated(e: any) {
-        try {
-            const payload = e?.detail?.items ?? e?.detail ?? null;
-            if (!payload) return;
-            mergeItems(payload as AgentTasksPanelItem[]);
-        } catch (err) {
-            // ignore
-            // eslint-disable-next-line no-console
-            console.error('agentTasksPanelStore: failed to handle update event', err);
-        }
     }
 
     function init() {
         if (initialized.value) return;
         initialized.value = true;
-
-        // listen to poller updates
-        window.addEventListener('agent_tasks.updated', onWindowUpdated as EventListener);
-
-        // start poller
-        startPoller();
+        try {
+            startPoller();
+        } catch (e) {
+            console.error('agentTasksPanelStore: failed to start poller', e);
+        }
     }
 
     function dispose() {
         if (!initialized.value) return;
         initialized.value = false;
-
-        window.removeEventListener('agent_tasks.updated', onWindowUpdated as EventListener);
-        stopPoller();
+        try {
+            stopPoller();
+        } catch (e) {
+            console.error('agentTasksPanelStore: failed to stop poller', e);
+        }
     }
 
     function clear() {
@@ -96,6 +89,6 @@ export const useAgentTasksPanelStore = defineStore('agentTasksPanel', () => {
         items,
         addLocalId,
         removeLocalId,
-        isPollerRunning,
+        mergeItems,
     };
 });
