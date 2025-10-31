@@ -22,9 +22,6 @@ function readLocalTasks(): Array<{ id: string }> {
 }
 
 function mergeServerData(items: AgentTasksCheckResponseItem[]) {
-    // Simple event-based integration point: frontend stores/components can listen to
-    // 'agent_tasks.updated' and update their internal state.
-    // We include payload with items for convenience.
     try {
         window.dispatchEvent(new CustomEvent('agent_tasks.updated', { detail: { items } }));
     } catch (e) {
@@ -51,8 +48,6 @@ async function tickOnce() {
 
         mergeServerData(data);
     } catch (err) {
-        // Log and continue polling
-        // eslint-disable-next-line no-console
         console.error('AgentTasks poller error', err);
     } finally {
         isRunning = false;
@@ -65,7 +60,6 @@ async function tickOnce() {
 export function startPoller() {
     if (!stopped) return;
     stopped = false;
-    // start immediately
     tickOnce();
 }
 
@@ -80,3 +74,21 @@ export function stopPoller() {
 export function isPollerRunning(): boolean {
     return !stopped || isRunning;
 }
+
+const agentTasksPoller = {
+    startPoller,
+    stopPoller,
+    getPanelItems: readLocalTasks,
+    hideChat: (chatId: number | string) => {
+        try {
+            const key = 'agent_tasks_panel_hidden_' + String(chatId);
+            localStorage.setItem(key, '1');
+        } catch (e) {
+            console.error('agentTasksPoller: hideChat failed', e);
+        }
+    },
+    isPollerRunning,
+};
+
+export { agentTasksPoller };
+export default agentTasksPoller;
