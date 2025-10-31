@@ -43,7 +43,7 @@ class TaskLocalStorage {
             iten.hidden = false
         }
 
-        this.store()
+        this.store(items)
     }
 
     getLastUpdateTime(): number {
