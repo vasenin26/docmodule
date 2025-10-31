@@ -69,8 +69,8 @@
 
             <!-- Модальное окно чата -->
             <SidePanel v-model:open="showChatModal">
-                <AgentChat 
-                    v-if="chat" 
+                <AgentChat
+                    v-if="chat"
                     :messages="chat.messages"
                     :loading="isPolling"
                     :status="implementationStatus"
@@ -79,7 +79,7 @@
                     :contextFill="chat?.context_fill ?? 0"
                     :totalTokens="chat?.total_tokens ?? 0"
                     :context="chat?.context"
-                    @sendMessage="sendMessageToChat" 
+                    @sendMessage="sendMessageToChat"
                     @stop="sendStopGenerating"
                 />
             </SidePanel>
@@ -153,10 +153,10 @@ const checkImplementationStatus = async () => {
         const request = new ImplementationStatusRequest(props.implementation.id);
         const data = await request.call(api);
         requestCount.value++;
-        
+
         implementationStatus.value = data.status;
         implementationContent.value = data.content || null;
-        
+
         // Обновляем сообщения чата, если пришли с сервера
         if (data.chat && data.chat.messages) {
             if (!chat.value) {
@@ -175,7 +175,7 @@ const checkImplementationStatus = async () => {
             (chat.value as any).total_tokens = (data.chat as any).total_tokens ?? (chat.value as any)?.total_tokens ?? 0;
             (chat.value as any).context = (data.chat as any).context ?? (chat.value as any)?.context ?? null;
         }
-        
+
         // Останавливаем опрос если реализация завершена
         if (data.status === 'completed' || data.status === 'failed') {
             stopPolling();
@@ -204,14 +204,19 @@ const getStatusMessage = () => {
 // Функции управления опросом
 const startPolling = () => {
     if (pollInterval.value) return;
-    
+
     isPolling.value = true;
-    pollInterval.value = setInterval(checkImplementationStatus, 3000);
+    const fu = async () => {
+        await checkImplementationStatus()
+        pollInterval.value = setTimeout(fu ,3000)
+    }
+
+    fu();
 };
 
 const stopPolling = () => {
     if (pollInterval.value) {
-        clearInterval(pollInterval.value);
+        clearTimeout(pollInterval.value);
         pollInterval.value = null;
     }
     isPolling.value = false;
@@ -223,14 +228,14 @@ const sendMessageToChat = async (message: string) => {
 
     implementationStatus.value = 'processing';
     startPolling();
-    
+
     if (result?.success && result.chat) {
         // Обновляем локальное состояние чата
         updateChatMessages(chat.value, result.chat.messages);
     } else if (hasError.value) {
         console.error('Ошибка при отправке:', error.value);
     }
-    
+
     // Обновляем чат после отправки сообщения
     setTimeout(checkImplementationStatus, 1000);
 };
@@ -246,7 +251,7 @@ onMounted(() => {
     console.log('Implementation data:', props.implementation);
     console.log('Techplane data:', props.implementation.techplane);
     console.log('Task data:', props.implementation.techplane?.task);
-    
+
     // Начинаем опрос если содержимое пустое или статус не завершен
     if (!implementationContent.value || (implementationStatus.value !== 'completed' && implementationStatus.value !== 'failed')) {
         startPolling();

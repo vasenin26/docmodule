@@ -321,10 +321,15 @@ const checkGenerationStatus = async () => {
 
 // Функция для запуска автоматического опроса
 const startPolling = () => {
-    if (!isPolling.value) {
-        isPolling.value = true;
-        pollInterval.value = setInterval(checkGenerationStatus, 3000); // каждые 3 секунды
+    if (pollInterval.value) return;
+
+    isPolling.value = true;
+    const fu = async () => {
+        await checkGenerationStatus()
+        pollInterval.value = setTimeout(fu ,3000)
     }
+
+    fu();
 };
 
 // Функция для остановки опроса

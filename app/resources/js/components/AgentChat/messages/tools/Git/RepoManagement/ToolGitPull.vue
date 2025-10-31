@@ -36,42 +36,17 @@ function containerClass(): string {
 
         <template v-if="parseResult()">
             <div class="text-sm space-y-3">
-                <div class="space-y-1">
-                    <div class="text-xs font-medium text-gray-600">Удаленный репозиторий:</div>
-                    <div class="text-sm bg-white p-2 rounded border font-mono">{{ parseResult()?.remote || parseResult()?.origin || 'origin' }}</div>
-                </div>
-
-                <div class="space-y-1">
-                    <div class="text-xs font-medium text-gray-600">Ветка:</div>
-                    <div class="text-sm bg-white p-2 rounded border font-mono">{{ parseResult()?.branch || 'main' }}</div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="bg-white p-2 rounded border">
-                        <div class="font-medium text-gray-600">Новых коммитов:</div>
-                        <div class="text-sm">{{ parseResult()?.commits_ahead || 0 }}</div>
-                    </div>
-                    <div class="bg-white p-2 rounded border">
-                        <div class="font-medium text-gray-600">Обновлено файлов:</div>
-                        <div class="text-sm">{{ parseResult()?.files_updated || 0 }}</div>
-                    </div>
-                </div>
-
-                <div v-if="parseResult()?.message" class="space-y-1">
-                    <div class="text-xs font-medium text-gray-600">Результат:</div>
-                    <div class="text-sm bg-gray-100 p-2 rounded border">
-                        {{ parseResult()?.message }}
-                    </div>
-                </div>
-
-                <div v-if="parseResult()?.conflicts && parseResult()?.conflicts.length > 0" class="space-y-1">
-                    <div class="text-xs font-medium text-gray-600">Конфликты:</div>
+                <template v-if="getSuccess()">
                     <div class="space-y-1">
-                        <div v-for="conflict in parseResult()?.conflicts" :key="conflict" class="bg-red-100 p-2 rounded border font-mono text-sm text-red-800">
-                            {{ conflict }}
-                        </div>
+                        <div class="text-xs font-medium text-gray-600">Удаленный репозиторий:</div>
+                        <div class="text-sm bg-white p-2 rounded border font-mono">{{ parseResult()?.url || 'N/A' }}</div>
                     </div>
-                </div>
+
+                    <div class="space-y-1">
+                        <div class="text-xs font-medium text-gray-600">Ветка:</div>
+                        <div class="text-sm bg-white p-2 rounded border font-mono">{{ parseResult()?.branch || 'N/A' }}</div>
+                    </div>
+                </template>
             </div>
         </template>
         <div v-else class="text-gray-500 italic text-sm">Нет данных для отображения</div>

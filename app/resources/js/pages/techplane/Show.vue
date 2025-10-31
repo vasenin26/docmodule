@@ -183,7 +183,6 @@ const showDoneModal = ref(false);
 
 // Реактивные переменные для чата
 const chat = ref<LLMChat | null>(props.techplane.llm_chat || null);
-const isSending = ref<boolean>(false);
 
 // Единый экземпляр API клиента
 const api = createApi();
@@ -252,10 +251,15 @@ async function onDoneApplied(payload: TechplaneMarkDoneResponse) {
 
 // Функция для запуска автоматического опроса
 const startPolling = () => {
-    if (!isPolling.value) {
-        isPolling.value = true;
-        pollInterval.value = setInterval(checkGenerationStatus, 3000); // каждые 3 секунды
+    if (pollInterval.value) return;
+
+    isPolling.value = true;
+    const fu = async () => {
+        await checkGenerationStatus()
+        pollInterval.value = setTimeout(fu ,3000)
     }
+
+    fu();
 };
 
 const sendStopGenerating = async () => {
