@@ -10,6 +10,7 @@ use App\Models\Project;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AgentTaskController extends Controller
 {
@@ -28,7 +29,7 @@ class AgentTaskController extends Controller
 
         if ($request->filled('status')) {
             $status = $request->string('status');
-            
+
             // Валидируем статус через enum
             if (AgentTaskStatus::isValid($status)) {
                 $query->where('status', $status);
@@ -104,6 +105,43 @@ class AgentTaskController extends Controller
     }
 
     /**
+     * Check tasks statuses for provided ids and always include user's active tasks
+     * POST /agent-tasks/check
+     */
+    public function check(Request $request)
+    {
+        $this->validate($request, [
+            'ids' => ['nullable', 'array'],
+            'ids.*' => ['string'],
+        ]);
+
+        $ids = $request->input('ids', []);
+        $user = $request->user();
+
+        // Base query: tasks that belong to user or belong to user's projects
+        $baseQuery = AgentTask::with(['project', 'creator', 'agent'])->where(function ($q) use ($user) {
+            $q->where('created_by', $user->id)
+              ->orWhereHas('project', function ($q2) use ($user) {
+                  $q2->where('created_by', $user->id);
+              });
+        });
+
+        $tasksByIds = collect([]);
+        if (!empty($ids)) {
+            $tasksByIds = (clone $baseQuery)->whereIn('id', $ids)->get();
+        }
+
+        $activeTasks = (clone $baseQuery)
+            ->whereIn('status', [AgentTask::STATUS_PROCESSING, AgentTask::STATUS_WAIT])
+            ->get();
+
+        $tasks = $tasksByIds->concat($activeTasks)->unique('id')->values();
+
+        // Return resource collection
+        return AgentTaskResource::collection($tasks);
+    }
+
+    /**
      * Получить содержимое чата для задачи (web API)
      * GET /agent-tasks/{id}/chat-content
      */
@@ -111,7 +149,7 @@ class AgentTaskController extends Controller
     {
         try {
             $task = AgentTask::findOrFail($id);
-            
+
             // Проверяем доступ к задаче через проект
             if ($task->project && !$task->project->canAccess(Auth::user())) {
                 abort(403);
@@ -130,7 +168,7 @@ class AgentTaskController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['error' => 'Task not found'], 404);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to get chat content', [
+            Log::error('Failed to get chat content', [
                 'task_id' => $id,
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
@@ -150,7 +188,7 @@ class AgentTaskController extends Controller
     {
         try {
             $task = AgentTask::findOrFail($id);
-            
+
             // Проверяем доступ к задаче через проект
             if ($task->project && !$task->project->canAccess(Auth::user())) {
                 abort(403);
@@ -159,14 +197,14 @@ class AgentTaskController extends Controller
             // Создаем хендлер через фабрику
             $handlerFactory = app(AgentResultHandlerFactory::class);
             $handler = $handlerFactory->createTaskHandler($task);
-            
+
             if (!$handler) {
                 return response()->json(['error' => 'Handler not found'], 404);
             }
 
             // Получаем целевой ресурс от хендлера
             $targetResource = $handler->getTargetResource();
-            
+
             if (!$targetResource) {
                 return response()->json(['error' => 'Target resource not found'], 404);
             }
@@ -180,7 +218,7 @@ class AgentTaskController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['error' => 'Task not found'], 404);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to get target resource', [
+            Log::error('Failed to get target resource', [
                 'task_id' => $id,
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
@@ -193,5 +231,3 @@ class AgentTaskController extends Controller
         }
     }
 }
-
-
