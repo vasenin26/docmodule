@@ -16,7 +16,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import agentTasksPoller from '@/services/agentTasksPoller';
 
