@@ -16,12 +16,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import agentTasksPoller from '@/services/agentTasksPoller';
 
 // Set component name for devtools
-// @ts-ignore - defineOptions may not be typed in all setups
 if (typeof defineOptions === 'function') defineOptions({ name: 'AgentTasksPanel' });
 
 const items = ref([]);
