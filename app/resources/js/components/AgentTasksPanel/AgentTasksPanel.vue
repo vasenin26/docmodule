@@ -8,7 +8,7 @@
           <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <circle cx="12" cy="12" r="8" stroke-width="1.5" />
           </svg>
-          <span :class="['absolute top-0 right-0 w-3 h-3 rounded-full', statusColor(item.status)]"></span>
+          <span :class="['absolute top-0 right-0 w-3 h-3 rounded-full', statusColor(item.raw_status)]"></span>
         </button>
         <button @click.stop="hide(item)" class="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-xs">×</button>
       </div>
@@ -16,78 +16,72 @@
   </div>
 </template>
 
-<script>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+<script setup>
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import agentTasksPoller from '@/services/agentTasksPoller';
 
-export default {
-  name: 'AgentTasksPanel',
-  setup() {
-    const items = ref([]);
-    const visible = ref(false);
+// Set component name for devtools
+// @ts-ignore - defineOptions may not be typed in all setups
+if (typeof defineOptions === 'function') defineOptions({ name: 'AgentTasksPanel' });
 
-    function refresh() {
-      const list = agentTasksPoller.getPanelItems();
-      // Only visible if at least one non-hidden item exists
-      const filtered = (list || []).filter((it) => !it.hidden);
-      items.value = filtered;
-      visible.value = filtered.length > 0;
-    }
+const items = ref([]);
+const visible = computed(() => items.value.length > 0);
 
-    function onUpdated(e) {
-      const detail = e?.detail ?? e;
-      // If event provides merged list, use it, otherwise read from poller
-      if (Array.isArray(detail)) {
-        items.value = detail.filter((it) => !it.hidden);
-        visible.value = items.value.length > 0;
-      } else {
-        refresh();
-      }
-    }
+function refresh() {
+  const list = agentTasksPoller.getPanelItems() || [];
+  const filtered = (list || []).filter((it) => !it.hidden);
+  items.value = filtered;
+}
 
-    function onClick(item) {
-      if (item.url) {
-        window.location.href = item.url;
-      }
-    }
+function onUpdated(e) {
+  const detail = e?.detail ?? e;
+  if (detail && Array.isArray(detail.items)) {
+    items.value = detail.items.filter((it) => !it.hidden);
+  } else if (Array.isArray(detail)) {
+    items.value = detail.filter((it) => !it.hidden);
+  } else {
+    refresh();
+  }
+}
 
-    function hide(item) {
-      agentTasksPoller.hideChat(item.chatId);
-      refresh();
-    }
+function onClick(item) {
+  if (item.url) {
+    window.location.href = item.url;
+  }
+}
 
-    onMounted(() => {
-      // lazy init poller
-      agentTasksPoller.startPoller();
-      refresh();
-      window.addEventListener('agent_tasks_panel.updated', onUpdated);
-    });
+function hide(item) {
+  try {
+    agentTasksPoller.hideChat(item.chat_id ?? item.chatId);
+  } catch (e) {
+    console.error('hide failed', e);
+  }
+  refresh();
+}
 
-    onBeforeUnmount(() => {
-      window.removeEventListener('agent_tasks_panel.updated', onUpdated);
-      agentTasksPoller.stopPoller();
-    });
+function statusColor(status) {
+  switch (status) {
+    case 'processing':
+      return 'bg-yellow-400';
+    case 'wait':
+      return 'bg-blue-400';
+    case 'completed':
+      return 'bg-green-500';
+    default:
+      return 'bg-gray-400';
+  }
+}
 
-    return {
-      items,
-      visible,
-      onClick,
-      hide,
-      statusColor(status) {
-        switch (status) {
-          case 'processing':
-            return 'bg-yellow-400';
-          case 'await':
-            return 'bg-blue-400';
-          case 'completed':
-            return 'bg-green-500';
-          default:
-            return 'bg-gray-400';
-        }
-      },
-    };
-  },
-};
+onMounted(() => {
+  agentTasksPoller.startPoller();
+  refresh();
+  window.addEventListener('agent_tasks.updated', onUpdated);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('agent_tasks.updated', onUpdated);
+  agentTasksPoller.stopPoller();
+});
 </script>
 
 <style scoped>
