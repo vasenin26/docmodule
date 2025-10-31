@@ -133,7 +133,7 @@ export function useAgentTasksPanel() {
                 for (let item of remoteItems) {
                     taskStorage.pushItem(
                         item.chat_id,
-                        item.agent_task_id,
+                        item.id,
                         item.raw_status
                     );
                 }
