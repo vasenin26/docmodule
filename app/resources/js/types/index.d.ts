@@ -176,11 +176,14 @@ export interface PageVersion {
     project_files: { id: number; url: string; description?: string | null }[];
     created_at: string;
     updated_at: string;
+    parent_id?: number | null;
+    parent?: { id: number; title?: string } | null;
 }
 
 export interface Page {
     id: number;
     parent_id?: number | null;
+    parent?: { id: number; title?: string } | null;
     version_id?: number | null;
     created_at: string;
     created_by: number;

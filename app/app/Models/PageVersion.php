@@ -22,6 +22,7 @@ class PageVersion extends Model
         'content',
         'previous_version_id',
         'is_draft',
+        'parent_id',
     ];
 
     protected function casts(): array
@@ -164,15 +165,6 @@ class PageVersion extends Model
             ->pluck('id')
             ->all();
 
-        $this->projectFiles()->sync($ids);
-    }
-
-    /**
-     * Copy project file links from another version to this one.
-     */
-    public function copyProjectFilesFrom(PageVersion $source): void
-    {
-        $ids = $source->projectFiles()->pluck('project_files.id')->all();
         $this->projectFiles()->sync($ids);
     }
 }

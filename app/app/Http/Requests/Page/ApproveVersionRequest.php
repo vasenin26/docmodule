@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Page;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use App\Models\Page;
 
 class ApproveVersionRequest extends FormRequest
 {
@@ -21,6 +23,9 @@ class ApproveVersionRequest extends FormRequest
      */
     public function rules(): array
     {
+        $pageVersion = $this->route('pageVersion');
+        $pageId = $pageVersion?->page_id ?? null;
+
         return [
             'title' => 'required|string|max:255',
             'content' => 'nullable|string',
@@ -28,6 +33,15 @@ class ApproveVersionRequest extends FormRequest
             'project_files.*.url' => 'required|string|url',
             'project_files.*.description' => 'nullable|string',
             'createTask' => 'boolean',
+            'parent_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('pages', 'id')->where(function ($query) use ($pageId) {
+                    if ($pageId) {
+                        $query->where('project_id', Page::find($pageId)?->project_id);
+                    }
+                }),
+            ],
         ];
     }
 
@@ -45,6 +59,8 @@ class ApproveVersionRequest extends FormRequest
             'project_files.*.url.required' => 'Ссылка на вложение обязательна.',
             'project_files.*.url.url' => 'Ссылка на вложение должна быть корректным URL.',
             'createTask.boolean' => 'Поле создания задачи должно быть булевым значением.',
+            'parent_id.integer' => 'parent_id должен быть целым числом.',
+            'parent_id.exists' => 'Выбранная родительская страница не найдена или не принадлежит проекту.',
         ];
     }
 
