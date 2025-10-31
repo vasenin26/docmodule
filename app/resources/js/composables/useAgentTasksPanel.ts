@@ -47,10 +47,6 @@ class TaskLocalStorage {
         this.store()
     }
 
-    getItemByChat(chatId: number): ?TaskItem {
-        this.searchByChatId(chatId, this.read().items)
-    }
-
     getLastUpdateTime(): number {
         return this.read().lastUpdateTime || 0
     }
@@ -59,7 +55,7 @@ class TaskLocalStorage {
         return this.read().items || []
     }
 
-    private defineStatus(current: string, item: ?TaskItem): Status {
+    private defineStatus(current: string, item: TaskItem | null): Status {
         if (item === null) {
             switch (current) {
                 case 'completed':
@@ -81,7 +77,7 @@ class TaskLocalStorage {
         return 'completed'
     }
 
-    private searchByChatId(chatId: number, items: TaskItem): ?TaskItem {
+    private searchByChatId(chatId: number, items: TaskItem): TaskItem | null {
         for (let item of items) {
             if (item.chat_id === chatId) return item;
         }
