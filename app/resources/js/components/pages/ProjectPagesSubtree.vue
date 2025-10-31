@@ -50,14 +50,9 @@ function toggle(id: number): void {
                     </template>
                     <template v-else>
                         <span class="leaf-icon">
-                            <Icon name="circle" class="icon" size="12" />
+                            <Icon name="fileText" class="icon" size="12" />
                         </span>
                     </template>
-
-                    <!-- Универсальная иконка перед названием (для визуального единообразия) -->
-                    <span class="node-icon">
-                        <Icon name="fileText" class="icon" size="14" />
-                    </span>
 
                     <!-- Ссылка на страницу — должна быть кликабельна отдельно от кнопки -->
                     <Link :href="route('pages.show', node.id)" class="node-link">{{ pageTitle(node) }}</Link>
@@ -109,14 +104,6 @@ function toggle(id: number): void {
   width: 20px;
   height: 20px;
   color: #6b7280; /* gray-500 */
-}
-.node-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  color: #374151; /* gray-700 */
 }
 .node-link {
   color: inherit;
