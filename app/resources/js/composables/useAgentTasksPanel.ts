@@ -89,7 +89,10 @@ class TaskLocalStorage {
         const record = localStorage.getItem(LOCAL_STORE_KEY)
 
         if (record === null) {
-            return []
+            return {
+                items: [],
+                lastUpdateTime: 0
+            }
         }
 
         return JSON.parse(record) as Record;
