@@ -23,8 +23,7 @@ type Record = {
 
 class TaskLocalStorage {
     getChatIds(): number[] {
-        const items = this.read();
-        return items.map((item: TaskItem) => item.task_id)
+        return this.read().items.map((item: TaskItem) => item.task_id)
     }
 
     pushItem(chatId: number, taskId: number, status: string): void {
