@@ -55,6 +55,13 @@
                                 <p class="text-xs text-muted-foreground">Поддерживается формат Markdown</p>
                             </div>
 
+                            <!-- Родительская страница -->
+                            <div class="space-y-2">
+                                <Label for="parent">Родительская страница</Label>
+                                <PageSelect v-model="form.parent_id" :projectId="page?.project_id || null" placeholder="Выберите родительскую страницу" />
+                                <InputError v-if="errors?.parent_id || errors?.parent" :message="errors?.parent_id || errors?.parent" />
+                            </div>
+
                             <!-- Прикрепленные файлы -->
                             <div class="space-y-2">
                                 <FileLinksList v-model="form.files" />
@@ -134,6 +141,7 @@ import { ActualizationStatusRequest } from '@/service/api/request/Actualization/
 import { StartActualizationForDraftRequest } from '@/service/api/request/Actualization/StartActualizationForDraftRequest';
 import AppContentWysiwyg from '@/components/AppContentWysiwyg.vue';
 import ActualizationButton from '@/components/PageInfo/ActualizationButton.vue';
+import PageSelect from '@/components/PageSelect.vue';
 
 type PageVersion = {
     id: number;
@@ -143,6 +151,7 @@ type PageVersion = {
     files?: string[];
     project_files?: { id: number; url: string; description?: string | null }[];
     is_draft?: boolean;
+    parent_id?: number | null,
 };
 
 const props = withDefaults(
@@ -167,7 +176,8 @@ const form = useForm({
         || props.pageVersion?.files
         || [],
     createTask: false,
-    is_current_version: false as boolean
+    is_current_version: false as boolean,
+    parent_id: (props.pageVersion as any)?.page?.parent_id ?? (props.page as any)?.parent?.id ?? null,
 });
 
 const processing = ref(false);
@@ -193,6 +203,7 @@ const createDraft = () => {
     processing.value = true;
     const transformed = form.transform((data: any) => ({
         ...data,
+        parent_id: data.parent_id ?? null,
         project_files: Array.isArray(data.files)
             ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
             : []
@@ -215,6 +226,7 @@ const submit = () => {
 
     const transformed = form.transform((data: any) => ({
         ...data,
+        parent_id: data.parent_id ?? null,
         project_files: Array.isArray(data.files)
             ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
             : []
@@ -240,6 +252,7 @@ const approveDraft = () => {
     if (!props.is_current_version) {
         const transformed = form.transform((data: any) => ({
             ...data,
+            parent_id: data.parent_id ?? null,
             project_files: Array.isArray(data.files)
                 ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
                 : []

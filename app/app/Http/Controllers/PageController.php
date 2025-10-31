@@ -275,7 +275,26 @@ class PageController extends Controller
             'project_files' => 'array',
             'project_files.*.url' => 'required|string|url',
             'project_files.*.description' => 'nullable|string',
+            'parent_id' => ['nullable', 'integer'],
         ]);
+
+        // Validate parent existence and project membership and cycle
+        if (!empty($validated['parent_id'])) {
+            $parent = Page::whereNotNull('version_id')->find($validated['parent_id']);
+            if (!$parent) {
+                return redirect()->back()->withErrors(['parent_id' => 'Выбранная родительская страница не найдена']);
+            }
+
+            // Ensure same project
+            if ($parent->project_id !== $page->project_id) {
+                return redirect()->back()->withErrors(['parent_id' => 'Родительская страница должна принадлежать тому же проекту']);
+            }
+
+            // Check cycle
+            if ($this->isDescendant($validated['parent_id'], $page->id)) {
+                return redirect()->back()->withErrors(['parent_id' => 'Нельзя назначить дочернюю страницу родителем']);
+            }
+        }
 
         $draft = $page->createDraft($validated);
 
@@ -289,6 +308,9 @@ class PageController extends Controller
                 $draft->copyProjectFilesFrom($currentVersion);
             }
         }
+
+        // Сохраняем parent_id в версии
+        $draft->update(['parent_id' => $validated['parent_id'] ?? null]);
 
         return redirect()->route('pages.versions.edit', [$page->id, $draft->id])
             ->with('success', 'Черновик создан.');
@@ -504,5 +526,19 @@ class PageController extends Controller
             newVersionId: $currentVersion->id,
             oldVersionId: $oldVersionId
         );
+    }
+
+    /**
+     * Проверить, что candidateParentId не является потомком страницы pageId
+     */
+    private function isDescendant(int $candidateParentId, int $pageId): bool
+    {
+        if ($candidateParentId === $pageId) return true;
+        $parent = Page::find($candidateParentId);
+        while ($parent) {
+            if ($parent->id === $pageId) return true;
+            $parent = $parent->parent;
+        }
+        return false;
     }
 }
