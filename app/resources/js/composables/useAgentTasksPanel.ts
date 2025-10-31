@@ -1,73 +1,145 @@
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { createApi } from '@/services/api/Api';
+import {ref, onMounted, onBeforeUnmount} from 'vue';
+import {createApi} from '@/services/api/Api';
 import {AgentTasksCheckRequest, AgentTasksCheckResponseItem} from '@/services/api/request/Task/AgentTasksCheckRequest';
 
 const POLL_INTERVAL = 5000;
-const MAX_IDS = 50;
+const LOCAL_STORE_KEY = 'agent_tasks_list'
 
 const api = createApi();
+
+export type Status = 'processing' | 'completed' | 'await';
+
+export type TaskItem = {
+    chat_id: number
+    task_id: number
+    status: Status,
+    hidden: boolean
+}
+
+type Record = {
+    items?: TaskItem[]
+    lastUpdateTime?: number
+}
+
+class TaskLocalStorage {
+    getChatIds(): number[] {
+        const items = this.read();
+        return items.map((item: TaskItem) => item.task_id)
+    }
+
+    pushItem(chatId: number, taskId: number, status: string): void {
+        const items = this.read().items
+        const item = this.searchByChatId(chatId, items)
+
+        if (item === null) {
+            items.push({
+                chat_id: chatId,
+                task_id: taskId,
+                status: this.defineStatus(status, null),
+                hidden: false
+            })
+        } else {
+            item.status = this.defineStatus(status, item)
+            item.task_id = taskId
+            iten.hidden = false
+        }
+
+        this.store()
+    }
+
+    getItemByChat(chatId: number): ?TaskItem {
+        this.searchByChatId(chatId, this.read().items)
+    }
+
+    getLastUpdateTime(): number {
+        return this.read().lastUpdateTime || 0
+    }
+
+    getItems(): TaskItem[] {
+        return this.read().items || []
+    }
+
+    private defineStatus(current: string, item: ?TaskItem): Status {
+        if (item === null) {
+            switch (current) {
+                case 'completed':
+                    return 'completed'
+                case 'processing':
+                default:
+                    return 'processing'
+            }
+        } else {
+            if (item.status === 'completed' && (current === 'processing' || current === 'wait')) {
+                return 'processing'
+            }
+
+            if (item.status === 'processing' && current === 'completed') {
+                return 'await'
+            }
+        }
+
+        return 'completed'
+    }
+
+    private searchByChatId(chatId: number, items: TaskItem): ?TaskItem {
+        for (let item of items) {
+            if (item.chat_id === chatId) return item;
+        }
+
+        return null;
+    }
+
+    private read(): Record {
+        const record = localStorage.getItem(LOCAL_STORE_KEY)
+
+        if (record === null) {
+            return []
+        }
+
+        return JSON.parse(record) as Record;
+    }
+
+    private store(items: TaskItem[]): void {
+        const json = JSON.stringify({
+            items,
+            lastUpdateTime: (new Date()).getTime()
+        })
+        localStorage.setItem(LOCAL_STORE_KEY, json)
+    }
+}
+
 export function useAgentTasksPanel() {
     const stopped = ref(true);
     const isRunning = ref(false);
-    const items = ref<AgentTasksCheckResponseItem[]>([])
+    const items = ref<TaskItem[]>([])
     let timeoutHandle: any = null;
 
-    function readLocalIds(): Array<string> {
-        try {
-            const raw = localStorage.getItem('agent_tasks_panel_ids');
-            if (!raw) return [];
-            const parsed = JSON.parse(raw);
-            if (!Array.isArray(parsed)) return [];
-            return parsed.map((it) => String(it.id ?? it));
-        } catch (e) {
-            console.error('useAgentTasksPanel: failed to read local ids', e);
-            return [];
-        }
-    }
+    const taskStorage = new TaskLocalStorage();
 
     async function fetchOnce(): Promise<void> {
         if (stopped.value) return;
-
-        if (isRunning.value) {
-            timeoutHandle = setTimeout(fetchOnce, POLL_INTERVAL);
-            return;
-        }
+        if (isRunning.value) return;
 
         isRunning.value = true;
 
         try {
-            const ids = readLocalIds().slice(0, MAX_IDS);
-            const req = new AgentTasksCheckRequest(ids);
-            const data = await req.call(api);
+            const lastUpdateTime = taskStorage.getLastUpdateTime();
 
-            // normalize items into panel shape
-            const normalized = data.map((it) => ({
-                chat_id: it.chat_id,
-                agent_task_id: it.agent_task_id,
-                raw_status: it.raw_status,
-                hidden: !!localStorage.getItem('agent_tasks_panel_hidden_' + String(it.chat_id)),
-            }));
+            if ((new Date()).getTime() - lastUpdateTime > POLL_INTERVAL) {
+                const ids = taskStorage.getChatIds();
+                const req = new AgentTasksCheckRequest(ids);
+                const remoteItems = await req.call(api);
 
-            const byChat = new Map();
+                for (let item of remoteItems) {
+                    taskStorage.pushItem(
+                        item.chat_id,
+                        item.agent_task_id,
+                        item.raw_status
+                    );
+                }
+            }
 
-            normalized.forEach((it) => {
-                const chatId = String(it.chat_id ?? '');
-                if (!byChat.has(chatId)) byChat.set(chatId, []);
-                byChat.get(chatId).push(it);
-            });
-
-            const merged: any[] = [];
-
-            byChat.forEach((list) => {
-                // if any processing/wait -> processing
-                const hasActive = list.some(l => ['processing', 'wait'].includes(l.raw_status));
-                const finalStatus = hasActive ? 'processing' : 'completed';
-                // choose representative task: newest by updated_at
-                list.sort((a,b) => (b.updated_at || '') .localeCompare(a.updated_at || ''));
-                const rep = { ...list[0], status: finalStatus };
-                merged.push(rep);
-            });
-
+            items.value.set(taskStorage.getItems())
         } catch (e) {
             console.error('useAgentTasksPanel: fetch error', e);
         } finally {
