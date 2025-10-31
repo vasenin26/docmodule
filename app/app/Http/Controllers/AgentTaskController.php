@@ -120,12 +120,9 @@ class AgentTaskController extends Controller
         $user = $request->user();
 
         // Base query: tasks that belong to user or belong to user's projects
-        $baseQuery = AgentTask::with(['project', 'creator', 'agent'])->where(function ($q) use ($user) {
-            $q->where('created_by', $user->id)
-              ->orWhereHas('project', function ($q2) use ($user) {
-                  $q2->where('created_by', $user->id);
-              });
-        });
+        $baseQuery = AgentTask::with(['project', 'creator', 'agent'])
+            ->whereCreatedBy($user->id)
+            ->whereNotNull('handler');
 
         $tasksByIds = collect([]);
         if (!empty($ids)) {
