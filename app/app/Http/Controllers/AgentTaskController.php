@@ -110,12 +110,13 @@ class AgentTaskController extends Controller
      */
     public function check(Request $request)
     {
-        $this->validate($request, [
+        // Laravel 12: Controller::validate removed — use $request->validate
+        $validated = $request->validate([
             'ids' => ['nullable', 'array'],
             'ids.*' => ['string'],
         ]);
 
-        $ids = $request->input('ids', []);
+        $ids = $validated['ids'] ?? [];
         $user = $request->user();
 
         // Base query: tasks that belong to user or belong to user's projects
