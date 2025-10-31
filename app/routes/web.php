@@ -153,6 +153,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Agent tasks (global)
     Route::get('agent-tasks/{id}/chat-content', [AgentTaskController::class, 'getChatContent'])
         ->name('agent-tasks.chat-content');
+    Route::post('agent-tasks/check', [AgentTaskController::class, 'check'])
+        ->name('agent-tasks.check');
+
     Route::get('agent-tasks/{id}/target-resource', [AgentTaskController::class, 'getTargetResource'])
         ->name('agent-tasks.target-resource');
 
