@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { createApi } from '@/services/api/Api';
 import { TechplaneMarkDoneRequest, type TechplaneMarkDoneResponse } from '@/services/api/request/Techplane/TechplaneMarkDoneRequest';
+import { Dialog, DialogFooter, DialogHeader, DialogContent, DialogClose, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
 const props = defineProps<{
   techplaneId: number;

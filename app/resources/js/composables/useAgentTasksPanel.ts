@@ -7,7 +7,7 @@ const LOCAL_STORE_KEY = 'agent_tasks_list'
 
 const api = createApi();
 
-export type Status = 'processing' | 'completed' | 'await';
+export type Status = 'processing' | 'completed' | 'await' | 'viewed';
 
 export type TaskItem = {
     chat_id: number
@@ -43,11 +43,13 @@ class TaskLocalStorage {
             let hidden = item.hidden;
             const newStatus = this.defineStatus(status, item);
 
-            if(newStatus === 'await') {
+            if (newStatus === 'await') {
                 hidden = false;
             }
+            if(newStatus) {
+                item.status = newStatus
+            }
 
-            item.status = newStatus
             item.task_id = taskId
             item.hidden = hidden
             item.type = type
@@ -56,13 +58,22 @@ class TaskLocalStorage {
         this.store(items)
     }
 
-    hideItem(chatId: number): never
-    {
+    hideItem(chatId: number): never {
         const items = this.read().items
         const item = this.searchByChatId(chatId, items)
 
-        if(item) {
+        if (item) {
             item.hidden = true
+            this.store(items)
+        }
+    }
+
+    markItem(chatId: number): never {
+        const items = this.read().items
+        const item = this.searchByChatId(chatId, items)
+
+        if (item) {
+            item.status = 'viewed'
             this.store(items)
         }
     }
@@ -75,10 +86,11 @@ class TaskLocalStorage {
         return this.read().items || []
     }
 
-    private defineStatus(current: string, item: TaskItem | null): Status {
-        console.log(current, item?.status)
+    private defineStatus(newStatus: string, item: TaskItem | null): Status | null {
+        console.log(newStatus, item?.status)
+
         if (item === null) {
-            switch (current) {
+            switch (newStatus) {
                 case 'completed':
                     return 'completed'
                 case 'processing':
@@ -86,20 +98,22 @@ class TaskLocalStorage {
                     return 'processing'
             }
         } else {
-            if (item.status === 'completed' && (current === 'processing' || current === 'wait')) {
-                return 'processing'
-            }
-
-            if (item.status === 'processing') {
-              if(current === 'success') {
-                  return 'await'
-              } else {
-                  return 'processing'
-              }
+            switch (newStatus) {
+                case 'wait':
+                case 'processing':
+                    return 'processing'
+                case 'success':
+                    if (item.status === 'processing')
+                        return 'await'
+                    if (item.status === 'viewed')
+                        return 'viewed'
+                    if (item.status === 'await')
+                        return null
+                    return 'completed'
             }
         }
 
-        return 'completed'
+        return item?.status || 'processing'
     }
 
     private searchByChatId(chatId: number, items: TaskItem[]): TaskItem | null {
@@ -164,7 +178,7 @@ export function useAgentTasksPanel() {
                 }
             }
 
-            items.value= taskStorage.getItems()
+            items.value = taskStorage.getItems()
         } catch (e) {
             console.error('useAgentTasksPanel: fetch error', e);
         } finally {
@@ -189,9 +203,14 @@ export function useAgentTasksPanel() {
         }
     }
 
-    function hideItem(chatId: number): never
-    {
+    function hideItem(chatId: number): never {
         taskStorage.hideItem(chatId)
+
+        items.value = taskStorage.getItems()
+    }
+
+    function markItem(chatId: number): never {
+        taskStorage.markItem(chatId)
 
         items.value = taskStorage.getItems()
     }
@@ -207,6 +226,7 @@ export function useAgentTasksPanel() {
     return {
         items,
         isRunning,
-        hideItem
+        hideItem,
+        markItem
     };
 }

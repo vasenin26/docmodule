@@ -30,11 +30,12 @@ import {Bot, FileText, Hammer, Search, Pen, Brackets} from 'lucide-vue-next';
 import { TaskItem, useAgentTasksPanel } from '@/composables/useAgentTasksPanel';
 import {navigateToTargetResource} from "@/utils/utils";
 
-const { items, hideItem } = useAgentTasksPanel();
+const { items, hideItem, markItem } = useAgentTasksPanel();
 
 const visible = computed(() => items.value.filter((m: TaskItem) => !m.hidden).length > 0);
 
 function onClick(item: TaskItem) {
+    markItem(item.chat_id)
     navigateToTargetResource(item.task_id)
 }
 
@@ -46,12 +47,12 @@ function statusColor(status) {
     switch (status) {
         case 'processing':
             return 'bg-yellow-400';
-        case 'wait':
+        case 'await':
             return 'bg-blue-400';
         case 'completed':
-            return 'bg-green-500';
+            return 'bg-green-200';
         default:
-            return 'bg-gray-400';
+            return 'hidden';
     }
 }
 

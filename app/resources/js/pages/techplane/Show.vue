@@ -143,7 +143,7 @@ import { createApi } from '@/services/api/Api';
 import { TechplaneStatusRequest } from '@/services/api/request/Techplane/TechplaneStatusRequest';
 import { TechplaneExecuteRequest } from '@/services/api/request/Techplane/TechplaneExecuteRequest';
 import TechplaneDoneModal from '@/components/techplane/TechplaneDoneModal.vue';
-import { TechplaneMarkDoneRequest, type TechplaneMarkDoneResponse } from '@/services/api/request/Techplane/TechplaneMarkDoneRequest';
+import {type TechplaneMarkDoneResponse } from '@/services/api/request/Techplane/TechplaneMarkDoneRequest';
 import type { LLMChat } from '@/types';
 
 interface TechplaneData {
