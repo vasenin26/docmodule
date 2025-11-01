@@ -326,13 +326,9 @@ const executeTechplane = async () => {
         const api = createApi();
         const request = new TechplaneExecuteRequest(props.techplane.id);
 
-        console.log('Отправляем запрос на выполнение техплана:', props.techplane.id);
         const data = await request.call(api);
-        console.log('Получен ответ от сервера:', data);
 
         if (data && data.success) {
-            console.log('Реализация создана успешно, перенаправляем на:', data.redirect_url);
-            // Перенаправление на страницу реализации произойдет автоматически
             window.location.href = data.redirect_url;
         } else {
             const errorMessage = data?.message || 'Неизвестная ошибка при создании реализации';

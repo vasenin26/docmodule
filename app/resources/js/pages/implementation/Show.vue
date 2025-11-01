@@ -247,11 +247,6 @@ const sendStopGenerating = async () => {
 
 // Lifecycle hooks
 onMounted(() => {
-    // Отладочная информация
-    console.log('Implementation data:', props.implementation);
-    console.log('Techplane data:', props.implementation.techplane);
-    console.log('Task data:', props.implementation.techplane?.task);
-
     // Начинаем опрос если содержимое пустое или статус не завершен
     if (!implementationContent.value || (implementationStatus.value !== 'completed' && implementationStatus.value !== 'failed')) {
         startPolling();

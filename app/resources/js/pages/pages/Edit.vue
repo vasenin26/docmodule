@@ -314,7 +314,6 @@ const fetchActualizationStatus = async () => {
             hasActiveAgentTask.value = !!data.data.has_active_agent_task;
 
             // Отладочная информация
-            console.log('Статус актуализации:', data.data.status, 'Содержимое:', data.data.content ? 'есть' : 'нет');
             if (data.data.chat) {
                 if (!chat.value) {
                     chat.value = {
@@ -336,8 +335,6 @@ const fetchActualizationStatus = async () => {
             if (data.data.status === 'success' && data.data.content && !contentUpdated.value) {
                 form.content = data.data.content;
                 contentUpdated.value = true;
-                // Показываем уведомление пользователю
-                console.log('Содержимое черновика обновлено после актуализации');
             }
 
             if (['success', 'failed'].includes(actualizationProcessStatus.value)) {

@@ -87,8 +87,6 @@ class TaskLocalStorage {
     }
 
     private defineStatus(newStatus: string, item: TaskItem | null): Status | null {
-        console.log(newStatus, item?.status)
-
         if (item === null) {
             switch (newStatus) {
                 case 'completed':
