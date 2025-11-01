@@ -1,4 +1,5 @@
 import { Method, type ApiInterface, type Request } from '@/services/api/Api';
+import { type Patch } from '@/components/Patches/PatchesList.vue';
 
 export interface ActualizationStatusResponse {
     success: boolean;
@@ -7,6 +8,7 @@ export interface ActualizationStatusResponse {
         status: string;
         content: string;
         chat_id: int|null;
+        patches?: Patch[]
     };
 }
 

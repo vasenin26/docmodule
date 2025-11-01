@@ -6,6 +6,7 @@ use App\Interfaces\DisplayableResource;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property LLMChat $llmChat
@@ -59,6 +60,11 @@ class Actualization extends Model implements DisplayableResource
     public function llmChat(): BelongsTo
     {
         return $this->belongsTo(LLMChat::class, 'llm_chat_id');
+    }
+
+    public function patches(): HasMany
+    {
+        return $this->hasMany(Patch::class, 'target_id')->where('target', self::class);
     }
 
     /**

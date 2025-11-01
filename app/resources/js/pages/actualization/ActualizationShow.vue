@@ -127,12 +127,7 @@ const isWaiting = ref<bool>(false);
 const content = ref<string>('');
 const actualisationStatus = ref<string>('');
 
-const patches = ref<Patch[]>([
-    {
-        id: 0,
-        title: 'Test title'
-    }
-]);
+const patches = ref<Patch[]>([]);
 
 const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('ru-RU', {
@@ -234,6 +229,7 @@ async function checkUpdates() {
 
     content.value = info.data.content;
     actualisationStatus.value = info.data.status;
+    patches.value = info.data.patches || []
 
     loading.value = false;
 }

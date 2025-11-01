@@ -25,7 +25,9 @@ function onSelect(item: Patch): void {
         </div>
         <div class="menu-list">
             <div class="list">
-                <div class="patch node" v-for="item in items" :key="item.id" @click="onSelect(item)">
+                <div class="patch node" v-for="item in items" :key="item.id" @click="onSelect(item)"
+                     :title="item.title"
+                >
                     {{ item.title }}
                 </div>
             </div>
@@ -36,5 +38,12 @@ function onSelect(item: Patch): void {
 <style scoped lang="scss">
 .menu-list {
     padding: 20px;
+}
+.node {
+    cursor: pointer;
+    width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
 }
 </style>

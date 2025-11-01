@@ -14,6 +14,7 @@ use App\Models\AgentTask;
 use App\Models\LLMChat;
 use App\Models\Page;
 use App\Models\PageVersion;
+use App\Models\Patch;
 use App\Services\ActualizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -102,7 +103,8 @@ class ActualizationController extends Controller
                 'id' => $actualization->id,
                 'status' => $actualization->getGenerationStatus(),
                 'chat_id' => $actualization->llm_chat_id,
-                'content' => $actualization->pageVersion->content
+                'content' => $actualization->pageVersion->content,
+                'patches' => $actualization->patches()->orderBy('created_at')->get()->map((fn (Patch $patch) => ['id' => $patch->id, 'title' => $patch->title]))
             ]
         ]);
     }
