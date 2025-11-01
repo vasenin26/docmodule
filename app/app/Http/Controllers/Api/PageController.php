@@ -379,7 +379,7 @@ class PageController extends Controller
             'project_id' => $agent->project_id,
             'page_id' => $id,
             'endpoint' => $request->path(),
-            'ip' => $request->ip()
+            'ip' => $agent->id
         ]);
 
         // Создаем сервис с project_id агента через фабрику
@@ -391,54 +391,4 @@ class PageController extends Controller
                 'page_id' => $id,
                 'project_id' => $agent->project_id,
                 'agent_id' => $agent->id
-            ]);
-            return response()->json(['error' => 'Access denied to page'], 403);
-        }
-
-        $tasks = $service->getTaskHistory($id);
-
-        $taskList = $tasks->map(function ($task) {
-            return [
-                'id' => $task->id,
-                'status' => $task->status,
-                'created_at' => $task->created_at->toISOString(),
-                'updated_at' => $task->updated_at->toISOString(),
-                'creator' => [
-                    'id' => $task->creator->id,
-                    'name' => $task->creator->name,
-                    'email' => $task->creator->email,
-                ],
-                'techplane' => $task->techplane ? [
-                    'id' => $task->techplane->id,
-                    'title' => $task->techplane->title,
-                ] : null,
-            ];
-        })->toArray();
-
-        return response()->json($taskList);
-    }
-
-    /**
-     * Get flat pages for project
-     */
-    public function getFlatPages(
-        Request $request,
-        int $projectId,
-        PageContextServiceFactoryInterface $pageContextServiceFactory
-    ): JsonResponse {
-        Log::info('Flat pages API request', [
-            'project_id' => $projectId,
-            'endpoint' => $request->path(),
-            'ip' => $request->ip()
-        ]);
-
-        // Создаем сервис с project_id через фабрику
-        $service = $pageContextServiceFactory->createForProject($projectId);
-
-        $flatPages = $service->getFlatPagesForProject();
-
-        return response()->json([
-            'pages' => $flatPages
-        ]);
-    }
-}
+        

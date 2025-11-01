@@ -83,11 +83,11 @@ const onInput = () => {
       const url = (typeof route === 'function') ? route('pages.index', params) : `/pages?search=${encodeURIComponent(params.search)}&per_page=10`;
       const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
       const json = await res.json();
+      // Ожидаем структуру { data: [...] }
       results.value = Array.isArray(json.data) ? json.data.map((p: any) => ({ id: p.id, title: p.title, path: p.path || '' })) : [];
       showList.value = true;
     } catch (err) {
       console.error('PageSelect search error', err);
-      error.value = 'Ошибка при поиске';
     } finally {
       loading.value = false;
     }

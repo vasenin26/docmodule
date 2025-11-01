@@ -482,8 +482,28 @@ class PageController extends Controller
         }
 
         $validated = $request->validated();
+
+        // Cycle and parent validation before applying
+        $candidateParentId = $validated['parent_id'] ?? $pageVersion->parent_id ?? null;
+        if (!empty($candidateParentId)) {
+            $parent = Page::whereNotNull('version_id')->find($candidateParentId);
+            if (!$parent) {
+                return redirect()->back()->withErrors(['parent_id' => 'Выбранная родительская страница не найдена']);
+            }
+
+            if ($parent->project_id !== $page->project_id) {
+                return redirect()->back()->withErrors(['parent_id' => 'Родительская страница должна принадлежать тому же проекту']);
+            }
+
+            if ($this->isDescendant($candidateParentId, $page->id)) {
+                return redirect()->back()->withErrors(['parent_id' => 'Нельзя назначить дочернюю страницу родителем']);
+            }
+        }
+
+        // Обновляем версию данными из формы
         $pageVersion->update($validated);
 
+        // Применяем утверждение черновика (внутри обновит version_id и parent_id)
         $page->approveDraft($pageVersion);
 
         if ($request->boolean('createTask')) {

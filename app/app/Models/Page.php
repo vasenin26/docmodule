@@ -221,8 +221,11 @@ class Page extends Model implements DisplayableResource
      */
     public function approveDraft(PageVersion $draft): void
     {
-        // Обновляем version_id в странице
-        $this->update(['version_id' => $draft->id]);
+        // Обновляем version_id и parent_id в странице
+        $this->update([
+            'version_id' => $draft->id,
+            'parent_id' => $draft->parent_id ?? null,
+        ]);
     }
 
     /**

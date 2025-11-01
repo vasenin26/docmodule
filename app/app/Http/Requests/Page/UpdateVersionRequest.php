@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Page;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateVersionRequest extends FormRequest
 {
@@ -26,6 +27,10 @@ class UpdateVersionRequest extends FormRequest
      */
     public function rules(): array
     {
+        // Попытка получить проект страницы из route (если есть)
+        $page = $this->route('page');
+        $projectId = $page?->project_id ?? null;
+
         return [
             'title' => 'required|string|max:255',
             'content' => 'nullable|string',
@@ -33,6 +38,15 @@ class UpdateVersionRequest extends FormRequest
             'project_files.*.url' => 'required|string|url',
             'project_files.*.description' => 'nullable|string',
             'createTask' => 'boolean',
+            'parent_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('pages', 'id')->where(function ($query) use ($projectId) {
+                    if ($projectId) {
+                        $query->where('project_id', $projectId);
+                    }
+                }),
+            ],
         ];
     }
 
@@ -50,6 +64,8 @@ class UpdateVersionRequest extends FormRequest
             'project_files.*.url.required' => 'Ссылка на вложение обязательна.',
             'project_files.*.url.url' => 'Ссылка на вложение должна быть корректным URL.',
             'createTask.boolean' => 'Поле создания задачи должно быть булевым значением.',
+            'parent_id.integer' => 'parent_id должен быть целым числом.',
+            'parent_id.exists' => 'Выбранная родительская страница не найдена или не принадлежит проекту.',
         ];
     }
 
@@ -71,5 +87,26 @@ class UpdateVersionRequest extends FormRequest
                 }
             }
         }
+    }
+
+    /**
+     * Проверить, является ли URL ссылкой на файл в git репозитории
+     */
+    private function isGitRepositoryFileUrl(string $url): bool
+    {
+        $gitHosts = ['github.com', 'gitlab.com', 'bitbucket.org'];
+
+        $parsedUrl = parse_url($url);
+        if (!isset($parsedUrl['host'])) {
+            return false;
+        }
+
+        foreach ($gitHosts as $host) {
+            if (str_contains($parsedUrl['host'], $host)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
