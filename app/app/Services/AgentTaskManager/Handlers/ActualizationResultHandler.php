@@ -7,6 +7,7 @@ use App\Interfaces\HtmlToMdInterface;
 use App\Interfaces\LLM\AgentResultHandlerInterface;
 use App\Models\AgentTask;
 use App\Models\Actualization;
+use App\Models\Patch;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
@@ -31,7 +32,22 @@ class ActualizationResultHandler implements AgentResultHandlerInterface
     public function handleResult(?string $result): void
     {
         if($result !== null) {
-            $this->actualization?->pageVersion?->update(['content' => $this->converter->toHtml($result)]);
+            $data = json_decode($result, true);
+
+            if(json_last_error() !== JSON_ERROR_NONE) {
+                throw new Exception(json_last_error_msg());
+            }
+
+            if(!is_array($data) || empty($data['title']) || empty($data['content'])) {
+                throw new Exception('Wrong data format');
+            }
+
+            Patch::create([
+                'target' => get_class($this->actualization),
+                'target_id' => $this->actualization->id,
+                'title' => $data['title'],
+                'content' => $data['content'],
+            ]);
         }
 
         Log::info('Actualization completed', [
