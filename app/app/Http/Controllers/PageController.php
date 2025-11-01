@@ -12,6 +12,7 @@ use App\Models\PageVersion;
 use App\Models\Project;
 use App\Models\VersionDiffTask;
 use App\Services\ActualizationService;
+use App\Services\HtmlToMdConvertor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -80,7 +81,6 @@ class PageController extends Controller
      */
     public function create(Request $request, Project $project = null)
     {
-        // Проверяем доступ к проекту, если он указан
         if ($project && $project->owner_id !== Auth::id()) {
             abort(403);
         }
@@ -105,23 +105,17 @@ class PageController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StorePageRequest $request, Project $project = null)
+    public function store(StorePageRequest $request, Project $project = null, HtmlToMdConvertor $convertor)
     {
         $validated = $request->validated();
 
-        // Определяем project_id
         $projectId = null;
         if ($project) {
-            // Проверяем доступ к проекту
-            if ($project->owner_id !== Auth::id()) {
+            if (!$project->canAccess(Auth::user()) ) {
                 abort(403);
             }
             $projectId = $project->id;
         } elseif ($request->has('project_id') && $request->project_id) {
-            // Проверяем доступ к проекту из формы
             $selectedProject = Project::where('id', $request->project_id)
                 ->where('owner_id', Auth::id())
                 ->first();
@@ -130,7 +124,6 @@ class PageController extends Controller
             }
         }
 
-        // Если указан parent_id, наследуем project_id от родителя (если проект ещё не определён)
         if (!$projectId && !empty($validated['parent_id'])) {
             $parent = Page::find($validated['parent_id']);
             if ($parent) {
@@ -145,11 +138,10 @@ class PageController extends Controller
             'project_id' => $projectId,
         ]);
 
-        // Создаем первую версию
         $version = PageVersion::create([
             'page_id' => $page->id,
             'title' => $validated['title'],
-            'content' => $validated['content'],
+            'content' => $convertor->toMd($validated['content'] ?? ''),
         ]);
 
         // Синхронизация project_files при создании
@@ -158,10 +150,8 @@ class PageController extends Controller
             $version->syncProjectFilesByUrls($attachmentsInput, (int)$page->project_id);
         }
 
-        // Устанавливаем первую версию как текущую
         $page->update(['version_id' => $version->id]);
 
-        // Определяем куда перенаправить
         if ($project) {
             return redirect()->route('projects.show', $project)
                 ->with('success', 'Страница успешно создана.');
@@ -188,7 +178,6 @@ class PageController extends Controller
             'latestActualization.createdBy',
         ]);
 
-        // Задачи, прикреплённые к отображаемой версии через пивот (task_page_versions)
         $displayVersionId = $page->currentVersion?->id;
         $attachedTasks = VersionDiffTask::with('creator')
             ->when($displayVersionId, function ($query) use ($displayVersionId) {
@@ -224,13 +213,20 @@ class PageController extends Controller
         ]);
     }
 
-    public function edit(Page $page)
+    public function edit(Page $page, HtmlToMdConvertor $convertor)
     {
         $page->load(['project', 'currentVersion.projectFiles']);
 
         return Inertia::render('pages/Edit', [
             'page' => $page,
-            'pageVersion' => $page->currentVersion,
+            'pageVersion' => [
+                'id' => $page->currentVersion->id,
+                'title' => $page->currentVersion->title,
+                'content' => $convertor->toHtml($page->currentVersion->content),
+                'is_draft' => $page->currentVersion->is_draft,
+                'page_id' => $page->currentVersion->page_id,
+                'project_files' => $page->currentVersion->projectFiles()->get(['id', 'url', 'description']),
+            ],
             'is_current_version' => true,
             'errors' => (object)[],
             'project_id' => $page->project_id,
@@ -238,7 +234,7 @@ class PageController extends Controller
         ]);
     }
 
-    public function editVersion(Page $page, PageVersion $version)
+    public function editVersion(Page $page, PageVersion $version, HtmlToMdConvertor $convertor)
     {
         if ($version->page_id !== $page->id) {
             abort(404);
@@ -250,15 +246,22 @@ class PageController extends Controller
         $actualization = $version->actualisation;
 
         return Inertia::render('pages/Edit', [
-            'pageVersion' => $version,
+            'pageVersion' => [
+                'id' => $version->id,
+                'title' => $version->title,
+                'content' => $convertor->toHtml($version->content),
+                'files' => $version->files,
+                'is_draft' => $version->is_draft,
+                'page_id' => $version->page_id,
+                'project_files' => $page->currentVersion->projectFiles()->get(['id', 'url', 'description']),
+            ],
             'page' => $page,
             'is_current_version' => $page->checkCurrentVersion($version->id),
-            // Передаем актуализацию: активную, иначе последнюю завершенную (для просмотра чата)
             'actualization' => $actualization ?
-            [
-                ...$actualization->toArray(),
-                'generating' => $actualization->isGenerating()
-            ] : null,
+                [
+                    ...$actualization->toArray(),
+                    'generating' => $actualization->isGenerating()
+                ] : null,
             'errors' => (object)[],
             'project_id' => $page->project_id,
         ]);
@@ -382,7 +385,7 @@ class PageController extends Controller
     /**
      * Update a specific version of the page.
      */
-    public function updateVersion(UpdateVersionRequest $request, Page $page, PageVersion $version)
+    public function updateVersion(UpdateVersionRequest $request, Page $page, PageVersion $version, HtmlToMdConvertor $convertor)
     {
         // Проверяем, что версия принадлежит странице
         if ($version->page_id !== $page->id) {
@@ -396,8 +399,11 @@ class PageController extends Controller
         } else {
             $attachmentsInput = $validated['project_files'] ?? [];
             unset($validated['project_files']);
-            DB::transaction(function () use ($version, $page, $validated, $attachmentsInput) {
-                $version->update($validated);
+            DB::transaction(function () use ($version, $page, $validated, $attachmentsInput, $convertor) {
+                $version->update([
+                    'title' => $validated['title'],
+                    'content' => $convertor->toMd($validated['content']),
+                ]);
                 if (!empty($attachmentsInput)) {
                     $version->syncProjectFilesByUrls($attachmentsInput, (int)$page->project_id);
                 }
@@ -473,7 +479,7 @@ class PageController extends Controller
     /**
      * Утвердить черновик
      */
-    public function approveDraft(ApproveVersionRequest $request, PageVersion $pageVersion)
+    public function approveDraft(ApproveVersionRequest $request, PageVersion $pageVersion, HtmlToMdConvertor $convertor)
     {
         $page = $pageVersion->page;
 
@@ -482,7 +488,10 @@ class PageController extends Controller
         }
 
         $validated = $request->validated();
-        $pageVersion->update($validated);
+        $pageVersion->update([
+            'title' => $validated['title'],
+            'content' => $convertor->toMd($validated['content']),
+        ]);
 
         $page->approveDraft($pageVersion);
 

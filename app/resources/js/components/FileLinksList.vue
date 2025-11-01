@@ -2,7 +2,7 @@
     <div class="space-y-4">
         <div class="flex items-center justify-between">
             <Label>Прикрепленные файлы</Label>
-            <Button @click="addFile" variant="outline" size="sm">
+            <Button @click.prevent="addFile" variant="outline" size="sm">
                 <Plus class="mr-2 h-4 w-4" />
                 Добавить файл
             </Button>

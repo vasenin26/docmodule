@@ -33,6 +33,14 @@
                     </CardHeader>
                     <CardContent>
                         <form @submit.prevent="submit" class="space-y-6">
+
+                            <!-- Родительская страница -->
+                            <div class="space-y-2">
+                                <Label for="parent">Родительская страница</Label>
+                                <PageSelect v-model="form.parent_id" :projectId="page?.project_id || null" placeholder="Выберите родительскую страницу" />
+                                <InputError v-if="errors?.parent_id || errors?.parent" :message="errors?.parent_id || errors?.parent" />
+                            </div>
+
                             <!-- Название -->
                             <div class="space-y-2">
                                 <Label for="title">Название страницы *</Label>
@@ -53,13 +61,6 @@
                                 />
                                 <InputError v-if="errors?.content" :message="errors.content" />
                                 <p class="text-xs text-muted-foreground">Поддерживается формат Markdown</p>
-                            </div>
-
-                            <!-- Родительская страница -->
-                            <div class="space-y-2">
-                                <Label for="parent">Родительская страница</Label>
-                                <PageSelect v-model="form.parent_id" :projectId="page?.project_id || null" placeholder="Выберите родительскую страницу" />
-                                <InputError v-if="errors?.parent_id || errors?.parent" :message="errors?.parent_id || errors?.parent" />
                             </div>
 
                             <!-- Прикрепленные файлы -->
@@ -117,7 +118,6 @@
 
 <script setup lang="ts">
 import FileLinksList from '@/components/FileLinksList.vue';
-import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import PageListButton from '@/components/PageInfo/PageListButton.vue';
 import Button from '@/components/ui/button/Button.vue';
@@ -146,7 +146,6 @@ import PageSelect from '@/components/PageSelect.vue';
 type PageVersion = {
     id: number;
     title: string;
-    page_id: number;
     content: string;
     files?: string[];
     project_files?: { id: number; url: string; description?: string | null }[];

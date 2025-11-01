@@ -45,7 +45,7 @@
                 <!-- Содержимое страницы -->
                 <Card>
                     <CardContent class="p-6">
-                        <div v-if="page.content" class="ck-content"  v-html="page.content"></div>
+                        <MarkdownRenderer v-if="page.content" :content="page.content" />
                         <div v-else class="py-8 text-center text-muted-foreground">Содержимое страницы отсутствует</div>
                     </CardContent>
                 </Card>
