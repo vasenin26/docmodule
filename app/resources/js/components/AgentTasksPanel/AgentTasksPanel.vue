@@ -1,31 +1,45 @@
 <template>
-  <div v-if="visible" class="fixed bottom-4 left-0 right-0 flex justify-center pointer-events-none">
-    <div class="bg-white shadow rounded px-3 py-2 flex gap-2 pointer-events-auto">
-      <div v-for="item in items" :key="item.chat_id" class="relative">
-        <button @click="onClick(item)" class="w-12 h-12 rounded-full flex items-center justify-center border">
-          <span class="sr-only">Open task</span>
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <component :is="typeIcon(item.type)"/>
-          </svg>
-          <span :class="['absolute bottom-0 right-0 w-3 h-3 rounded-full', statusColor(item.raw_status)]"></span>
-        </button>
-        <button @click.stop="hide(item)" class="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-xs">×</button>
-      </div>
+    <div v-if="visible" class="pointer-events-none fixed right-0 bottom-4 left-0 flex justify-center">
+        <div class="pointer-events-auto flex gap-2 rounded bg-white px-3 py-2 shadow">
+            <div v-for="item in items" :key="item.chat_id" class="relative">
+                <template v-if="!item.hidden">
+                    <button @click="onClick(item)"
+                            class="flex h-12 w-12 items-center justify-center rounded-full border">
+                        <span class="sr-only">Open task</span>
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <component :is="typeIcon(item.type)" />
+                        </svg>
+                        <span
+                            :class="['absolute right-0 bottom-0 h-3 w-3 rounded-full', statusColor(item.status)]"></span>
+                    </button>
+                    <button
+                        @click.stop="hide(item)"
+                        class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-xs"
+                    >
+                        ×
+                    </button>
+                </template>
+            </div>
+        </div>
     </div>
-  </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Bot, FileText} from 'lucide-vue-next';
-import { useAgentTasksPanel } from '@/composables/useAgentTasksPanel';
+import {Bot, FileText, Hammer, Search, Pen, Brackets} from 'lucide-vue-next';
+import { TaskItem, useAgentTasksPanel } from '@/composables/useAgentTasksPanel';
+import {navigateToTargetResource} from "@/utils/utils";
 
-const {items} = useAgentTasksPanel();
+const { items, hideItem } = useAgentTasksPanel();
 
-const visible = computed(() => items.value.length > 0);
+const visible = computed(() => items.value.filter((m: TaskItem) => !m.hidden).length > 0);
 
-function onClick() {
+function onClick(item: TaskItem) {
+    navigateToTargetResource(item.task_id)
+}
 
+function hide(item: TaskItem): void {
+    hideItem(item.chat_id);
 }
 
 function statusColor(status) {
@@ -43,10 +57,20 @@ function statusColor(status) {
 
 function typeIcon(stype: string) {
     switch (stype) {
+        case 'actualization':
+            return Search;
         case 'task':
-            return FileText
+            return Pen;
+        case 'code':
+            return Brackets;
+        case 'tech':
+            return Hammer;
+        case 'text':
+            return FileText;
+        case 'plane-tasks':
+        case 'search-relevant-files':
         default:
-            return Bot
+            return Bot;
     }
 }
 </script>

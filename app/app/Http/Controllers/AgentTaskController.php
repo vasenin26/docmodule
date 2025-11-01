@@ -113,7 +113,7 @@ class AgentTaskController extends Controller
         // Laravel 12: Controller::validate removed — use $request->validate
         $validated = $request->validate([
             'ids' => ['nullable', 'array'],
-            'ids.*' => ['string'],
+            'ids.*' => ['int'],
         ]);
 
         $ids = $validated['ids'] ?? [];

@@ -3,7 +3,7 @@ import { Method, type ApiInterface, type Request } from '@/services/api/Api';
 export interface AgentTasksCheckResponseItem {
     chat_id: number | null;
     id: number;
-    raw_status?: string | null;
+    status?: string | null;
     type: string
 }
 

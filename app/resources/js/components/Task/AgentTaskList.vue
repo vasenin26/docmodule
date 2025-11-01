@@ -5,9 +5,11 @@
             <CardContent class="p-4">
                 <form @submit.prevent="search" class="flex gap-4">
                     <div class="flex-1">
-                        <Input v-model="searchQuery" placeholder="Поиск по handler/agent/id/проекту/создателю..." @keyup.enter="search" />
+                        <Input v-model="searchQuery" placeholder="Поиск по handler/agent/id/проекту/создателю..."
+                               @keyup.enter="search" />
                     </div>
-                    <select v-model="statusFilter" class="w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select v-model="statusFilter"
+                            class="w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Все статусы</option>
                         <option value="wait">Ожидание</option>
                         <option value="processing">В работе</option>
@@ -26,75 +28,75 @@
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead class="border-b bg-muted/50">
-                            <tr>
-                                <th class="p-4 text-left font-medium">ID</th>
-                                <th class="p-4 text-left font-medium">Тип</th>
-                                <th class="p-4 text-left font-medium">Создатель</th>
-                                <th class="p-4 text-left font-medium">Чат</th>
-                                <th class="p-4 text-left font-medium">Контекст</th>
-                                <th class="p-4 text-left font-medium">Модель</th>
-                                <th class="p-4 text-left font-medium">Агент назначен</th>
-                                <th class="p-4 text-left font-medium">Резервирование</th>
-                                <th class="p-4 text-left font-medium">Расход</th>
-                                <th class="p-4 text-left font-medium">Статус</th>
-                                <th class="p-4 text-left font-medium">Обновлено</th>
-                            </tr>
+                        <tr>
+                            <th class="p-4 text-left font-medium">ID</th>
+                            <th class="p-4 text-left font-medium">Тип</th>
+                            <th class="p-4 text-left font-medium">Создатель</th>
+                            <th class="p-4 text-left font-medium">Чат</th>
+                            <th class="p-4 text-left font-medium">Контекст</th>
+                            <th class="p-4 text-left font-medium">Модель</th>
+                            <th class="p-4 text-left font-medium">Агент назначен</th>
+                            <th class="p-4 text-left font-medium">Резервирование</th>
+                            <th class="p-4 text-left font-medium">Расход</th>
+                            <th class="p-4 text-left font-medium">Статус</th>
+                            <th class="p-4 text-left font-medium">Обновлено</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="task in tasks.data" :key="task.id" class="border-b">
-                                <td class="p-4">#{{ task.id }}</td>
-                                <td class="p-4">
-                                    {{ task.type }}
+                        <tr v-for="task in tasks.data" :key="task.id" class="border-b">
+                            <td class="p-4">#{{ task.id }}</td>
+                            <td class="p-4">
+                                {{ task.type }}
+                                <Button
+                                    v-if="task.has_handler"
+                                    variant="ghost"
+                                    size="sm"
+                                    @click="navigateToTargetResource(task.id)"
+                                    class="h-8 w-8 p-0"
+                                    :disabled="isLoadingTargetResource"
+                                >
+                                    <ArrowRight class="h-4 w-4" />
+                                </Button>
+                            </td>
+                            <td class="p-4">{{ task.creator?.name ?? '—' }}</td>
+                            <td class="p-4">
+                                <div v-if="task.chat_id" class="flex items-center gap-2">
+                                    <span>{{ task.chat_id }}</span>
                                     <Button
-                                        v-if="task.has_handler"
                                         variant="ghost"
                                         size="sm"
-                                        @click="navigateToTargetResource(task.id)"
-                                        class="h-8 w-8 p-0"
-                                        :disabled="isLoadingTargetResource"
+                                        @click="openChatViewer(task.id, task.chat_id)"
+                                        class="h-6 w-6 p-0"
                                     >
-                                        <ArrowRight class="h-4 w-4" />
+                                        <MessageSquare class="h-4 w-4" />
                                     </Button>
-                                </td>
-                                <td class="p-4">{{ task.creator?.name ?? '—' }}</td>
-                                <td class="p-4">
-                                    <div v-if="task.chat_id" class="flex items-center gap-2">
-                                        <span>{{ task.chat_id }}</span>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            @click="openChatViewer(task.id, task.chat_id)"
-                                            class="h-6 w-6 p-0"
-                                        >
-                                            <MessageSquare class="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    <span v-else class="text-muted-foreground">—</span>
-                                </td>
-                                <td class="p-4">{{ task.context_id ?? '—' }}</td>
-                                <td class="p-4">{{ task.agent_model ?? '—' }}</td>
-                                <td class="p-4">{{ task.agent_assigned ? 'Да' : 'Нет' }}</td>
-                                <td class="p-4 text-sm text-muted-foreground">
-                                    <div>at: {{ formatDateTime(task.reserved_at) || '—' }}</div>
-                                    <div>until: {{ formatDateTime(task.reserved_until) || '—' }}</div>
-                                    <div>sec: {{ task.reserved_seconds ?? '—' }}</div>
-                                </td>
-                                <td class="p-4 text-sm text-muted-foreground">
-                                    <div>tx: {{ task.prompt_tokens ?? '—' }}</div>
-                                    <div>rx: {{ task.completion_tokens ?? '—' }}</div>
-                                    <div class="cost">cost: {{ formatCost(task.cost) }}</div>
-                                </td>
-                                <td class="p-4">
-                                    <AgentTaskStatusBadge :status="task.status" />
-                                </td>
-                                <td class="p-4 text-sm text-muted-foreground">{{ formatDateTime(task.updated_at) }}</td>
-                            </tr>
-                            <tr v-if="tasks.data.length === 0">
-                                <td colspan="12" class="p-8 text-center text-muted-foreground">
-                                    <div v-if="searchQuery || statusFilter">Задачи не найдены по заданным критериям</div>
-                                    <div v-else>Задачи не найдены</div>
-                                </td>
-                            </tr>
+                                </div>
+                                <span v-else class="text-muted-foreground">—</span>
+                            </td>
+                            <td class="p-4">{{ task.context_id ?? '—' }}</td>
+                            <td class="p-4">{{ task.agent_model ?? '—' }}</td>
+                            <td class="p-4">{{ task.agent_assigned ? 'Да' : 'Нет' }}</td>
+                            <td class="p-4 text-sm text-muted-foreground">
+                                <div>at: {{ formatDateTime(task.reserved_at) || '—' }}</div>
+                                <div>until: {{ formatDateTime(task.reserved_until) || '—' }}</div>
+                                <div>sec: {{ task.reserved_seconds ?? '—' }}</div>
+                            </td>
+                            <td class="p-4 text-sm text-muted-foreground">
+                                <div>tx: {{ task.prompt_tokens ?? '—' }}</div>
+                                <div>rx: {{ task.completion_tokens ?? '—' }}</div>
+                                <div class="cost">cost: {{ formatCost(task.cost) }}</div>
+                            </td>
+                            <td class="p-4">
+                                <AgentTaskStatusBadge :status="task.status" />
+                            </td>
+                            <td class="p-4 text-sm text-muted-foreground">{{ formatDateTime(task.updated_at) }}</td>
+                        </tr>
+                        <tr v-if="tasks.data.length === 0">
+                            <td colspan="12" class="p-8 text-center text-muted-foreground">
+                                <div v-if="searchQuery || statusFilter">Задачи не найдены по заданным критериям</div>
+                                <div v-else>Задачи не найдены</div>
+                            </td>
+                        </tr>
                         </tbody>
                     </table>
                 </div>
@@ -112,7 +114,7 @@
                         'rounded-md px-3 py-2 text-sm',
                         link.active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
                     ]"
-                    v-html="link.label"
+                    title="link.label"
                 />
             </nav>
         </div>
@@ -137,6 +139,7 @@ import { Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import ChatViewer from './ChatViewer.vue';
 import { MessageSquare, ArrowRight } from 'lucide-vue-next';
+import { navigateToTargetResource } from '@/utils/utils';
 
 interface AgentTaskListItem {
     id: number;
@@ -191,15 +194,6 @@ const formatDateTime = (date: string | null | undefined) => {
     return d.toLocaleString('ru-RU');
 };
 
-// shortJson no longer used in the table but kept if needed elsewhere
-const shortJson = (value: unknown) => {
-    try {
-        const json = JSON.stringify(value ?? {}, null, 0);
-        return json.length > 60 ? json.slice(0, 60) + '…' : json;
-    } catch (e) {
-        return '';
-    }
-};
 
 const search = () => {
     const searchRoute = props.project
@@ -212,12 +206,12 @@ const search = () => {
         searchRoute,
         {
             search: searchQuery.value,
-            status: statusFilter.value,
+            status: statusFilter.value
         },
         {
             preserveState: true,
-            preserveScroll: true,
-        },
+            preserveScroll: true
+        }
     );
 };
 
@@ -235,8 +229,8 @@ const clearSearch = () => {
         {},
         {
             preserveState: true,
-            preserveScroll: true,
-        },
+            preserveScroll: true
+        }
     );
 };
 
@@ -252,36 +246,16 @@ const closeChatViewer = () => {
     selectedChatId.value = null;
 };
 
-const navigateToTargetResource = async (taskId: number) => {
-    if (isLoadingTargetResource.value) return;
-
-    isLoadingTargetResource.value = true;
-
-    try {
-        const response = await fetch(`/agent-tasks/${taskId}/target-resource`);
-        const data = await response.json();
-
-        if (response.ok && data.url) {
-            // Перенаправляем на целевую страницу
-            window.location.href = data.url;
-        } else {
-            // Показываем ошибку
-            alert(data.error || 'Ресурс не найден');
-        }
-    } catch (error) {
-        console.error('Error fetching target resource:', error);
-        alert('Ошибка при определении целевого ресурса');
-    } finally {
-        isLoadingTargetResource.value = false;
-    }
-};
-
 const formatCost = (cost?: number | null) => {
     if (cost == null) return '\u2014';
     try {
         // cost stored in backend as RUB * 1000; convert to RUB float
         const rub = cost / 1000;
-        return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 2 }).format(rub);
+        return new Intl.NumberFormat('ru-RU', {
+            style: 'currency',
+            currency: 'RUB',
+            maximumFractionDigits: 2
+        }).format(rub);
     } catch (e) {
         return `${cost} ₽`;
     }

@@ -1,6 +1,6 @@
 import {ref, onMounted, onBeforeUnmount} from 'vue';
 import {createApi} from '@/services/api/Api';
-import {AgentTasksCheckRequest, AgentTasksCheckResponseItem} from '@/services/api/request/Task/AgentTasksCheckRequest';
+import {AgentTasksCheckRequest} from '@/services/api/request/Task/AgentTasksCheckRequest';
 
 const POLL_INTERVAL = 5000;
 const LOCAL_STORE_KEY = 'agent_tasks_list'
@@ -12,7 +12,8 @@ export type Status = 'processing' | 'completed' | 'await';
 export type TaskItem = {
     chat_id: number
     task_id: number
-    status: Status,
+    type: string
+    status: Status
     hidden: boolean
 }
 
@@ -26,7 +27,7 @@ class TaskLocalStorage {
         return this.read().items.map((item: TaskItem) => item.task_id)
     }
 
-    pushItem(chatId: number, taskId: number, status: string): void {
+    pushItem(chatId: number, taskId: number, status: string, type: string): void {
         const items = this.read().items
         const item = this.searchByChatId(chatId, items)
 
@@ -35,15 +36,35 @@ class TaskLocalStorage {
                 chat_id: chatId,
                 task_id: taskId,
                 status: this.defineStatus(status, null),
+                type: type,
                 hidden: false
             })
         } else {
-            item.status = this.defineStatus(status, item)
+            let hidden = item.hidden;
+            const newStatus = this.defineStatus(status, item);
+
+            if(newStatus === 'await') {
+                hidden = false;
+            }
+
+            item.status = newStatus
             item.task_id = taskId
-            iten.hidden = false
+            item.hidden = hidden
+            item.type = type
         }
 
         this.store(items)
+    }
+
+    hideItem(chatId: number): never
+    {
+        const items = this.read().items
+        const item = this.searchByChatId(chatId, items)
+
+        if(item) {
+            item.hidden = true
+            this.store(items)
+        }
     }
 
     getLastUpdateTime(): number {
@@ -55,6 +76,7 @@ class TaskLocalStorage {
     }
 
     private defineStatus(current: string, item: TaskItem | null): Status {
+        console.log(current, item?.status)
         if (item === null) {
             switch (current) {
                 case 'completed':
@@ -68,16 +90,20 @@ class TaskLocalStorage {
                 return 'processing'
             }
 
-            if (item.status === 'processing' && current === 'completed') {
-                return 'await'
+            if (item.status === 'processing') {
+              if(current === 'success') {
+                  return 'await'
+              } else {
+                  return 'processing'
+              }
             }
         }
 
         return 'completed'
     }
 
-    private searchByChatId(chatId: number, items: TaskItem): TaskItem | null {
-        for (let item of items) {
+    private searchByChatId(chatId: number, items: TaskItem[]): TaskItem | null {
+        for (const item of items) {
             if (item.chat_id === chatId) return item;
         }
 
@@ -123,21 +149,22 @@ export function useAgentTasksPanel() {
         try {
             const lastUpdateTime = taskStorage.getLastUpdateTime();
 
-            if ((new Date()).getTime() - lastUpdateTime > POLL_INTERVAL) {
+            if ((new Date()).getTime() - lastUpdateTime > POLL_INTERVAL - 1000) {
                 const ids = taskStorage.getChatIds();
                 const req = new AgentTasksCheckRequest(ids);
                 const remoteItems = await req.call(api);
 
-                for (let item of remoteItems) {
+                for (const item of remoteItems) {
                     taskStorage.pushItem(
                         item.chat_id,
                         item.id,
-                        item.raw_status
+                        item.status,
+                        item.type
                     );
                 }
             }
 
-            items.value.set(taskStorage.getItems())
+            items.value= taskStorage.getItems()
         } catch (e) {
             console.error('useAgentTasksPanel: fetch error', e);
         } finally {
@@ -162,6 +189,13 @@ export function useAgentTasksPanel() {
         }
     }
 
+    function hideItem(chatId: number): never
+    {
+        taskStorage.hideItem(chatId)
+
+        items.value = taskStorage.getItems()
+    }
+
     onMounted(() => {
         start();
     });
@@ -173,5 +207,6 @@ export function useAgentTasksPanel() {
     return {
         items,
         isRunning,
+        hideItem
     };
 }
