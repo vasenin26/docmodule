@@ -83,7 +83,7 @@ watch(() => pagesFromProps.value, () => {
 </script>
 
 <template>
-    <div class="project-pages-tree sidebar-card">
+    <div class="project-pages-tree sidebar-card ">
         <div v-if="!hasProject" class="blank-state">
             Проект не выбран
         </div>

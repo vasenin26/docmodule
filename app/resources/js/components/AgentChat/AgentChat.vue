@@ -1,9 +1,5 @@
 <template>
     <div class="flex h-full flex-col flex-nowrap overflow-hidden rounded-lg border bg-white">
-        <!-- Заголовок чата -->
-        <div class="border-b bg-gray-100 px-4 py-3">
-            <h3 class="text-sm font-medium text-gray-800">История LLM генерации</h3>
-        </div>
 
         <!-- Содержимое чата -->
         <div ref="messagesContainer" class="flex-1 space-y-4 overflow-y-auto p-4" @scroll="handleScroll">

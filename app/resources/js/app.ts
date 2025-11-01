@@ -1,6 +1,7 @@
 import '../css/app.css';
 import 'ckeditor5/ckeditor5.css';
 import '../css/ck-content.scss';
+import '../css/menu-list.scss';
 
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';

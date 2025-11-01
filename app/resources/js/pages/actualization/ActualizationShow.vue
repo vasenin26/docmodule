@@ -1,8 +1,7 @@
 <template>
-    <FullScreenLayout>
+    <TemplateEditorLayout>
         <template #context-actions>
             <div class="flex items-center gap-2">
-                <ChatButton :showCondition="!isWaiting" @click="showChat = true" />
                 <Button @click="restartGeneration" variant="outline">
                     <RefreshCw :class="{ 'animate-spin': isRestarting }" class="mr-2 h-4 w-4" />
                     Перезапустить
@@ -58,8 +57,10 @@
             <!-- Обновленное содержимое -->
             <Card>
                 <CardHeader>
-                    <CardTitle class="flex gap-2 items-center">Обновленное содержимое <span v-if="loading">(загрузка...)</span></CardTitle>
-                    <CardDescription> Результат актуализации документации на основе прикрепленных файлов </CardDescription>
+                    <CardTitle class="flex items-center gap-2">Обновленное содержимое <span
+                        v-if="loading">(загрузка...)</span></CardTitle>
+                    <CardDescription> Результат актуализации документации на основе прикрепленных файлов
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div class="ck-content" v-html="content"></div>
@@ -67,22 +68,19 @@
             </Card>
         </div>
 
-        <!-- Модальное окно чата -->
-        <SidePanel v-model:open="showChat">
-            <SmartAgentChat
-                :chatId="chat_id"
-                @updated="checkUpdates"
-            />
-        </SidePanel>
-    </FullScreenLayout>
+        <template #sidebar>
+            <PatchesList :items="patches" />
+        </template>
+
+        <template #assistant>
+            <SmartAgentChat :chatId="chat_id" @updated="checkUpdates" />
+        </template>
+    </TemplateEditorLayout>
 </template>
 
 <script setup lang="ts">
 import SmartAgentChat from '@/components/AgentChat/SmartAgentChat.vue';
-import ChatButton from '@/components/ChatButton.vue';
-import SidePanel from '@/components/ui/sidepanel/SidePanel.vue';
 import { useChatAgent } from '@/composables/useChatAgent';
-import FullScreenLayout from '@/layouts/fullscreen/FullScreenLayout.vue';
 import { createApi } from '@/services/api/Api';
 import { RestartGeneration } from '@/services/api/request/Actualization/RestartGenerationRequest';
 import { PageVersion } from '@/types';
@@ -95,8 +93,11 @@ import CardContent from '../../components/ui/card/CardContent.vue';
 import CardDescription from '../../components/ui/card/CardDescription.vue';
 import CardHeader from '../../components/ui/card/CardHeader.vue';
 import CardTitle from '../../components/ui/card/CardTitle.vue';
-import {sleep} from  '@/utils/utils'
+import { sleep } from '@/utils/utils';
 import { ActualizationStatusRequest } from '@/services/api/request/Actualization/ActualizationStatusRequest';
+import TemplateEditorLayout from '@/layouts/editor/TemplateEditorLayout.vue';
+import PatchesList from '@/components/Patches/PatchesList.vue';
+import { type Patch } from '@/components/Patches/PatchesList.vue';
 
 interface User {
     id: number;
@@ -119,7 +120,6 @@ const props = defineProps<{
     chat_id: number | null;
 }>();
 
-const showChat = ref<bool>(false);
 const loading = ref<bool>(false);
 const isRestarting = ref<bool>(false);
 const isWaiting = ref<bool>(false);
@@ -127,13 +127,20 @@ const isWaiting = ref<bool>(false);
 const content = ref<string>('');
 const actualisationStatus = ref<string>('');
 
+const patches = ref<Patch[]>([
+    {
+        id: 0,
+        title: 'Test title'
+    }
+]);
+
 const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('ru-RU', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit',
+        minute: '2-digit'
     });
 };
 
@@ -142,7 +149,7 @@ const getStatusText = (status: string) => {
         pending: 'Ожидает обработки',
         processing: 'Обрабатывается',
         completed: 'Завершена',
-        failed: 'Ошибка',
+        failed: 'Ошибка'
     };
     return statusMap[status] || status;
 };
@@ -151,22 +158,21 @@ const { setChatId, reset, startPoling, stopPoling, status } = useChatAgent(props
 const api = createApi();
 
 onMounted(() => {
+    content.value = props.version.content;
+    status.value = props.actualization.status;
 
-    content.value = props.version.content
-    status.value = props.actualization.status
-
-    reset()
+    reset();
 
     if (props.chat_id) {
         setChatId(props.chat_id);
     } else {
         (async () => {
             const chatId = await waitChat();
-            setChatId(chatId)
-            startPoling()
-        })()
+            setChatId(chatId);
+            startPoling();
+        })();
     }
-})
+});
 
 watch(status, () => {
     if (status.value === 'completed') checkUpdates();
@@ -186,7 +192,7 @@ async function restartGeneration() {
         const info = await loadInfo(props.actualization.id);
 
         if (info.data.status === 'restarting') {
-            await async function () {
+            await async function() {
                 return new Promise((r) => setTimeout(r, 400));
             };
 
@@ -224,10 +230,10 @@ async function waitChat(): int {
 async function checkUpdates() {
     loading.value = true;
 
-    const info = (await loadInfo())
+    const info = await loadInfo();
 
-    content.value = info.data.content
-    actualisationStatus.value = info.data.status
+    content.value = info.data.content;
+    actualisationStatus.value = info.data.status;
 
     loading.value = false;
 }

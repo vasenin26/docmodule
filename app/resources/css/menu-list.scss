@@ -1,0 +1,56 @@
+.menu-list {
+    .tree, list {
+        list-style: none;
+        padding-left: 12px;
+        margin: 6px 0;
+    }
+
+    .node {
+        padding: 2px 0;
+    }
+
+    .node-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .expand-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .expand-btn:focus {
+        outline: 2px solid rgba(0, 0, 0, 0.08);
+        border-radius: 4px;
+    }
+
+    .leaf-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        color: #6b7280; /* gray-500 */
+    }
+
+    .node-link {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .node-link:hover {
+        text-decoration: underline;
+    }
+
+    .icon {
+        display: inline-block;
+    }
+}
