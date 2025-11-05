@@ -110,7 +110,7 @@ const features = [
         </p>
 
         <div class="flex flex-col items-center gap-4">
-          <div class="text-5xl sm:text-6xl font-extrabold">167&amp;nbsp;рублей</div>
+          <div class="text-5xl sm:text-6xl font-extrabold">167 рублей</div>
           <p class="text-sm text-muted-foreground max-w-xl">именно столько в среднем обходится автоматическое внесение исправлений с помощью нашего продукта.</p>
           <Link
             :href="route('register')"
