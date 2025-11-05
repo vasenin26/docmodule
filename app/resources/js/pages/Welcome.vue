@@ -93,11 +93,41 @@ const features = [
 
       <div class="mt-8 flex justify-center">
         <Link
-          href="#"
+          :href="route('register')"
           class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-white font-semibold shadow-sm hover:brightness-95"
         >
           погнали!
         </Link>
+      </div>
+    </section>
+
+    <!-- Goal: Наша цель -->
+    <section class="w-full max-w-6xl mx-auto px-6 py-12 lg:py-20">
+      <div class="mx-auto text-center max-w-4xl">
+        <h2 class="text-2xl font-semibold mb-4">Наша цель</h2>
+        <p class="text-muted-foreground mb-6">
+          Мы стремимся сделать поддержку и сопровождение программных продуктов дешевле и доступнее. Вносите изменения в работу продукта без привлечения дорогих высококвалифицированных специалистов.
+        </p>
+
+        <div class="flex flex-col items-center gap-4">
+          <div class="text-5xl sm:text-6xl font-extrabold">167&amp;nbsp;рублей</div>
+          <p class="text-sm text-muted-foreground max-w-xl">именно столько в среднем обходится автоматическое внесение исправлений с помощью нашего продукта.</p>
+          <Link
+            :href="route('register')"
+            class="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-white font-semibold shadow-sm hover:brightness-95"
+          >
+            попробовать
+          </Link>
+        </div>
+      </div>
+    </section>
+
+    <!-- Free integration: Бесплатное внедрение -->
+    <section class="w-full bg-[#F7F7F7] dark:bg-transparent">
+      <div class="max-w-4xl mx-auto px-6 py-12 lg:py-16 text-center">
+        <p class="text-base text-muted-foreground">
+          Консультируем, Внедряем, Сопровождаем. Бесплатно интегрируем ваш продукт для работы с приложением.
+        </p>
       </div>
     </section>
   </div>
