@@ -57,10 +57,8 @@
             <!-- Обновленное содержимое -->
             <Card>
                 <CardHeader>
-                    <CardTitle class="flex items-center gap-2">Обновленное содержимое <span
-                        v-if="loading">(загрузка...)</span></CardTitle>
-                    <CardDescription> Результат актуализации документации на основе прикрепленных файлов
-                    </CardDescription>
+                    <CardTitle class="flex items-center gap-2">Обновленное содержимое <span v-if="loading">(загрузка...)</span></CardTitle>
+                    <CardDescription> Результат актуализации документации на основе прикрепленных файлов </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div class="ck-content" v-html="content"></div>
@@ -69,7 +67,7 @@
         </div>
 
         <template #sidebar>
-            <PatchesList :items="patches" />
+            <PatchesList :items="patches" @select="selectPatch" />
         </template>
 
         <template #assistant>
@@ -135,7 +133,7 @@ const formatDate = (date: string) => {
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
     });
 };
 
@@ -144,7 +142,7 @@ const getStatusText = (status: string) => {
         pending: 'Ожидает обработки',
         processing: 'Обрабатывается',
         completed: 'Завершена',
-        failed: 'Ошибка'
+        failed: 'Ошибка',
     };
     return statusMap[status] || status;
 };
@@ -187,7 +185,7 @@ async function restartGeneration() {
         const info = await loadInfo(props.actualization.id);
 
         if (info.data.status === 'restarting') {
-            await async function() {
+            await async function () {
                 return new Promise((r) => setTimeout(r, 400));
             };
 
@@ -229,8 +227,13 @@ async function checkUpdates() {
 
     content.value = info.data.content;
     actualisationStatus.value = info.data.status;
-    patches.value = info.data.patches || []
+    patches.value = info.data.patches || [];
 
     loading.value = false;
+}
+
+async function selectPatch(pathId: number) {
+    const patchDetails = await loadPatch(pathId)
+    showDiff(patchDetails)
 }
 </script>

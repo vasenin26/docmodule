@@ -312,9 +312,6 @@ class PageController extends Controller
             }
         }
 
-        // Сохраняем parent_id в версии
-        $draft->update(['parent_id' => $validated['parent_id'] ?? null]);
-
         return redirect()->route('pages.versions.edit', [$page->id, $draft->id])
             ->with('success', 'Черновик создан.');
     }
