@@ -97,6 +97,8 @@ import TemplateEditorLayout from '@/layouts/editor/TemplateEditorLayout.vue';
 import PatchesList from '@/components/Patches/PatchesList.vue';
 import { type Patch } from '@/components/Patches/PatchesList.vue';
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
+import parse from 'parse-diff';
+import { LoadPatchRequest, PatchDetails } from '@/services/api/request/Patch/LoadPatch';
 
 interface User {
     id: number;
@@ -233,8 +235,15 @@ async function checkUpdates() {
     loading.value = false;
 }
 
-async function selectPatch(pathId: number) {
-    const patchDetails = await loadPatch(pathId)
-    showDiff(patchDetails)
+async function selectPatch(patchId: number) {
+    const patchDetails = await loadPatch(patchId)
+    const diff = parse(patchDetails.content);
+
+    console.log(diff)
+}
+
+async function loadPatch(patchId: number): PatchDetails {
+    const req = new LoadPatchRequest(patchId);
+    return await req.call(createApi());
 }
 </script>

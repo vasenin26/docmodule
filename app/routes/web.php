@@ -6,6 +6,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImplementationController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\PatchController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectPagesController;
 use App\Http\Controllers\ProjectPromptController;
@@ -213,6 +214,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('expense-summary');
     Route::get('/expense-summary/data', [ExpenseSummaryController::class, 'getData'])
         ->name('expense-summary.data');
+
+    PatchController::route();
 
     // Чат ЛЛМ
     Route::post('/chat/{chat}', [ChatController::class, 'state'])->name('chat.state');

@@ -104,7 +104,7 @@ class ActualizationController extends Controller
                 'status' => $actualization->getGenerationStatus(),
                 'chat_id' => $actualization->llm_chat_id,
                 'content' => $actualization->pageVersion->content,
-                'patches' => $actualization->patches()->orderBy('created_at')->get()->map((fn (Patch $patch) => ['id' => $patch->id, 'title' => $patch->title]))
+                'patches' => $actualization->patches()->latest()->get()->map((fn (Patch $patch) => ['id' => $patch->id, 'title' => $patch->title]))
             ]
         ]);
     }
