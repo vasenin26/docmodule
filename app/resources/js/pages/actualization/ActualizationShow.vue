@@ -57,8 +57,10 @@
             <!-- Обновленное содержимое -->
             <Card>
                 <CardHeader>
-                    <CardTitle class="flex items-center gap-2">Обновленное содержимое <span v-if="loading">(загрузка...)</span></CardTitle>
-                    <CardDescription> Результат актуализации документации на основе прикрепленных файлов </CardDescription>
+                    <CardTitle class="flex items-center gap-2">Обновленное содержимое <span
+                        v-if="loading">(загрузка...)</span></CardTitle>
+                    <CardDescription> Результат актуализации документации на основе прикрепленных файлов
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <MarkdownRenderer :content="content" />
@@ -136,7 +138,7 @@ const formatDate = (date: string) => {
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit',
+        minute: '2-digit'
     });
 };
 
@@ -145,7 +147,7 @@ const getStatusText = (status: string) => {
         pending: 'Ожидает обработки',
         processing: 'Обрабатывается',
         completed: 'Завершена',
-        failed: 'Ошибка',
+        failed: 'Ошибка'
     };
     return statusMap[status] || status;
 };
@@ -188,7 +190,7 @@ async function restartGeneration() {
         const info = await loadInfo(props.actualization.id);
 
         if (info.data.status === 'restarting') {
-            await async function () {
+            await async function() {
                 return new Promise((r) => setTimeout(r, 400));
             };
 
@@ -236,10 +238,24 @@ async function checkUpdates() {
 }
 
 async function selectPatch(patchId: number) {
-    const patchDetails = await loadPatch(patchId)
+    const patchDetails = await loadPatch(patchId);
     const diff = parse(patchDetails.content);
+    const lines = content.value.split('\n');
 
-    console.log(diff)
+    for (const chunk of diff[0].chunks) {
+        for (const change of chunk.changes) {
+            switch(change.type) {
+                case 'add':
+                    lines.splice(change.ln - 1, 0, change.content.slice(1))
+                    break;
+                case 'del':
+                    lines.splice(change.ln - 1, 1)
+                    break;
+            }
+        }
+    }
+
+    content.value = lines.join("\n")
 }
 
 async function loadPatch(patchId: number): PatchDetails {

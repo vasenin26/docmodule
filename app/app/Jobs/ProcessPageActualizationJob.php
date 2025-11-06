@@ -55,8 +55,6 @@ class ProcessPageActualizationJob implements ShouldQueue
 
         $promptProvider = $promptProviderFactory->createProjectPromptService($page->project_id);
 
-        $currentContent = $converter->toMd($pageVersion->content ?? '');
-
         // Создаем контекст для актуализации
         $context = new ActualizationContextDTO(
             attachedFiles: $pageVersion->projectFiles->toArray(),

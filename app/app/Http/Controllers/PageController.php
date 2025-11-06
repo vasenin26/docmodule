@@ -274,7 +274,11 @@ class PageController extends Controller
     /**
      * Create a draft from current version.
      */
-    public function createDraft(Request $request, Page $page)
+    public function createDraft(
+        Request $request,
+        Page $page,
+        HtmlToMdConvertor $convertor,
+    )
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -303,7 +307,10 @@ class PageController extends Controller
             }
         }
 
-        $draft = $page->createDraft($validated);
+        $draft = $page->createDraft([
+            'title' => $validated['title'],
+            'content' => $convertor->toMd($validated['content']),
+        ]);
 
         // Обработка project_files: если переданы в форме — используем их; иначе копируем с текущей версии
         $attachmentsInput = $validated['project_files'] ?? [];
