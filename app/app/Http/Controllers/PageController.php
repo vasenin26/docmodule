@@ -6,6 +6,7 @@ use App\Common\DTO\Actualization\ActualizationDTO;
 use App\Http\Requests\Page\ApproveVersionRequest;
 use App\Http\Requests\Page\StorePageRequest;
 use App\Http\Requests\Page\UpdateVersionRequest;
+use App\Interfaces\PageContextServiceFactoryInterface;
 use App\Jobs\CalculateVersionDifferenceJob;
 use App\Models\Page;
 use App\Models\PageVersion;
@@ -86,7 +87,7 @@ class PageController extends Controller
         }
 
         $parentPage = null;
-        if ($page->id) {
+        if ($page) {
             $parentPage = [
                 'id' => $page->id,
                 'title' => $page->currentVersion->title,
@@ -105,7 +106,12 @@ class PageController extends Controller
         ]);
     }
 
-    public function store(StorePageRequest $request, Project $project, HtmlToMdConvertor $convertor)
+    public function store(
+        StorePageRequest $request,
+        Project $project,
+        PageContextServiceFactoryInterface $pageContextServiceFactory,
+        HtmlToMdConvertor $convertor
+    )
     {
         $validated = $request->validated();
 
@@ -151,6 +157,8 @@ class PageController extends Controller
         }
 
         $page->update(['version_id' => $version->id]);
+
+        $pageContextServiceFactory->createForProject($project->id)->flushCache();
 
         return redirect()->route('pages.show', $page->id)
             ->with('success', 'Страница успешно создана.');
@@ -378,7 +386,13 @@ class PageController extends Controller
     /**
      * Update a specific version of the page.
      */
-    public function updateVersion(UpdateVersionRequest $request, Page $page, PageVersion $version, HtmlToMdConvertor $convertor)
+    public function updateVersion(
+        UpdateVersionRequest $request,
+        Page $page,
+        PageVersion $version,
+        HtmlToMdConvertor $convertor,
+        PageContextServiceFactoryInterface $pageContextServiceFactory,
+    )
     {
         // Проверяем, что версия принадлежит странице
         if ($version->page_id !== $page->id) {
@@ -401,6 +415,8 @@ class PageController extends Controller
                     $version->syncProjectFilesByUrls($attachmentsInput, (int)$page->project_id);
                 }
             });
+
+            $pageContextServiceFactory->createForProject($page->project_id)->flushCache();
 
             return redirect()->back()
                 ->with('success', 'Черновик обновлен.');

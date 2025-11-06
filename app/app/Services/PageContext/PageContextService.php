@@ -256,11 +256,11 @@ class PageContextService implements PageContextServiceInterface
      */
     public function getFlatPagesForProject(): array
     {
-        $cacheKey = "page_context_{$this->projectId}_flat_pages";
-        
+        $cacheKey = $this->getPageCacheKey();
+
         return Cache::remember($cacheKey, 300, function () {
             Log::debug('Getting flat pages for project', ['project_id' => $this->projectId]);
-            
+
             $pages = Page::where('project_id', $this->projectId)
                 ->whereNotNull('version_id')
                 ->with(['currentVersion'])
@@ -279,9 +279,9 @@ class PageContextService implements PageContextServiceInterface
                     'parent_id' => $page->parent_id,
                     'children' => []
                 ];
-                
+
                 $flatPages[] = $flatPage;
-                
+
                 // Строим карту детей для каждого родителя
                 if ($page->parent_id) {
                     if (!isset($childrenMap[$page->parent_id])) {
@@ -305,5 +305,15 @@ class PageContextService implements PageContextServiceInterface
 
             return $flatPages;
         });
+    }
+
+    public function flushCache(): void
+    {
+        Cache::forget($this->getPageCacheKey());
+    }
+
+    private function getPageCacheKey(): string
+    {
+        return "page_context_{$this->projectId}_flat_pages";
     }
 }
