@@ -415,7 +415,7 @@ class PageController extends Controller
             unset($validated['project_files']);
             DB::transaction(function () use ($version, $page, $validated, $attachmentsInput, $convertor) {
                 $version->update([
-                    'title' => $validated['title'],
+                    'title' => $validated['title'] ?? $version->title,
                     'content' => $convertor->toMd($validated['content']),
                 ]);
                 if (!empty($attachmentsInput)) {
@@ -426,7 +426,8 @@ class PageController extends Controller
             $pageContextServiceFactory->createForProject($page->project_id)->flushCache();
 
             return redirect()->back()
-                ->with('success', 'Черновик обновлен.');
+                ->with('message', 'Черновик обновлен.')
+                ->with('success', true);
         }
     }
 

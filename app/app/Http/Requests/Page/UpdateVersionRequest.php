@@ -27,7 +27,7 @@ class UpdateVersionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'required|string|max:255',
+            'title' => 'nullable|string|max:255',
             'content' => 'nullable|string',
             'project_files' => 'array',
             'project_files.*.url' => 'required|string|url',

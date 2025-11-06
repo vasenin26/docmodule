@@ -7,10 +7,12 @@
                     Перезапустить
                 </Button>
                 <Button>
-                    <Link :href="route('pages.versions.edit', [version.page_id, version.id])"> Редактировать</Link>
+                    <Link :href="route('pages.versions.edit', [version.page_id, version.id])">Редактировать</Link>
                 </Button>
+                <Button v-if="changed" @click.prevent="onSave"> Сохранить </Button>
+                <Button v-if="changed" @click.prevent="onDiscard" variant="outline"> Отменить </Button>
                 <Button as-child variant="outline">
-                    <Link :href="route('pages.show', version.page_id)"> Назад к странице</Link>
+                    <Link :href="route('pages.show', version.page_id)">Назад к странице</Link>
                 </Button>
             </div>
         </template>
@@ -57,19 +59,17 @@
             <!-- Обновленное содержимое -->
             <Card>
                 <CardHeader>
-                    <CardTitle class="flex items-center gap-2">Обновленное содержимое <span
-                        v-if="loading">(загрузка...)</span></CardTitle>
-                    <CardDescription> Результат актуализации документации на основе прикрепленных файлов
-                    </CardDescription>
+                    <CardTitle class="flex items-center gap-2">Обновленное содержимое <span v-if="loading">(загрузка...)</span></CardTitle>
+                    <CardDescription> Результат актуализации документации на основе прикрепленных файлов </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <MarkdownRenderer :content="content" />
+                    <MarkdownRenderer :content="currentContent" />
                 </CardContent>
             </Card>
         </div>
 
         <template #sidebar>
-            <PatchesList :items="patches" @select="selectPatch" />
+            <PatchesList :items="patches" @select="selectPatch" :selected="currentPatch" />
         </template>
 
         <template #assistant>
@@ -101,6 +101,7 @@ import { type Patch } from '@/components/Patches/PatchesList.vue';
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
 import parse from 'parse-diff';
 import { LoadPatchRequest, PatchDetails } from '@/services/api/request/Patch/LoadPatch';
+import { UpdatePageContent } from '@/services/api/request/Page/UpdateVersionReqeust';
 
 interface User {
     id: number;
@@ -126,8 +127,11 @@ const props = defineProps<{
 const loading = ref<bool>(false);
 const isRestarting = ref<bool>(false);
 const isWaiting = ref<bool>(false);
+const changed = ref<bool>(false);
 
-const content = ref<string>('');
+const baseContent = ref<string>('');
+const currentContent = ref<string>('');
+const currentPatch = ref<number | null>(null);
 const actualisationStatus = ref<string>('');
 
 const patches = ref<Patch[]>([]);
@@ -138,7 +142,7 @@ const formatDate = (date: string) => {
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
     });
 };
 
@@ -147,7 +151,7 @@ const getStatusText = (status: string) => {
         pending: 'Ожидает обработки',
         processing: 'Обрабатывается',
         completed: 'Завершена',
-        failed: 'Ошибка'
+        failed: 'Ошибка',
     };
     return statusMap[status] || status;
 };
@@ -156,7 +160,8 @@ const { setChatId, reset, startPoling, stopPoling, status } = useChatAgent(props
 const api = createApi();
 
 onMounted(() => {
-    content.value = props.version.content;
+    baseContent.value = props.version.content;
+    currentContent.value = props.version.content;
     status.value = props.actualization.status;
 
     reset();
@@ -190,7 +195,7 @@ async function restartGeneration() {
         const info = await loadInfo(props.actualization.id);
 
         if (info.data.status === 'restarting') {
-            await async function() {
+            await async function () {
                 return new Promise((r) => setTimeout(r, 400));
             };
 
@@ -230,7 +235,7 @@ async function checkUpdates() {
 
     const info = await loadInfo();
 
-    content.value = info.data.content;
+    currentContent.value = info.data.content;
     actualisationStatus.value = info.data.status;
     patches.value = info.data.patches || [];
 
@@ -238,28 +243,51 @@ async function checkUpdates() {
 }
 
 async function selectPatch(patchId: number) {
+    currentPatch.value = patchId;
+
     const patchDetails = await loadPatch(patchId);
     const diff = parse(patchDetails.content);
-    const lines = content.value.split('\n');
+    const lines = baseContent.value.split('\n');
 
     for (const chunk of diff[0].chunks) {
         for (const change of chunk.changes) {
-            switch(change.type) {
+            switch (change.type) {
                 case 'add':
-                    lines.splice(change.ln - 1, 0, change.content.slice(1))
+                    lines.splice(change.ln - 1, 0, change.content.slice(1));
                     break;
                 case 'del':
-                    lines.splice(change.ln - 1, 1)
+                    lines.splice(change.ln - 1, 1);
                     break;
             }
         }
     }
 
-    content.value = lines.join("\n")
+    currentContent.value = lines.join('\n');
+    changed.value = true;
 }
 
 async function loadPatch(patchId: number): PatchDetails {
     const req = new LoadPatchRequest(patchId);
     return await req.call(createApi());
+}
+
+async function onSave() {
+    loading.value = true;
+
+    const req = new UpdatePageContent(props.version.page_id, props.version.id, currentContent.value);
+    const result = await req.call(createApi());
+
+    if (result) {
+        baseContent.value = currentContent.value;
+        changed.value = false;
+    }
+
+    loading.value = false;
+}
+
+async function onDiscard() {
+    currentContent.value = baseContent.value;
+    currentPatch.value = null;
+    changed.value = false;
 }
 </script>

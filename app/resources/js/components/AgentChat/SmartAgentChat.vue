@@ -5,6 +5,7 @@ import { useChatAgent } from '@/composables/useChatAgent';
 
 const props = defineProps<{
     chatId: number | null;
+    frozen?: boolean
 }>();
 
 const { status, sending, messages, requestCount, totalTokens, contextFill, polingState, stopGeneration, sendMessage, stopPoling, startPoling } =

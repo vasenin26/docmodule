@@ -34,7 +34,7 @@
                 <span v-if="sending">Отправка...</span>
                 <span v-else>Отправить</span>
             </Button>
-            <div v-if="typeof safeContextFill === 'number'" class="flex items-center gap-2">
+            <div class="flex items-center gap-2">
                 <span class="text-xs text-gray-500 whitespace-nowrap">
                     Расход: {{ formattedTotalTokens }}
                 </span>

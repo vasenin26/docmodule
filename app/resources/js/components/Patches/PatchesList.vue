@@ -5,7 +5,8 @@ export type Patch = {
 };
 
 defineProps<{
-    items: Patch[];
+    items: Patch[]
+    selected: number|null
 }>();
 
 const emit = defineEmits<{
@@ -26,6 +27,7 @@ function onSelect(item: Patch): void {
         <div class="menu-list">
             <div class="list">
                 <div class="patch node" v-for="item in items" :key="item.id" @click="onSelect(item)"
+                     :class="{selected: item.id === selected}"
                      :title="item.title"
                 >
                     {{ item.title }}
@@ -45,5 +47,8 @@ function onSelect(item: Patch): void {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
+    &.selected{
+        font-weight: bold;
+    }
 }
 </style>
