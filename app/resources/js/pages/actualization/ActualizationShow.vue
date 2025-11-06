@@ -239,6 +239,10 @@ async function checkUpdates() {
     actualisationStatus.value = info.data.status;
     patches.value = info.data.patches || [];
 
+    if(patches.value[0] && patches.value[0].id !== currentPatch.value) {
+        await selectPatch(patches.value[0].id)
+    }
+
     loading.value = false;
 }
 
