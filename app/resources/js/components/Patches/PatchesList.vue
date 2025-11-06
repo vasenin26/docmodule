@@ -32,6 +32,9 @@ function onSelect(item: Patch): void {
                 >
                     {{ item.title }}
                 </div>
+                <div v-if="items.length === 0">
+                    Ничего нет
+                </div>
             </div>
         </div>
     </div>

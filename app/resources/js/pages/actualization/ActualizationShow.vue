@@ -235,7 +235,6 @@ async function checkUpdates() {
 
     const info = await loadInfo();
 
-    currentContent.value = info.data.content;
     actualisationStatus.value = info.data.status;
     patches.value = info.data.patches || [];
 
