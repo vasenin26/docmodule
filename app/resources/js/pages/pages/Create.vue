@@ -12,102 +12,78 @@
             <Heading title="Создать страницу" />
         </div>
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-4">
+        <div class="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
             <!-- Основное содержимое -->
             <div class="space-y-6 lg:col-span-1">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Новая страница</CardTitle>
-                    <CardDescription> Создайте новую страницу документации </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form @submit.prevent="submit" class="space-y-6">
-                        <!-- Проект -->
-                        <div v-if="project" class="rounded-lg bg-muted/50 p-4">
-                            <p class="mb-2 text-sm text-muted-foreground">Проект:</p>
-                            <p class="font-medium">{{ project.title }}</p>
-                        </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Новая страница</CardTitle>
+                        <CardDescription> Создайте новую страницу документации</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form @submit.prevent="submit" class="space-y-6">
+                            <!-- Проект -->
+                            <div v-if="project" class="rounded-lg bg-muted/50 p-4">
+                                <p class="mb-2 text-sm text-muted-foreground">Проект:</p>
+                                <p class="font-medium">{{ project.title }}</p>
+                            </div>
 
-                        <!-- Выбор проекта (если не указан в URL) -->
-                        <div v-else-if="projects && projects.length > 0" class="space-y-2">
-                            <Label for="project_id">Проект</Label>
-                            <select
-                                id="project_id"
-                                v-model="form.project_id"
-                                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                            >
-                                <option :value="null">Без проекта</option>
-                                <option v-for="proj in projects" :key="proj.id" :value="proj.id">
-                                    {{ proj.title }}
-                                </option>
-                            </select>
-                            <InputError v-if="errors.project_id" :message="errors.project_id" />
-                        </div>
+                            <!-- Родительская страница -->
+                            <div v-if="parentPage" class="rounded-lg bg-muted/50 p-4">
+                                <p class="mb-2 text-sm text-muted-foreground">Родительская страница:</p>
+                                <p class="font-medium">{{ parentPage.title }}</p>
+                            </div>
 
-                        <!-- Родительская страница -->
-                        <div v-if="parentPage" class="rounded-lg bg-muted/50 p-4">
-                            <p class="mb-2 text-sm text-muted-foreground">Родительская страница:</p>
-                            <p class="font-medium">{{ parentPage.title }}</p>
-                        </div>
+                            <!-- Название -->
+                            <div class="space-y-2">
+                                <Label for="title">Название страницы *</Label>
+                                <Input
+                                    id="title"
+                                    v-model="form.title"
+                                    placeholder="Введите название страницы"
+                                    :class="{ 'border-destructive': errors.title }"
+                                />
+                                <InputError v-if="errors.title" :message="errors.title" />
+                            </div>
 
-                        <!-- Название -->
-                        <div class="space-y-2">
-                            <Label for="title">Название страницы *</Label>
-                            <Input
-                                id="title"
-                                v-model="form.title"
-                                placeholder="Введите название страницы"
-                                :class="{ 'border-destructive': errors.title }"
-                            />
-                            <InputError v-if="errors.title" :message="errors.title" />
-                        </div>
+                            <!-- Содержимое -->
+                            <div class="space-y-2">
+                                <Label for="content">Содержимое</Label>
+                                <AppContentWysiwyg v-model="form.content" />
+                                <InputError v-if="errors.content" :message="errors.content" />
+                                <p class="text-xs text-muted-foreground">Поддерживается формат Markdown</p>
+                            </div>
 
-                        <!-- Содержимое -->
-                        <div class="space-y-2">
-                            <Label for="content">Содержимое</Label>
-                            <AppContentWysiwyg
-                                v-model="form.content"
-                            />
-                            <InputError v-if="errors.content" :message="errors.content" />
-                            <p class="text-xs text-muted-foreground">Поддерживается формат Markdown</p>
+                            <!-- Прикрепленные файлы -->
+                            <div class="space-y-2">
+                                <FileLinksList v-model="form.files" />
+                                <InputError v-if="errors?.files" :message="errors.files" />
+                                <InputError v-else-if="errors?.project_files" :message="errors.project_files" />
+                            </div>
 
-                        </div>
+                            <!-- Скрытое поле для parent_id -->
+                            <input v-if="parentPage" type="hidden" name="parent_id" :value="parentPage.id" />
 
-                        <!-- Прикрепленные файлы -->
-                        <div class="space-y-2">
-                            <FileLinksList v-model="form.files" />
-                            <InputError v-if="errors?.files" :message="errors.files" />
-                            <InputError v-else-if="errors?.project_files" :message="errors.project_files" />
-                        </div>
-
-                        <!-- Скрытое поле для parent_id -->
-                        <input v-if="parentPage" type="hidden" name="parent_id" :value="parentPage.id" />
-
-                        <!-- Кнопки -->
-                        <div class="flex items-center gap-4">
-                            <Button type="submit" :disabled="processing">
-                                {{ processing ? 'Создание...' : 'Создать страницу' }}
-                            </Button>
-                            <Button type="button" variant="outline" @click="cancel"> Отмена </Button>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
-            </div>
-
-            <div class="space-y-6 lg:col-span-1">
-                <!-- Предварительный просмотр -->
-                <MarkdownPreview :content="form.content" />
+                            <!-- Кнопки -->
+                            <div class="flex items-center gap-4">
+                                <Button type="submit" :disabled="processing">
+                                    {{ processing ? 'Создание...' : 'Создать страницу' }}
+                                </Button>
+                                <Button type="button" variant="outline" @click="cancel"> Отмена</Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     </PagesLayout>
 </template>
 
 <script setup lang="ts">
+import AppContentWysiwyg from '@/components/AppContentWysiwyg.vue';
 import FileLinksList from '@/components/FileLinksList.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
-import MarkdownPreview from '@/components/MarkdownPreview.vue';
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
@@ -119,7 +95,6 @@ import Label from '@/components/ui/label/Label.vue';
 import PagesLayout from '@/layouts/pages/PagesLayout.vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import AppContentWysiwyg from '@/components/AppContentWysiwyg.vue';
 
 interface ParentPage {
     id: number;
@@ -161,14 +136,17 @@ const submit = () => {
 
     const transformed = form.transform((data: any) => ({
         ...data,
-        project_files: Array.isArray(data.files)
-            ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
-            : [],
+        parent_id: props.parentPage?.id,
+        project_files: Array.isArray(data.files) ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u })) : [],
     }));
 
     transformed.post(submitUrl, {
-        onSuccess: () => { processing.value = false; },
-        onError: () => { processing.value = false; },
+        onSuccess: () => {
+            processing.value = false;
+        },
+        onError: () => {
+            processing.value = false;
+        },
     });
 };
 

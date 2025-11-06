@@ -5,30 +5,26 @@
                 <Button v-if="canCreateTask" @click="createTask" variant="default"> Создать задачу</Button>
 
                 <Button>
-                    <Link :href="route('pages.edit', page.id)">
-                        Редактировать
-                    </Link>
+                    <Link :href="route('pages.edit', page.id)"> Редактировать </Link>
                 </Button>
 
-                <ActualizationButton
-                    :versionId="page.version_id"
-                    :canActualize="canActualize"
-                />
+                <ActualizationButton :versionId="page.version_id" :canActualize="canActualize" />
 
                 <Button as-child variant="outline">
-                    <Link :href="route('pages.versions', page.id)"> Версии</Link>
+                    <Link :href="route('pages.versions', page.id)">Версии</Link>
                 </Button>
+
+                <Button variant="outline" :link="route('projects.pages.create-children', {project: page.project_id, page: page.id})"> Создать дочернюю </Button>
                 <PageListButton :page="pageForPageListButton" />
             </div>
         </template>
 
         <div class="space-y-2">
             <Heading :title="page.title || 'Без названия'" />
-            <p class="mt-1 text-sm text-muted-foreground">Создано {{ formatDate(page.created_at) }}
-                пользователем {{ page.creator?.name }}</p>
+            <p class="mt-1 text-sm text-muted-foreground">Создано {{ formatDate(page.created_at) }} пользователем {{ page.creator?.name }}</p>
         </div>
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-4">
+        <div class="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
             <!-- Основное содержимое -->
             <div class="space-y-6 lg:col-span-1">
                 <!-- Информация о черновике -->
@@ -54,20 +50,16 @@
                 <Card v-if="page.diffDescriptions && page.diffDescriptions.length > 0">
                     <CardHeader>
                         <CardTitle>Связанные задачи</CardTitle>
-                        <CardDescription> Задачи, созданные на основе изменений в данной версии страницы
-                        </CardDescription>
+                        <CardDescription> Задачи, созданные на основе изменений в данной версии страницы </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div class="space-y-4">
-                            <div v-for="taskDescription in page.diffDescriptions" :key="taskDescription.id"
-                                 class="rounded-lg border p-4">
+                            <div v-for="taskDescription in page.diffDescriptions" :key="taskDescription.id" class="rounded-lg border p-4">
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
                                         <p class="mb-2 text-sm text-muted-foreground">
                                             Создано {{ formatDate(taskDescription.created_at) }}
-                                            <span v-if="taskDescription.creator"> пользователем {{
-                                                    taskDescription.creator.name
-                                                }} </span>
+                                            <span v-if="taskDescription.creator"> пользователем {{ taskDescription.creator.name }} </span>
                                         </p>
                                         <div class="prose prose-sm max-w-none">
                                             <MarkdownRenderer :content="taskDescription.content" />
@@ -132,9 +124,7 @@
                             </div>
                             <div>
                                 <span class="font-medium">Предыдущая версия:</span>
-                                <span class="ml-2 text-muted-foreground">{{
-                                        previousVersion?.id || 'Первая версия'
-                                    }}</span>
+                                <span class="ml-2 text-muted-foreground">{{ previousVersion?.id || 'Первая версия' }}</span>
                             </div>
                             <div>
                                 <span class="font-medium">Дата создания версии:</span>
@@ -143,8 +133,8 @@
                             <div>
                                 <span class="font-medium">Дата создания предыдущей версии:</span>
                                 <span class="ml-2 text-muted-foreground">{{
-                                        previousVersion ? formatDate(previousVersion.created_at) : 'Первая версия'
-                                    }}</span>
+                                    previousVersion ? formatDate(previousVersion.created_at) : 'Первая версия'
+                                }}</span>
                             </div>
                         </div>
                     </CardContent>
@@ -158,8 +148,7 @@
                     </CardHeader>
                     <CardContent>
                         <div class="space-y-2">
-                            <div v-for="a in page.project_files" :key="a.id"
-                                 class="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50">
+                            <div v-for="a in page.project_files" :key="a.id" class="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50">
                                 <FileIcon class="h-5 w-5 text-muted-foreground" />
                                 <div class="flex-1">
                                     <p class="font-mono text-sm break-all">{{ getFileName(a.url) }}</p>
@@ -179,11 +168,11 @@
 </template>
 
 <script setup lang="ts">
-import DraftInfo from '@/components/PageInfo/DraftInfo.vue';
-import ActualizationButton from '@/components/PageInfo/ActualizationButton.vue';
-import ChildPages, { ChildPage } from '@/components/PageInfo/ChildPages.vue';
 import Heading from '@/components/Heading.vue';
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
+import ActualizationButton from '@/components/PageInfo/ActualizationButton.vue';
+import ChildPages, { ChildPage } from '@/components/PageInfo/ChildPages.vue';
+import DraftInfo from '@/components/PageInfo/DraftInfo.vue';
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
@@ -194,10 +183,10 @@ import PagesLayout from '@/layouts/pages/PagesLayout.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { computed, onMounted } from 'vue';
 
-import { usePageActualization } from '@/composables/usePageActualization';
-import { FileIcon } from 'lucide-vue-next';
-import { Project } from '@/types';
 import PageListButton from '@/components/PageInfo/PageListButton.vue';
+import { usePageActualization } from '@/composables/usePageActualization';
+import { Project } from '@/types';
+import { FileIcon } from 'lucide-vue-next';
 
 interface Creator {
     name: string;
@@ -223,6 +212,7 @@ interface PageData {
     title: string;
     content: string;
     project_files?: { id: number; url: string; description?: string | null }[];
+    project_id: number;
     created_at: string;
     approved_at: string;
     creator: Creator;
@@ -250,17 +240,11 @@ const props = defineProps<{
 }>();
 
 const canCreateTask = computed(() => {
-    return (
-        props.previousVersion &&
-        (!props.page.diffDescriptions || props.page.diffDescriptions.length === 0)
-    );
+    return props.previousVersion && (!props.page.diffDescriptions || props.page.diffDescriptions.length === 0);
 });
 
 // Логика актуализации (для статуса и кнопки)
-const {
-    canStartActualization,
-    checkStatus,
-} = usePageActualization(props.page.id);
+const { canStartActualization, checkStatus } = usePageActualization(props.page.id);
 
 // Проверяем статус при загрузке компонента
 onMounted(() => {
@@ -285,7 +269,7 @@ const formatDate = (date: string) => {
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
     });
 };
 

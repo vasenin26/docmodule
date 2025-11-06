@@ -338,30 +338,6 @@ class Page extends Model implements DisplayableResource
 
     // Методы для обратной совместимости с API
 
-    /**
-     * Получить заголовок страницы (из текущей версии)
-     */
-    public function getTitleAttribute(): ?string
-    {
-        return $this->currentVersion?->title;
-    }
-
-    /**
-     * Получить содержимое страницы (из текущей версии)
-     */
-    public function getContentAttribute(): ?string
-    {
-        return $this->currentVersion?->content;
-    }
-
-    /**
-     * Получить файлы страницы (из текущей версии)
-     */
-    public function getFilesAttribute(): array
-    {
-        return $this->currentVersion?->files ?? [];
-    }
-
     public function getVersion(int $id): PageVersion
     {
         return PageVersion::where(['page_id' => $this->id, 'id' => $id])->firstOrFail();

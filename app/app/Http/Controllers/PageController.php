@@ -79,18 +79,18 @@ class PageController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(Request $request, Project $project = null)
+    public function create(Request $request, Project $project = null, Page $page = null)
     {
         if ($project && $project->owner_id !== Auth::id()) {
             abort(403);
         }
 
         $parentPage = null;
-        if ($request->has('parent_id')) {
-            $parentPage = Page::whereNotNull('version_id')
-                ->where('id', $request->parent_id)
-                ->with('currentVersion')
-                ->first();
+        if ($page->id) {
+            $parentPage = [
+                'id' => $page->id,
+                'title' => $page->currentVersion->title,
+            ];
         }
 
         // Получаем список проектов пользователя для выбора
@@ -105,13 +105,13 @@ class PageController extends Controller
         ]);
     }
 
-    public function store(StorePageRequest $request, Project $project = null, HtmlToMdConvertor $convertor)
+    public function store(StorePageRequest $request, Project $project, HtmlToMdConvertor $convertor)
     {
         $validated = $request->validated();
 
         $projectId = null;
         if ($project) {
-            if (!$project->canAccess(Auth::user()) ) {
+            if (!$project->canAccess($request->user()) ) {
                 abort(403);
             }
             $projectId = $project->id;
@@ -152,13 +152,8 @@ class PageController extends Controller
 
         $page->update(['version_id' => $version->id]);
 
-        if ($project) {
-            return redirect()->route('projects.show', $project)
-                ->with('success', 'Страница успешно создана.');
-        } else {
-            return redirect()->route('pages.index')
-                ->with('success', 'Страница успешно создана.');
-        }
+        return redirect()->route('pages.show', $page->id)
+            ->with('success', 'Страница успешно создана.');
     }
 
     /**
@@ -190,6 +185,7 @@ class PageController extends Controller
         return Inertia::render('pages/Show', [
             'page' => [
                 'id' => $page->id,
+                'project_id' => $page->project_id,
                 'title' => $page->currentVersion->title,
                 'content' => $page->currentVersion->content,
                 'project_files' => $page->currentVersion->projectFiles()->get(['id', 'url', 'description']),
@@ -222,7 +218,7 @@ class PageController extends Controller
             'pageVersion' => [
                 'id' => $page->currentVersion->id,
                 'title' => $page->currentVersion->title,
-                'content' => $convertor->toHtml($page->currentVersion->content),
+                'content' => $convertor->toHtml($page->currentVersion->content ?? ''),
                 'is_draft' => $page->currentVersion->is_draft,
                 'page_id' => $page->currentVersion->page_id,
                 'project_files' => $page->currentVersion->projectFiles()->get(['id', 'url', 'description']),
@@ -249,7 +245,7 @@ class PageController extends Controller
             'pageVersion' => [
                 'id' => $version->id,
                 'title' => $version->title,
-                'content' => $convertor->toHtml($version->content),
+                'content' => $convertor->toHtml($version->content ?? ''),
                 'files' => $version->files,
                 'is_draft' => $version->is_draft,
                 'page_id' => $version->page_id,

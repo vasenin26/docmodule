@@ -51,10 +51,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Маршруты страниц в контексте проекта
     Route::get('projects/{project}/pages', [PageController::class, 'index'])->name('projects.pages.index');
     Route::get('projects/{project}/pages/create', [PageController::class, 'create'])->name('projects.pages.create');
+    Route::get('projects/{project}/pages/{page}/create', [PageController::class, 'create'])->name('projects.pages.create-children');
     Route::post('projects/{project}/pages', [PageController::class, 'store'])->name('projects.pages.store');
 
     // Общие маршруты для страниц
-    Route::resource('pages', PageController::class);
+    Route::resource('pages', PageController::class)->except('index');
     Route::get('pages/{page}/versions', [PageController::class, 'versions'])->name('pages.versions');
     Route::post('pages/{page}/restore/{version}', [PageController::class, 'restore'])->name('pages.restore');
 

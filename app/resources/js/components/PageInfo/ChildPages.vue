@@ -27,9 +27,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Форма создания дочерней страницы -->
-            <CreateChildPage :parent-id="parentId" :project-id="projectId" />
         </CardContent>
     </Card>
 </template>
@@ -41,7 +38,6 @@ import CardContent from '@/components/ui/card/CardContent.vue';
 import CardDescription from '@/components/ui/card/CardDescription.vue';
 import CardHeader from '@/components/ui/card/CardHeader.vue';
 import CardTitle from '@/components/ui/card/CardTitle.vue';
-import CreateChildPage from '@/components/CreateChildPage.vue';
 import { Link } from '@inertiajs/vue3';
 
 interface Creator {
