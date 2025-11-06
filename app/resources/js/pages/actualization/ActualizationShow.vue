@@ -61,7 +61,7 @@
                     <CardDescription> Результат актуализации документации на основе прикрепленных файлов </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div class="ck-content" v-html="content"></div>
+                    <MarkdownRenderer :content="content" />
                 </CardContent>
             </Card>
         </div>
@@ -96,6 +96,7 @@ import { ActualizationStatusRequest } from '@/services/api/request/Actualization
 import TemplateEditorLayout from '@/layouts/editor/TemplateEditorLayout.vue';
 import PatchesList from '@/components/Patches/PatchesList.vue';
 import { type Patch } from '@/components/Patches/PatchesList.vue';
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue';
 
 interface User {
     id: number;
