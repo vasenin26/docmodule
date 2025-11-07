@@ -8,7 +8,7 @@ release:
 	git push
 	git checkout main
 	git merge develop
-	make bump-patch
+	make bump-minor
 	git push
 	git checkout develop
 
