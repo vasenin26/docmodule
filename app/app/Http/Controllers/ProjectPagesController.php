@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Page;
 use App\Models\Project;
 use App\Interfaces\PageContextServiceFactoryInterface;
 use Illuminate\Http\Request;
@@ -20,17 +21,15 @@ class ProjectPagesController extends Controller
             abort(403);
         }
 
-        // Используем PageContextService для загрузки страниц как в ProjectController
-        $pageContextService = $this->pageContextServiceFactory->createForProject($project->id);
-        $pages = $pageContextService->getCurrentPages();
+        $pages = Page::where('project_id', $project->id)
+            ->whereNotNull('version_id')
+            ->with(['creator', 'parent', 'children', 'currentVersion'])
+            ->orderBy('created_at', 'desc');
 
         // Применяем фильтры поиска если они есть
         $search = $request->get('search');
         if ($search) {
-            $pages = $pages->filter(function ($page) use ($search) {
-                return str_contains(strtolower($page->currentVersion?->title ?? ''), strtolower($search)) ||
-                       str_contains(strtolower($page->currentVersion?->content ?? ''), strtolower($search));
-            });
+            $pages = $pages->where('title', 'like', '%' . $search . '%');
         }
 
         // Фильтр по родительской странице
