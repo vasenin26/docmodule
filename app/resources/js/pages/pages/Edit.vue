@@ -49,6 +49,10 @@
                                     v-model="form.title"
                                     placeholder="Введите название страницы"
                                     :class="{ 'border-destructive': errors?.title }"
+        <div class="mt-2">
+          <ImportantStar v-model="form.isImportant" />
+        </div>
+
                                 />
                                 <InputError v-if="errors?.title" :message="errors.title" />
                             </div>
@@ -71,9 +75,6 @@
                             </div>
 
                             <!-- Важная -->
-                            <div class="flex items-center space-x-2">
-                                <Checkbox id="isImportant" v-model="form.isImportant" />
-                                <Label for="isImportant">Важная</Label>
                             </div>
 
                             <!-- Checkbox для создания задачи -->
@@ -125,6 +126,8 @@
 <script setup lang="ts">
 import FileLinksList from '@/components/FileLinksList.vue';
 import InputError from '@/components/InputError.vue';
+import ImportantStar from '@/components/ui/ImportantStar.vue';
+
 import PageListButton from '@/components/PageInfo/PageListButton.vue';
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';

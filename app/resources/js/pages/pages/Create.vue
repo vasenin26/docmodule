@@ -43,6 +43,10 @@
                                     placeholder="Введите название страницы"
                                     :class="{ 'border-destructive': errors.title }"
                                 />
+                                <div class="flex items-center gap-2">
+                                    <ImportantStar v-model="form.isImportant" />
+                                </div>
+
                                 <InputError v-if="errors.title" :message="errors.title" />
                             </div>
 
@@ -93,6 +97,8 @@ import CardTitle from '@/components/ui/card/CardTitle.vue';
 import Input from '@/components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
 import PagesLayout from '@/layouts/pages/PagesLayout.vue';
+import ImportantStar from '@/components/ui/ImportantStar.vue';
+
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -117,6 +123,7 @@ const props = withDefaults(
         errors: () => ({}),
     },
 );
+    isImportant: false,
 
 const form = useForm({
     title: '',
@@ -138,6 +145,8 @@ const submit = () => {
         ...data,
         parent_id: props.parentPage?.id,
         project_files: Array.isArray(data.files) ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u })) : [],
+        is_important: !!data.isImportant,
+
     }));
 
     transformed.post(submitUrl, {
