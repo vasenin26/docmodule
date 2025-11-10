@@ -60,7 +60,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('pages', [PageController::class, 'index'])->name('pages.index');
 
 
-    Route::resource('pages', PageController::class)->except('index');
+    Route::resource('pages', PageController::class);
     Route::get('pages/{page}/versions', [PageController::class, 'versions'])->name('pages.versions');
     Route::post('pages/{page}/restore/{version}', [PageController::class, 'restore'])->name('pages.restore');
 
