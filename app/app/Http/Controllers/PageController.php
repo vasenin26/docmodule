@@ -29,6 +29,8 @@ class PageController extends Controller
 
     /**
      * Display a listing of the resource.
+     *
+     * Note: This endpoint always returns JSON. It's used by frontend components via AJAX.
      */
     public function index(Request $request, ?Project $project)
     {
@@ -73,44 +75,25 @@ class PageController extends Controller
         // Поддержка per_page для ограничений результата при поиске (PageSelect передаёт per_page)
         $perPage = (int) $request->get('per_page', 20);
 
-        // Если это AJAX/JSON-запрос — возвращаем структуру, ожидаемую фронтендом
-        if ($request->wantsJson() || $request->header('Accept') === 'application/json') {
-            $paginator = $query->orderBy('id', 'desc')->paginate($perPage)->appends($request->query());
+        // Всегда возвращаем JSON (это endpoint для AJAX). Формат: { data: [...], meta: { total, per_page, current_page, last_page } }
+        $paginator = $query->orderBy('id', 'desc')->paginate($perPage)->appends($request->query());
 
-            // Трансформация коллекции для доп. полей
-            $paginator->getCollection()->transform(function ($page) {
-                $page->hasActiveDraft = $page->hasActiveDraft(Auth::id());
-                $page->isActualized = $page->isActualized();
-                $page->actualizationInfo = $page->getActualizationInfo();
-                return $page;
-            });
-
-            return response()->json([
-                'data' => $paginator->items(),
-                'meta' => [
-                    'total' => $paginator->total(),
-                    'per_page' => $paginator->perPage(),
-                    'current_page' => $paginator->currentPage(),
-                    'last_page' => $paginator->lastPage(),
-                ],
-            ]);
-        }
-
-        // Для обычного запроса возвращаем view с пагинацией (существующая логика)
-        $pages = $query->orderBy('created_at', 'desc')->paginate($perPage);
-
-        // Добавляем информацию о черновиках и актуализации для каждой страницы
-        $pages->getCollection()->transform(function ($page) {
+        // Трансформация коллекции для доп. полей
+        $paginator->getCollection()->transform(function ($page) {
             $page->hasActiveDraft = $page->hasActiveDraft(Auth::id());
-            $page->isActualized = $page->isActualized(); // Для черновиков
-            $page->actualizationInfo = $page->getActualizationInfo(); // Информация об актуализации
+            $page->isActualized = $page->isActualized();
+            $page->actualizationInfo = $page->getActualizationInfo();
             return $page;
         });
 
-        return Inertia::render('pages/Index', [
-            'pages' => $pages,
-            'filters' => $request->only(['search', 'parent_id']),
-            'project' => $project,
+        return response()->json([
+            'data' => $paginator->items(),
+            'meta' => [
+                'total' => $paginator->total(),
+                'per_page' => $paginator->perPage(),
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+            ],
         ]);
     }
 
