@@ -57,7 +57,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Общие маршруты для страниц
     // Страница списка/поиска страниц (поддерживает query params: search, id, project_id, per_page)
-    Route::get('pages', [PageController::class, 'index'])->name('pages.index');
 
 
     Route::resource('pages', PageController::class);
