@@ -8,20 +8,12 @@ defineProps<{
     page: Page
 }>()
 
-// small helper
-const pagesIndexHref = () => {
-  if (typeof route === 'function') {
-    try { return route('pages.index'); } catch (e) { console.warn('PageListButton: Ziggy missing pages.index', e); }
-  }
-  return '/pages';
-};
-
 </script>
 
 <template>
 
     <Button as-child variant="outline">
-        <Link :href="page.project ? route('projects.show', page.project.id) : pagesIndexHref()">
+        <Link :href="page.project ? route('projects.show', page.project.id) : route('pages.index')">
             {{ page.project ? 'Назад к проекту' : 'Назад к списку' }}
         </Link>
     </Button>
