@@ -117,20 +117,20 @@ const props = withDefaults(
         parentPage?: ParentPage;
         project?: Project;
         projects?: Project[];
-        errors?: Record<string, string>;
+        errors?: Record<string, any>;
     }>(),
     {
         errors: () => ({}),
     },
 );
-    isImportant: false,
 
 const form = useForm({
     title: '',
     content: '',
     files: [] as string[],
-    parent_id: props.parentPage?.id || null,
-    project_id: props.project?.id || null,
+    parent_id: props.parentPage?.id ?? null,
+    project_id: props.project?.id ?? null,
+    isImportant: false,
 });
 
 const processing = ref(false);

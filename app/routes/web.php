@@ -56,7 +56,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('projects/{project}/pages', [PageController::class, 'store'])->name('projects.pages.store');
 
     // Общие маршруты для страниц
-    Route::resource('pages', PageController::class)->except('index');
+    // Страница списка/поиска страниц (поддерживает query params: search, id, project_id, per_page)
+
+
+    Route::resource('pages', PageController::class);
     Route::get('pages/{page}/versions', [PageController::class, 'versions'])->name('pages.versions');
     Route::post('pages/{page}/restore/{version}', [PageController::class, 'restore'])->name('pages.restore');
 
