@@ -422,7 +422,6 @@ class PageController extends Controller
         UpdateVersionRequest $request,
         Page $page,
         PageVersion $version,
-        HtmlToMdConvertor $convertor,
         PageContextServiceFactoryInterface $pageContextServiceFactory,
     )
     {
@@ -438,10 +437,10 @@ class PageController extends Controller
         } else {
             $attachmentsInput = $validated['project_files'] ?? [];
             unset($validated['project_files']);
-            DB::transaction(function () use ($version, $page, $validated, $attachmentsInput, $convertor) {
+            DB::transaction(function () use ($version, $page, $validated, $attachmentsInput) {
                 $version->update([
                     'title' => $validated['title'] ?? $version->title,
-                    'content' => $convertor->toMd($validated['content']),
+                    'content' => $validated['content'],
                 ]);
                 if (!empty($attachmentsInput)) {
                     $version->syncProjectFilesByUrls($attachmentsInput, (int)$page->project_id);
