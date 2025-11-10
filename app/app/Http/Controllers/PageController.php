@@ -45,16 +45,16 @@ class PageController extends Controller
         }
 
         // Поддержка поиска внутри указанного проекта через query param (используется PageSelect)
-        if ($request->has('project_id') && $request->project_id) {
+        if ($request->filled('project_id')) {
             $query->where('project_id', $request->project_id);
         }
 
         // Поддержка получения конкретной страницы по id (используется для инициализации выбранного элемента в PageSelect)
-        if ($request->has('id') && $request->id) {
+        if ($request->filled('id')) {
             $query->where('id', $request->id);
         } else {
             // Фильтрация по родительской странице (только если не запрошен конкретный id)
-            if ($request->has('parent_id')) {
+            if ($request->filled('parent_id')) {
                 $query->where('parent_id', $request->parent_id);
             } else {
                 $query->whereNull('parent_id');
@@ -62,7 +62,7 @@ class PageController extends Controller
         }
 
         // Поиск по названию и содержимому
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('currentVersion', function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
@@ -73,6 +73,30 @@ class PageController extends Controller
         // Поддержка per_page для ограничений результата при поиске (PageSelect передаёт per_page)
         $perPage = (int) $request->get('per_page', 20);
 
+        // Если это AJAX/JSON-запрос — возвращаем структуру, ожидаемую фронтендом
+        if ($request->wantsJson() || $request->header('Accept') === 'application/json') {
+            $paginator = $query->orderBy('id', 'desc')->paginate($perPage)->appends($request->query());
+
+            // Трансформация коллекции для доп. полей
+            $paginator->getCollection()->transform(function ($page) {
+                $page->hasActiveDraft = $page->hasActiveDraft(Auth::id());
+                $page->isActualized = $page->isActualized();
+                $page->actualizationInfo = $page->getActualizationInfo();
+                return $page;
+            });
+
+            return response()->json([
+                'data' => $paginator->items(),
+                'meta' => [
+                    'total' => $paginator->total(),
+                    'per_page' => $paginator->perPage(),
+                    'current_page' => $paginator->currentPage(),
+                    'last_page' => $paginator->lastPage(),
+                ],
+            ]);
+        }
+
+        // Для обычного запроса возвращаем view с пагинацией (существующая логика)
         $pages = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         // Добавляем информацию о черновиках и актуализации для каждой страницы
@@ -82,11 +106,6 @@ class PageController extends Controller
             $page->actualizationInfo = $page->getActualizationInfo(); // Информация об актуализации
             return $page;
         });
-
-        // Если это AJAX/JSON-запрос — возвращаем JSON (пагинацию) — используется PageSelect
-        if ($request->wantsJson()) {
-            return response()->json($pages);
-        }
 
         return Inertia::render('pages/Index', [
             'pages' => $pages,
