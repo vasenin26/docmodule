@@ -70,6 +70,12 @@
                                 <InputError v-else-if="errors?.project_files" :message="errors.project_files" />
                             </div>
 
+                            <!-- Важная -->
+                            <div class="flex items-center space-x-2">
+                                <Checkbox id="isImportant" v-model="form.isImportant" />
+                                <Label for="isImportant">Важная</Label>
+                            </div>
+
                             <!-- Checkbox для создания задачи -->
                             <div v-if="!is_current_version" class="flex items-center space-x-2">
                                 <Checkbox id="createTask" v-model="form.createTask" />
@@ -177,6 +183,7 @@ const form = useForm({
     createTask: false,
     is_current_version: false as boolean,
     parent_id: (props.pageVersion as any)?.page?.parent_id ?? (props.page as any)?.parent?.id ?? null,
+    isImportant: (props.page as any)?.is_important ?? false,
 });
 
 const processing = ref(false);
@@ -203,6 +210,7 @@ const createDraft = () => {
     const transformed = form.transform((data: any) => ({
         ...data,
         parent_id: data.parent_id ?? null,
+        is_important: !!data.isImportant,
         project_files: Array.isArray(data.files)
             ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
             : []
@@ -226,6 +234,7 @@ const submit = () => {
     const transformed = form.transform((data: any) => ({
         ...data,
         parent_id: data.parent_id ?? null,
+        is_important: !!data.isImportant,
         project_files: Array.isArray(data.files)
             ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
             : []
@@ -252,6 +261,7 @@ const approveDraft = () => {
         const transformed = form.transform((data: any) => ({
             ...data,
             parent_id: data.parent_id ?? null,
+            is_important: !!data.isImportant,
             project_files: Array.isArray(data.files)
                 ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u }))
                 : []

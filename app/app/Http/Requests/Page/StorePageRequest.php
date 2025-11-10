@@ -28,6 +28,7 @@ class StorePageRequest extends FormRequest
             'project_id' => 'nullable|exists:projects,id',
             'files' => 'nullable|array',
             'files.*' => 'required|string|url',
+            'is_important' => 'boolean',
         ];
     }
 

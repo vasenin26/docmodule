@@ -10,7 +10,8 @@ readonly class PageApiDTO
         public int $id,
         public string $title,
         public string $content,
-        public array $files
+        public array $files,
+        public bool $isImportant,
     ) {}
 
     public static function fromPage(Page $page): self
@@ -21,7 +22,8 @@ readonly class PageApiDTO
             id: $page->id,
             title: $currentVersion?->title ?? 'Без названия',
             content: $currentVersion?->content ?? '',
-            files: $currentVersion?->files ?? []
+            files: $currentVersion?->files ?? [],
+            isImportant: (bool)$page->is_important,
         );
     }
 
@@ -32,6 +34,7 @@ readonly class PageApiDTO
             'title' => $this->title,
             'content' => $this->content,
             'files' => $this->files,
+            'isImportant' => $this->isImportant,
         ];
     }
 }

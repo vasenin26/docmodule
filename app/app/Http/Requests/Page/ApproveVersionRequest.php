@@ -42,6 +42,7 @@ class ApproveVersionRequest extends FormRequest
                     }
                 }),
             ],
+            'is_important' => 'boolean',
         ];
     }
 

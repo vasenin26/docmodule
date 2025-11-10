@@ -24,6 +24,7 @@ class Page extends Model implements DisplayableResource
         'deleted_by',
         'deleted_at',
         'project_id',
+        'is_important',
     ];
 
     protected $dates = [
@@ -39,6 +40,7 @@ class Page extends Model implements DisplayableResource
     {
         return [
             'deleted_at' => 'datetime',
+            'is_important' => 'boolean',
         ];
     }
 

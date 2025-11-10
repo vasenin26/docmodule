@@ -13,7 +13,8 @@ readonly class DraftDTO
         public array $files,
         public string $createdAt,
         public string $updatedAt,
-        public int $pageId
+        public int $pageId,
+        public bool $isImportant,
     ) {}
 
     public static function fromPageVersion(PageVersion $draft): self
@@ -25,7 +26,8 @@ readonly class DraftDTO
             files: $draft->files ?? [],
             createdAt: $draft->created_at->toISOString(),
             updatedAt: $draft->updated_at->toISOString(),
-            pageId: $draft->page_id
+            pageId: $draft->page_id,
+            isImportant: (bool)($draft->page?->is_important ?? false),
         );
     }
 
@@ -39,6 +41,7 @@ readonly class DraftDTO
             'created_at' => $this->createdAt,
             'updated_at' => $this->updatedAt,
             'page_id' => $this->pageId,
+            'isImportant' => $this->isImportant,
         ];
     }
 }
