@@ -142,6 +142,7 @@ class PageController extends Controller
             'parent_id' => $validated['parent_id'] ?? null,
             'created_by' => Auth::id(),
             'project_id' => $projectId,
+            'is_important' => $validated['is_important'] ?? false,
         ]);
 
         $version = PageVersion::create([
@@ -206,7 +207,8 @@ class PageController extends Controller
                 'diffDescriptions' => $attachedTasks,
                 'project' => $page->project,
                 'children' => $page->children,
-                'parent' => $page->parent
+                'parent' => $page->parent,
+                'is_important' => (bool) $page->is_important,
             ],
             'currentDraft' => $page->getCurrentDraft(Auth::id()),
             'previousVersion' => $page->currentVersion->previousVersion ? [
@@ -287,6 +289,7 @@ class PageController extends Controller
             'project_files.*.url' => 'required|string|url',
             'project_files.*.description' => 'nullable|string',
             'parent_id' => ['nullable', 'integer'],
+            'is_important' => 'boolean',
         ]);
 
         // Validate parent existence and project membership and cycle
@@ -311,6 +314,9 @@ class PageController extends Controller
             'title' => $validated['title'],
             'content' => $convertor->toMd($validated['content']),
         ]);
+
+        // Сохраняем флаг на уровне страницы
+        $page->update(['is_important' => $validated['is_important'] ?? $page->is_important]);
 
         // Обработка project_files: если переданы в форме — используем их; иначе копируем с текущей версии
         $attachmentsInput = $validated['project_files'] ?? [];
@@ -374,7 +380,8 @@ class PageController extends Controller
                 'diffDescriptions' => $attachedTasks,
                 'project' => $page->project,
                 'children' => $page->children,
-                'parent' => $page->parent
+                'parent' => $page->parent,
+                'is_important' => (bool) $page->is_important,
             ],
             'version' => [
                 'id' => $version->id,
@@ -421,6 +428,8 @@ class PageController extends Controller
                 if (!empty($attachmentsInput)) {
                     $version->syncProjectFilesByUrls($attachmentsInput, (int)$page->project_id);
                 }
+                // Обновляем флаг страницы, если он передан
+                $page->update(['is_important' => $validated['is_important'] ?? $page->is_important]);
             });
 
             $pageContextServiceFactory->createForProject($page->project_id)->flushCache();
@@ -509,6 +518,9 @@ class PageController extends Controller
             'title' => $validated['title'],
             'content' => $convertor->toMd($validated['content']),
         ]);
+
+        // Обновляем флаг на уровне страницы
+        $page->update(['is_important' => $request->boolean('is_important')]);
 
         $page->approveDraft($pageVersion);
 

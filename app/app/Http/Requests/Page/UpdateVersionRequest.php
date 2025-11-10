@@ -33,6 +33,7 @@ class UpdateVersionRequest extends FormRequest
             'project_files.*.url' => 'required|string|url',
             'project_files.*.description' => 'nullable|string',
             'createTask' => 'boolean',
+            'is_important' => 'boolean',
         ];
     }
 
