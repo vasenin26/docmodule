@@ -9,7 +9,7 @@ const props = withDefaults(defineProps<{
   size: 18,
 });
 
-const emits = defineEmits<['update:modelValue']>();
+const emits = defineEmits<{ 'update:modelValue': (value: boolean) => void }>();
 
 const toggle = () => {
   emits('update:modelValue', !props.modelValue);
