@@ -49,11 +49,11 @@
                                     v-model="form.title"
                                     placeholder="Введите название страницы"
                                     :class="{ 'border-destructive': errors?.title }"
-        <div class="mt-2">
-          <ImportantStar v-model="form.isImportant" />
-        </div>
-
                                 />
+                                <div class="mt-2">
+                                    <ImportantStar v-model="form.isImportant" />
+                                </div>
+
                                 <InputError v-if="errors?.title" :message="errors.title" />
                             </div>
 
@@ -75,7 +75,6 @@
                             </div>
 
                             <!-- Важная -->
-                            </div>
 
                             <!-- Checkbox для создания задачи -->
                             <div v-if="!is_current_version" class="flex items-center space-x-2">
