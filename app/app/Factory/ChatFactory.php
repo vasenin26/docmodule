@@ -53,7 +53,7 @@ class ChatFactory implements LLMChatFactoryInterface
             $pageDiffs[] = $this->diffGenerator->createDifferenceDataDTO($pageVersion);
 
             foreach ($pageVersion->projectFiles as $file) {
-                if (in_array($file, $attached)) {
+                if (in_array($file, $attached, true)) {
                     continue;
                 }
                 $attached[] = $file;
@@ -131,22 +131,32 @@ class ChatFactory implements LLMChatFactoryInterface
         $role = $promptProvider->getDescriptionGeneratorRole();
         $conversation->addMessage(new SystemMessage($role));
 
-        $pageVersions = $task->pageVersions;
+        // Получаем связанные версии (гарантируем коллекцию)
+        $pageVersions = $task->pageVersions ?? collect();
 
         $attached = [];
         foreach ($pageVersions as $pageVersion) {
             $conversation->addMessage(new PageVersionMessage($pageVersion->id));
 
-            foreach ($pageVersion->files as $file) {
-                if (in_array($file, $attached)) {
+            // Используем корректную связь projectFiles
+            foreach ($pageVersion->projectFiles as $file) {
+                // Строгое сравнение, чтобы корректно сравнивать объекты
+                if (in_array($file, $attached, true)) {
                     continue;
                 }
                 $attached[] = $file;
             }
         }
 
+        // Добавляем файлы в разговор в формате, используемом в других методах
         foreach ($attached as $file) {
-            $conversation->addMessage(new GitFileMessage($file));
+            $conversation->addMessage(
+                new GitFileMessage(
+                    ExtractRepoUrl::extractRepoUrl($file->url),
+                    ExtractRepoUrl::extractFilePath($file->url),
+                    $file->description
+                )
+            );
         }
 
         return $this->createChat($task->project_id, $conversation->serialize());
