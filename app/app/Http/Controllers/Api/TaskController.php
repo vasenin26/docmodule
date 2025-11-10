@@ -135,12 +135,12 @@ class TaskController extends Controller
                 'messages' => $updateData->chat,
                 'context_fill' => $updateData->context_fill ?? $chat->context_fill,
             ];
-            
+
             // Обновляем context только если он передан
             if ($updateData->context !== null) {
-                $chatUpdateData['context'] = $updateData->context;
+                $chat->assignContext($updateData->context);
             }
-            
+
             $chat->update($chatUpdateData);
 
             $agentTask->update([

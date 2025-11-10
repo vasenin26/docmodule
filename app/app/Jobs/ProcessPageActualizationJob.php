@@ -47,13 +47,10 @@ class ProcessPageActualizationJob implements ShouldQueue
         AgentResultHandlerFactoryInterface $agentResultHandlerFactory,
         AgentTaskManagerInterface $agentTaskManager,
         LLMChatFactoryInterface $chatFactory,
-        HtmlToMdInterface $converter,
     ): void {
         $actualization = Actualization::with(['pageVersion.page', 'page'])->findOrFail($this->actualizationId);
         $pageVersion = $actualization->pageVersion;
         $page = $actualization->page;
-
-        $promptProvider = $promptProviderFactory->createProjectPromptService($page->project_id);
 
         // Создаем контекст для актуализации
         $context = new ActualizationContextDTO(
@@ -63,7 +60,7 @@ class ProcessPageActualizationJob implements ShouldQueue
         );
 
         $chat = $chatFactory->createChatForActualization(
-            $promptProvider,
+            $promptProviderFactory->createProjectPromptService($page->project_id),
             $pageVersion,
             $context
         );

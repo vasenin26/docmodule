@@ -11,10 +11,6 @@ class LLMChat extends Model
 {
     use HasFactory;
 
-    const ROLE_SYSTEM = 'system';
-    const ROLE_USER = 'user';
-
-
     protected $table = 'llm_chats';
 
     protected $fillable = [
@@ -273,6 +269,11 @@ class LLMChat extends Model
         }
 
         return end($this->messages);
+    }
+
+    public function assignContext(array $context): void
+    {
+        $this->context = [...$this->context, $context];
     }
 
     /**
