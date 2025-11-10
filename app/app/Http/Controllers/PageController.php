@@ -44,11 +44,21 @@ class PageController extends Controller
             $query->where('project_id', $project->id);
         }
 
-        // Фильтрация по родительской странице
-        if ($request->has('parent_id')) {
-            $query->where('parent_id', $request->parent_id);
+        // Поддержка поиска внутри указанного проекта через query param (используется PageSelect)
+        if ($request->has('project_id') && $request->project_id) {
+            $query->where('project_id', $request->project_id);
+        }
+
+        // Поддержка получения конкретной страницы по id (используется для инициализации выбранного элемента в PageSelect)
+        if ($request->has('id') && $request->id) {
+            $query->where('id', $request->id);
         } else {
-            $query->whereNull('parent_id');
+            // Фильтрация по родительской странице (только если не запрошен конкретный id)
+            if ($request->has('parent_id')) {
+                $query->where('parent_id', $request->parent_id);
+            } else {
+                $query->whereNull('parent_id');
+            }
         }
 
         // Поиск по названию и содержимому
@@ -60,7 +70,10 @@ class PageController extends Controller
             });
         }
 
-        $pages = $query->orderBy('created_at', 'desc')->paginate(20);
+        // Поддержка per_page для ограничений результата при поиске (PageSelect передаёт per_page)
+        $perPage = (int) $request->get('per_page', 20);
+
+        $pages = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         // Добавляем информацию о черновиках и актуализации для каждой страницы
         $pages->getCollection()->transform(function ($page) {
@@ -69,6 +82,11 @@ class PageController extends Controller
             $page->actualizationInfo = $page->getActualizationInfo(); // Информация об актуализации
             return $page;
         });
+
+        // Если это AJAX/JSON-запрос — возвращаем JSON (пагинацию) — используется PageSelect
+        if ($request->wantsJson()) {
+            return response()->json($pages);
+        }
 
         return Inertia::render('pages/Index', [
             'pages' => $pages,

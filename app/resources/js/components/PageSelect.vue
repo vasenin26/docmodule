@@ -44,7 +44,7 @@ const fetchById = async (id: number) => {
     loading.value = true;
     // Попробуем получить страницу через pages.index?id — адаптируйте если есть отдельный show route
     // Используем глобальную функцию route(...) (Ziggy) если доступна
-    const url = (typeof route === 'function') ? route('pages.index', { id }) : `/pages?id=${id}`;
+    const url = (typeof route === 'function') ? route('pages.index', { id, per_page: 1 }) : `/pages?id=${id}&per_page=1`;
     const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
     const json = await res.json();
     const item = Array.isArray(json.data) && json.data.length ? json.data[0] : json.data || null;
