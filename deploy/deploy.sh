@@ -269,7 +269,7 @@ handle_webhook() {
     fi
 
     # Проверка формата тега (должен быть vX.X.X или vYYYY.WW.Z)
-    if [[ -n "$tag" && ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ && ! "$tag" =~ ^v[0-9]{4}\.\.[0-9]{2}\.\.[0-9]+$ ]]; then
+    if [[ -n "$tag" && ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ && ! "$tag" =~ ^v[0-9]{4}\.[0-9]{2}\.[0-9]+$ ]]; then
         log "Error: Invalid tag format. Expected vX.X.X or vYYYY.WW.Z, got: $tag"
         exit 1
     fi
