@@ -49,6 +49,15 @@ RUN apt-get update && apt-get install -y \
         libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
+# Ensure PHP-FPM inherits container environment variables (don't clear env in workers)
+RUN if [ -f /etc/php/8.4/fpm/pool.d/www.conf ]; then \
+      sed -ri "s/^\s*;\s*clear_env\s*=.*/clear_env = no/" /etc/php/8.4/fpm/pool.d/www.conf || true; \
+      if ! grep -qE '^\s*clear_env\s*=' /etc/php/8.4/fpm/pool.d/www.conf 2>/dev/null; then \
+        printf "\n; Ensure FPM workers inherit container environment\nclear_env = no\n" >> /etc/php/8.4/fpm/pool.d/www.conf; \
+      fi; \
+    fi
+
+
 WORKDIR /var/www/html
 
 # Composer
