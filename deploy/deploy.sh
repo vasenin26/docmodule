@@ -4,7 +4,7 @@ set -e
 
 # Конфигурация
 APP_NAME="docmodule"
-COMPOSE_FILE="docker-compose.yaml"
+COMPOSE_FILE="docker-compose.prod.yaml"
 BACKUP_DIR="/opt/backups"
 LOG_FILE="/var/log/deploy.log"
 
@@ -119,6 +119,28 @@ health_check() {
     return 1
 }
 
+# Записывает APP_IMAGE в корневой .env и экспортирует переменную в среду выполнения
+set_app_image_in_env() {
+    local image_ref="$1"
+    local env_file=".env"
+
+    # Создаём файл если нужно и устанавливаем безопасные права
+    if [ ! -f "$env_file" ]; then
+        touch "$env_file"
+        chmod 640 "$env_file" || true
+    fi
+
+    # Записываем или обновляем APP_IMAGE
+    if grep -q "^APP_IMAGE=" "$env_file" 2>/dev/null; then
+        sed -i "s|^APP_IMAGE=.*|APP_IMAGE=$image_ref|" "$env_file"
+    else
+        echo "APP_IMAGE=$image_ref" >> "$env_file"
+    fi
+
+    # Экспортим для текущей сессии
+    export APP_IMAGE="$image_ref"
+}
+
 # Функция обновления приложения
 update_app() {
     local image_tag="$1"
@@ -160,6 +182,16 @@ update_app() {
         log "Pull failed, retrying in ${sleep_secs}s... ($pull_attempts/$pull_max)"
         sleep $sleep_secs
     done
+
+    # Записать APP_IMAGE в .env (основной поток)
+    set_app_image_in_env "$image_tag"
+
+    # Проверка: APP_IMAGE обязана быть задана
+    if [ -z "${APP_IMAGE:-}" ]; then
+        log "Error: APP_IMAGE is not set after attempting to write to .env — aborting to avoid :latest usage"
+        exit 1
+    fi
+
 
     # Обновление тега образа в docker-compose
     # Поддерживаем как старую запись (ghcr.io/vasenin26/docmodule:...), так и параметризованный вариант APP_IMAGE
@@ -237,7 +269,7 @@ handle_webhook() {
     fi
 
     # Проверка формата тега (должен быть vX.X.X или vYYYY.WW.Z)
-    if [[ -n "$tag" && ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ && ! "$tag" =~ ^v[0-9]{4}\.[0-9]{2}\.[0-9]+$ ]]; then
+    if [[ -n "$tag" && ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ && ! "$tag" =~ ^v[0-9]{4}\.\.[0-9]{2}\.\.[0-9]+$ ]]; then
         log "Error: Invalid tag format. Expected vX.X.X or vYYYY.WW.Z, got: $tag"
         exit 1
     fi
