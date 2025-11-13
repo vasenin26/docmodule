@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\AccessRequestController;
 
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
@@ -16,7 +17,6 @@ Route::middleware('guest')->group(function () {
 
     if (env('REGISTRATION_REQUEST_ONLY', false)) {
         // When in request-only mode, POST /register handles access requests instead of creating users
-        use App\Http\Controllers\Auth\AccessRequestController;
 
         Route::post('register', [AccessRequestController::class, 'store'])
             ->middleware('throttle:6,1');
