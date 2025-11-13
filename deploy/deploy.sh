@@ -54,6 +54,13 @@ ensure_db_running() {
 
 # Функция логирования
 log() {
+# If the configured compose file is missing on the host (for example CI copied it as docker-compose.yaml),
+# try a sensible fallback to docker-compose.yaml to be robust.
+if [ ! -f "${COMPOSE_FILE}" ] && [ -f docker-compose.yaml ]; then
+    echo "[INFO] Compose file '${COMPOSE_FILE}' not found, falling back to docker-compose.yaml"
+    COMPOSE_FILE="docker-compose.yaml"
+fi
+
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
 
