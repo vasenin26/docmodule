@@ -33,6 +33,7 @@ class AccessRequestController extends Controller
     {
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
+            'contact' => 'required|string|max:255',
             'organization' => 'nullable|string|max:255',
             'message' => 'nullable|string|max:2000',
         ]);
@@ -50,7 +51,12 @@ class AccessRequestController extends Controller
 
         try {
             foreach ($recipients as $email) {
-                Mail::to($email)->send(new AccessRequestMail($validated['full_name'], $validated['organization'] ?? null, $validated['message'] ?? null));
+                Mail::to($email)->send(new AccessRequestMail(
+                    $validated['full_name'],
+                    $validated['organization'] ?? null,
+                    $validated['message'] ?? null,
+                    $validated['contact']
+                ));
             }
         } catch (\Exception $e) {
             Log::error('Failed to send access request email: '.$e->getMessage());

@@ -33,13 +33,17 @@ class AccessRequestTest extends TestCase
 
         $response = $this->post('/register', [
             'full_name' => 'Иван Иванов',
+            'contact' => 'ivan@example.com',
             'organization' => 'Acme Ltd',
             'message' => 'Прошу доступ',
         ]);
 
         // Mail was sent
         Mail::assertSent(AccessRequestMail::class, function ($mail) {
-            return true;
+            return $mail->fullName === 'Иван Иванов'
+                && $mail->contact === 'ivan@example.com'
+                && $mail->organization === 'Acme Ltd'
+                && $mail->messageText === 'Прошу доступ';
         });
 
         // No user created
