@@ -11,6 +11,17 @@ COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yaml}"
 BACKUP_DIR="/opt/backups"
 LOG_FILE="/var/log/deploy.log"
 
+# Wrapper for docker compose that passes --env-file .env when present so variable
+# substitution (e.g. ${APP_IMAGE}) works even if the process environment doesn't contain variables.
+run_compose() {
+    local env_args=()
+    if [ -f .env ]; then
+        env_args+=("--env-file" ".env")
+    fi
+
+    docker compose "${env_args[@]}" -f "$COMPOSE_FILE" "$@"
+}
+
 # Утилита: логин в реестр контейнеров (опционально)
 registry_login_if_needed() {
     local image_ref="$1"
@@ -35,12 +46,12 @@ registry_login_if_needed() {
 # Утилита: убедиться, что БД запущена и готова
 ensure_db_running() {
     log "Ensuring database service is running..."
-    docker compose -f "$COMPOSE_FILE" up -d db
+    run_compose up -d db
 
     local max_attempts=30
     local attempt=1
     while [ $attempt -le $max_attempts ]; do
-        if docker compose -f "$COMPOSE_FILE" exec -T db pg_isready -U "${DB_USERNAME:-laravel}" -d "${DB_DATABASE:-laravel}" >/dev/null 2>&1; then
+        if run_compose exec -T db pg_isready -U "${DB_USERNAME:-laravel}" -d "${DB_DATABASE:-laravel}" >/dev/null 2>&1; then
             log "Database is ready"
             return 0
         fi
@@ -75,7 +86,7 @@ create_backup() {
     ensure_db_running
 
     # Бэкап базы данных
-    docker compose -f "$COMPOSE_FILE" exec -T db pg_dump -U "${DB_USERNAME:-laravel}" "${DB_DATABASE:-laravel}" > "$BACKUP_DIR/$BACKUP_NAME/database.sql" || {
+    run_compose exec -T db pg_dump -U "${DB_USERNAME:-laravel}" "${DB_DATABASE:-laravel}" > "$BACKUP_DIR/$BACKUP_NAME/database.sql" || {
         log "Warning: database backup failed"
     }
 
@@ -96,13 +107,13 @@ rollback() {
     log "Rolling back to previous version..."
 
     # Остановка текущих контейнеров
-    docker compose -f "$COMPOSE_FILE" down
+    run_compose down
 
     # Откат к предыдущему образу
     docker tag "${APP_NAME}_app:backup" "${APP_NAME}_app:latest" || true
 
     # Запуск откаченной версии
-    docker compose -f "$COMPOSE_FILE" up -d
+    run_compose up -d
 
     log "Rollback completed"
 }
@@ -167,6 +178,18 @@ update_app() {
         log "Warning: image does not contain registry prefix. Ensure pull will work without auth if registry omitted. Given: $image_tag"
     fi
 
+    # Обновление тега образа в docker-compose (ранний шаг, чтобы docker compose не увидел пустую переменную)
+    # Поддерживаем как старую запись (ghcr.io/vasenin26/docmodule:...), так и параметризованный вариант APP_IMAGE
+    if grep -q "ghcr.io/vasenin26/docmodule" "$COMPOSE_FILE" 2>/dev/null; then
+        sed -i "s|image: ghcr.io/vasenin26/docmodule:.*|image: $image_tag|g" "$COMPOSE_FILE"
+    else
+        # В противном случае заменим первую встреченную строку вида 'image: .*docmodule.*'
+        sed -i "0,/image: .*docmodule.*/s|image: .*docmodule.*|image: $image_tag|" "$COMPOSE_FILE" || true
+    fi
+
+    # Записать APP_IMAGE в .env (основной поток)
+    set_app_image_in_env "$image_tag"
+
     # Создание бэкапа
     create_backup
 
@@ -214,11 +237,11 @@ update_app() {
 
     # Остановка приложения
     log "Stopping current application..."
-    docker compose -f "$COMPOSE_FILE" stop app || true
+    run_compose stop app || true
 
     # Запуск обновленного приложения
     log "Starting updated application..."
-    docker compose -f "$COMPOSE_FILE" up -d app
+    run_compose up -d app
 
     # Ожидание запуска
     sleep 30
@@ -249,10 +272,10 @@ run_migrations() {
     ensure_db_running
 
     # Убедимся, что приложение запущено (нужно для artisan)
-    docker compose -f "$COMPOSE_FILE" up -d app
+    run_compose up -d app
 
     # Выполнение миграций
-    docker compose -f "$COMPOSE_FILE" exec app php artisan migrate --force
+    run_compose exec app php artisan migrate --force
 
     log "Migrations completed"
 }
