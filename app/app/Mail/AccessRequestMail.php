@@ -13,15 +13,17 @@ class AccessRequestMail extends Mailable
     public $fullName;
     public $organization;
     public $messageText;
+    public $contact;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(string $fullName, ?string $organization, ?string $messageText)
+    public function __construct(string $fullName, ?string $organization, ?string $messageText, string $contact)
     {
         $this->fullName = $fullName;
         $this->organization = $organization;
         $this->messageText = $messageText;
+        $this->contact = $contact;
     }
 
     /**
@@ -36,6 +38,7 @@ class AccessRequestMail extends Mailable
                 'fullName' => $this->fullName,
                 'organization' => $this->organization,
                 'messageText' => $this->messageText,
+                'contact' => $this->contact,
             ]);
     }
 }

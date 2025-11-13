@@ -7,6 +7,7 @@
 <body>
     <h1>Новый запрос на доступ</h1>
     <p><strong>ФИО:</strong> {{ $fullName }}</p>
+    <p><strong>Контактные данные:</strong> {{ $contact ?? '-' }}</p>
     <p><strong>Организация:</strong> {{ $organization ?? '-' }}</p>
     <p><strong>Сообщение:</strong></p>
     <p>{!! nl2br(e($messageText)) !!}</p>
