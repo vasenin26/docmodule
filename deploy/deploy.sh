@@ -4,7 +4,10 @@ set -e
 
 # Конфигурация
 APP_NAME="docmodule"
-COMPOSE_FILE="docker-compose.prod.yaml"
+# COMPOSE_FILE can be overridden in environment; default to docker-compose.prod.yaml on disk
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yaml}"
+
+
 BACKUP_DIR="/opt/backups"
 LOG_FILE="/var/log/deploy.log"
 
