@@ -23,7 +23,7 @@ services:
       - ./html:/usr/share/nginx/html:rw
 
   app:
-    image: ghcr.io/vasenin26/docmodule:latest
+    image: ${APP_IMAGE:-ghcr.io/vasenin26/docmodule:latest}
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
@@ -51,7 +51,7 @@ services:
       - repos:/var/repos:ro
 
   ssr:
-    image: ghcr.io/vasenin26/docmodule:latest
+    image: ${APP_IMAGE:-ghcr.io/vasenin26/docmodule:latest}
     container_name: ssr
     command: php artisan inertia:start-ssr --port=13714 --host=0.0.0.0
 
@@ -73,5 +73,4 @@ volumes:
 networks:
   default:
     name: docmodule
-
 
