@@ -2,8 +2,8 @@ name: Build and Deploy via SSH
 
 on:
   push:
-    tags:
-      - 'v*.*.*'  # Запуск только при создании тега vX.X.X
+    branches:
+      - main
 
 env:
   REGISTRY: ghcr.io
@@ -14,15 +14,92 @@ jobs:
     runs-on: ubuntu-latest
     environment: Production
     permissions:
-      contents: read
+      contents: write      # Нужно для создания git tags через API
       packages: write
 
     steps:
-    - name: Checkout repository
+    - name: Checkout repository (full)
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0      # важно иметь локальные теги для вычисления Z
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
+
+    - name: Compute release tag and create it in the repo
+      id: create_tag
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_SHA: ${{ github.sha }}
+      run: |
+        set -euo pipefail
+
+        # UTC date for deterministic week/year
+        YEAR=$(date -u +%Y)
+        WEEK=$(date -u +%V)
+        PREFIX="v${YEAR}.${WEEK}."
+
+        echo "Computed prefix: $PREFIX"
+
+        # Ensure tags are available locally (checkout fetch-depth:0 above)
+        # Find maximum existing Z for this YYYY.WW
+        existing_tags=$(git tag -l "${PREFIX}*" || true)
+
+        max=0
+        if [ -n "$existing_tags" ]; then
+          for t in $existing_tags; do
+            # extract the last component after the last dot
+            zpart=${t##*.}
+            if [[ "$zpart" =~ ^[0-9]+$ ]]; then
+              if [ ${zpart} -gt ${max} ]; then
+                max=${zpart}
+              fi
+            fi
+          done
+        fi
+
+        Z=$((max + 1))
+        VERSION_TAG="${PREFIX}${Z}"
+
+        # Try to create tag via GitHub API. On conflict (already exists), increment Z and retry.
+        attempts=0
+        max_attempts=5
+        while [ $attempts -lt $max_attempts ]; do
+          echo "Attempt $((attempts+1)): creating tag $VERSION_TAG"
+
+          response=$(curl -s -o /tmp/create_tag_resp -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/git/refs" \
+            -d "{\"ref\": \"refs/tags/${VERSION_TAG}\", \"sha\": \"${GITHUB_SHA}\"}")
+
+          if [ "$response" = "201" ]; then
+            echo "Tag ${VERSION_TAG} created"
+            echo "VERSION_TAG=${VERSION_TAG}" >> $GITHUB_ENV
+            echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # If tag exists (422) or other conflict, increment Z and retry
+          if [ "$response" = "422" ] || [ "$response" = "409" ]; then
+            echo "Tag ${VERSION_TAG} already exists (or conflict). Will try next Z. Response: $response"
+            attempts=$((attempts+1))
+            Z=$((Z+1))
+            VERSION_TAG="${PREFIX}${Z}"
+            sleep 1
+            continue
+          fi
+
+          # Any other non-201 response - fail with debug
+          echo "Failed to create tag. HTTP status: $response"
+          echo "Response body:" && cat /tmp/create_tag_resp || true
+          exit 1
+        done
+
+        echo "Exceeded attempts to create tag (max_attempts=$max_attempts)" >&2
+        exit 1
 
     - name: Log in to Container Registry
       uses: docker/login-action@v3
@@ -31,17 +108,13 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Extract metadata
+    - name: Extract metadata (labels) and set tags from VERSION_TAG
       id: meta
       uses: docker/metadata-action@v5
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
-          type=ref,event=tag
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=raw,value=latest,enable={{is_default_branch}}
+          type=raw,value=${{ env.VERSION_TAG }}
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
@@ -50,13 +123,14 @@ jobs:
         file: ./docker/php/Dockerfile
         target: prod
         push: true
-        tags: ${{ steps.meta.outputs.tags }}
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION_TAG }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
     - name: Deploy to server via SSH
-      if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
+      # запуск при любом push в main — но DEPLOY должен выполняться только в успешном build
+      if: success()
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ vars.SERVER_HOST }}
@@ -64,24 +138,23 @@ jobs:
         key: ${{ secrets.SERVER_SSH_KEY }}
         port: ${{ vars.SERVER_PORT }}
         script: |
+          set -e
           # Создание директории deploy если её нет
           mkdir -p /opt/docmodule
-          
-          # Копирование файлов конфигурации из репозитория
+
+          # Копирование файлов конфигурации из репозитория (по конкретному тегу)
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                -H "Accept: application/vnd.github.v3.raw" \
                -o /opt/docmodule/deploy.sh \
-               https://api.github.com/repos/${{ github.repository }}/contents/deploy/deploy.sh?ref=${{ github.ref_name }}
-          
-          # Делаем скрипт исполняемым
+               "https://api.github.com/repos/${{ github.repository }}/contents/deploy/deploy.sh?ref=${{ env.VERSION_TAG }}"
+
           chmod +x /opt/docmodule/deploy.sh
-          
-          # Копирование docker-compose файла
+
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                -H "Accept: application/vnd.github.v3.raw" \
                -o /opt/docmodule/docker-compose.yaml \
-               https://api.github.com/repos/${{ github.repository }}/contents/docker-compose.prod.yaml?ref=${{ github.ref_name }}
-          
-          # Переход в директорию и запуск деплоя
+               "https://api.github.com/repos/${{ github.repository }}/contents/docker-compose.prod.yaml?ref=${{ env.VERSION_TAG }}"
+
+          # Переход в директорию и запуск деплоя с явным image:tag
           cd /opt/docmodule
-          ./deploy.sh deploy ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+          ./deploy.sh deploy ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION_TAG }}
