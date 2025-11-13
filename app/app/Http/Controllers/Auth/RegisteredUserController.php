@@ -20,6 +20,11 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
+        // Если включён режим "только запросы регистрации" — показываем форму запроса доступа
+        if (env('REGISTRATION_REQUEST_ONLY', false)) {
+            return Inertia::render('auth/AccessRequest');
+        }
+
         return Inertia::render('auth/Register');
     }
 
