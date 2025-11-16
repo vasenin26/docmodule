@@ -18,6 +18,13 @@ class Advice extends Model
         'content',
     ];
 
+    /**
+     * Optionally, cast group to string (db-level constraint is string(64))
+     */
+    protected $casts = [
+        'group' => 'string',
+    ];
+
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);

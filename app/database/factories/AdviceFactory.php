@@ -14,7 +14,7 @@ class AdviceFactory extends Factory
     {
         return [
             'project_id' => Project::factory(),
-            'group' => $this->faker->sentence(2),
+            'group' => $this->faker->regexify('[A-Za-z0-9\-_]{1,64}'),
             'content' => $this->faker->paragraph(),
         ];
     }

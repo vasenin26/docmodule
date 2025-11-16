@@ -14,8 +14,8 @@ return new class extends Migration
             // foreignId to projects table, cascade on delete
             $table->foreignId('project_id')->constrained()->onDelete('cascade');
 
-            // group is required text field
-            $table->text('group');
+            // group is required string(64)
+            $table->string('group', 64);
 
             // content required
             $table->text('content');
