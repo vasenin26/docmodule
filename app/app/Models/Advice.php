@@ -15,7 +15,6 @@ class Advice extends Model
     protected $fillable = [
         'project_id',
         'group',
-        'test_field',
         'content',
     ];
 

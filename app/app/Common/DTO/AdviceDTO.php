@@ -6,8 +6,7 @@ class AdviceDTO
 {
     public function __construct(
         public readonly int $projectId,
-        public readonly ?string $group,
-        public readonly ?string $testField,
+        public readonly string $group,
         public readonly string $content,
     ) {}
 
@@ -15,8 +14,7 @@ class AdviceDTO
     {
         return new self(
             projectId: (int) ($data['project_id'] ?? 0),
-            group: $data['group'] ?? null,
-            testField: $data['test_field'] ?? null,
+            group: (string) ($data['group'] ?? ''),
             content: $data['content'] ?? '',
         );
     }
@@ -26,7 +24,6 @@ class AdviceDTO
         return [
             'project_id' => $this->projectId,
             'group' => $this->group,
-            'test_field' => $this->testField,
             'content' => $this->content,
         ];
     }

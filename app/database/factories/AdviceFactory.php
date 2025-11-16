@@ -14,8 +14,7 @@ class AdviceFactory extends Factory
     {
         return [
             'project_id' => Project::factory(),
-            'group' => $this->faker->optional()->word(),
-            'test_field' => $this->faker->optional()->sentence(3),
+            'group' => $this->faker->sentence(2),
             'content' => $this->faker->paragraph(),
         ];
     }
