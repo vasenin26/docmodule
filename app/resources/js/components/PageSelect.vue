@@ -40,26 +40,13 @@ const selected = ref<PageItem | null>(null);
 let debounceTimer: number | null = null;
 const error = ref<string | null>(null);
 
-const buildUrl = (params: Record<string, any>) => {
-  if (typeof route !== 'function') {
-    throw new Error('Ziggy route is required');
-  }
-
-  // If component is scoped to a project, use the project pages index route
-  if (props.projectId) {
-    return route('projects.pages.index', { project: props.projectId, ...params });
-  }
-
-  return route('pages.index', params);
-};
-
 const api = createApi();
 
 // При наличии modelValue подгружаем одну страницу для отображения
 const fetchById = async (id: number) => {
   try {
     loading.value = true;
-    // Попробуем получить страницу через pages.index?id — адаптируйте если есть отдельный show route
+    // Запрос сам формирует URL через Ziggy внутри конструктора
     const req = new PageListRequest({ id, per_page: 1 }, props.projectId);
     const json = await api.execute<any>(req);
     const item = Array.isArray(json.data) && json.data.length ? json.data[0] : json.data || null;
