@@ -15,7 +15,8 @@ return new class extends Migration
             $table->foreignId('project_id')->constrained()->onDelete('cascade');
 
             // group and test_field as nullable
-            $table->string('group')->nullable();
+            // NOTE: group is intentionally a text field (was string in original PR)
+            $table->text('group')->nullable();
             $table->text('test_field')->nullable();
 
             // content required
