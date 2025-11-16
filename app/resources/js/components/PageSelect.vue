@@ -25,6 +25,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { createApi, Method } from '@/services/api/Api';
+import { PageListRequest } from '@/services/api/request/Page/PageListRequest';
 
 interface PageItem { id: number; title: string; path?: string }
 
@@ -59,8 +60,8 @@ const fetchById = async (id: number) => {
   try {
     loading.value = true;
     // Попробуем получить страницу через pages.index?id — адаптируйте если есть отдельный show route
-    const url = buildUrl({ id, per_page: 1 });
-    const json = await api.execute<any>({ method: Method.LIST, url, body: null });
+    const req = new PageListRequest({ id, per_page: 1 }, props.projectId);
+    const json = await api.execute<any>(req);
     const item = Array.isArray(json.data) && json.data.length ? json.data[0] : json.data || null;
     if (item) {
       selected.value = { id: item.id, title: item.title, path: item.path || '' } as PageItem;
@@ -93,8 +94,8 @@ const onInput = () => {
     loading.value = true;
     try {
       const params: any = { search: query.value, per_page: 10 };
-      const url = buildUrl(params);
-      const json = await api.execute<any>({ method: Method.LIST, url, body: null });
+      const req = new PageListRequest(params, props.projectId);
+      const json = await api.execute<any>(req);
       results.value = Array.isArray(json.data) ? json.data.map((p: any) => ({ id: p.id, title: p.title, path: p.path || '' })) : [];
       showList.value = true;
     } catch (err) {
