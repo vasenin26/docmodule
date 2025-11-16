@@ -24,6 +24,8 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { createApi, Method } from '@/services/api/Api';
+import { PageListRequest } from '@/services/api/request/Page/PageListRequest';
 
 interface PageItem { id: number; title: string; path?: string }
 
@@ -38,32 +40,15 @@ const selected = ref<PageItem | null>(null);
 let debounceTimer: number | null = null;
 const error = ref<string | null>(null);
 
-const buildUrl = (params: Record<string, any>, defaultPath = '/pages') => {
-  if (typeof route === 'function') {
-    try {
-      return route('pages.index', params);
-    } catch (err) {
-      console.warn('PageSelect.buildUrl: Ziggy route error for pages.index, falling back to manual URL', err);
-    }
-  }
-  const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
-    if (v === undefined || v === null) continue;
-    sp.append(k, String(v));
-  }
-  const q = sp.toString();
-  return q ? `${defaultPath}?${q}` : defaultPath;
-};
+const api = createApi();
 
 // При наличии modelValue подгружаем одну страницу для отображения
 const fetchById = async (id: number) => {
   try {
     loading.value = true;
-    // Попробуем получить страницу через pages.index?id — адаптируйте если есть отдельный show route
-    // Используем глобальную функцию route(...) (Ziggy) если доступна
-    const url = buildUrl({ id, per_page: 1 });
-    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-    const json = await res.json();
+    // Запрос сам формирует URL через Ziggy внутри конструктора
+    const req = new PageListRequest({ id, per_page: 1 }, props.projectId);
+    const json = await api.execute<any>(req);
     const item = Array.isArray(json.data) && json.data.length ? json.data[0] : json.data || null;
     if (item) {
       selected.value = { id: item.id, title: item.title, path: item.path || '' } as PageItem;
@@ -96,10 +81,8 @@ const onInput = () => {
     loading.value = true;
     try {
       const params: any = { search: query.value, per_page: 10 };
-      if (props.projectId) params.project_id = props.projectId;
-      const url = buildUrl(params);
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      const json = await res.json();
+      const req = new PageListRequest(params, props.projectId);
+      const json = await api.execute<any>(req);
       results.value = Array.isArray(json.data) ? json.data.map((p: any) => ({ id: p.id, title: p.title, path: p.path || '' })) : [];
       showList.value = true;
     } catch (err) {
