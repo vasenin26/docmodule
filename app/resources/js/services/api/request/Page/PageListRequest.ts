@@ -24,8 +24,9 @@ export class PageListRequest implements Request<any> {
         if (params.per_page !== undefined) routeParams.per_page = params.per_page;
         if (params.page !== undefined) routeParams.page = params.page;
 
+        // Use project-scoped search route when projectId provided
         if (projectId) {
-            this.url = route('projects.pages.index', { project: projectId, ...routeParams });
+            this.url = route('projects.pages.search', { project: projectId, ...routeParams });
         } else {
             this.url = route('pages.index', routeParams);
         }

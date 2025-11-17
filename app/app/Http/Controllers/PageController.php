@@ -98,6 +98,55 @@ class PageController extends Controller
     }
 
     /**
+     * Simplified search for PageSelect component within a project scope.
+     * Returns an array of simple objects: { id, title, path }
+     */
+    public function search(Request $request, Project $project): JsonResponse
+    {
+        // Проверяем доступ к проекту
+        if ($project->owner_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $query = Page::whereNotNull('version_id')
+            ->where('project_id', $project->id)
+            ->with(['currentVersion']);
+
+        // Если указан id — возвращаем конкретную страницу
+        if ($request->filled('id')) {
+            $query->where('id', $request->get('id'));
+        } else {
+            // Фильтрация по родительской странице (если передан)
+            if ($request->filled('parent_id')) {
+                $query->where('parent_id', $request->get('parent_id'));
+            } else {
+                $query->whereNull('parent_id');
+            }
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->whereHas('currentVersion', function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('content', 'like', "%{$search}%");
+            });
+        }
+
+        $perPage = min((int)$request->get('per_page', 10), 100);
+
+        $items = $query->orderBy('id', 'desc')->limit($perPage)->get()->map(function ($page) {
+            return [
+                'id' => (int)$page->id,
+                'title' => (string)($page->currentVersion?->title ?? ''),
+                'path' => method_exists($page, 'viewPage') ? $page->viewPage() : '',
+            ];
+        });
+
+        return response()->json(['data' => $items]);
+    }
+
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create(Request $request, Project $project = null, Page $page = null)

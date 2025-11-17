@@ -40,7 +40,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Поиск страниц (должен быть до resource('pages'))
     Route::get('pages/search', [PageSearchController::class, 'index'])->name('pages.search');
 
-    // Маршруты проектов
+    // Новый endpoint: поиск страниц в контексте проекта (возвращает JSON, используется frontend)
+    Route::get('projects/{project}/pages/search', [PageController::class, 'index'])->name('projects.pages.search');
+
+
     Route::resource('projects', ProjectController::class);
 
     // Маршруты репозиториев проектов
