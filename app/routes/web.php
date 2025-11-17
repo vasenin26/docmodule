@@ -45,9 +45,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Маршруты проектов
 
-    // Поиск страниц (должен быть до resource('pages'))
-    Route::get('pages/search', [PageSearchController::class, 'index'])->name('pages.search');
-
     // Маршруты проектов
     Route::resource('projects', ProjectController::class);
 
