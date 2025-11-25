@@ -26,6 +26,9 @@ class UpdateVersionRequest extends FormRequest
      */
     public function rules(): array
     {
+        $version = $this->route('version');
+        $pageId = $version?->page_id ?? null;
+
         return [
             'title' => 'nullable|string|max:255',
             'content' => 'nullable|string',
@@ -34,6 +37,15 @@ class UpdateVersionRequest extends FormRequest
             'project_files.*.description' => 'nullable|string',
             'createTask' => 'boolean',
             'is_important' => 'boolean',
+            'parent_id' => [
+                'nullable',
+                'integer',
+                \Illuminate\Validation\Rule::exists('pages', 'id')->where(function ($query) use ($pageId) {
+                    if ($pageId) {
+                        $query->where('project_id', \App\Models\Page::find($pageId)?->project_id);
+                    }
+                }),
+            ],
         ];
     }
 
@@ -51,6 +63,8 @@ class UpdateVersionRequest extends FormRequest
             'project_files.*.url.required' => 'Ссылка на вложение обязательна.',
             'project_files.*.url.url' => 'Ссылка на вложение должна быть корректным URL.',
             'createTask.boolean' => 'Поле создания задачи должно быть булевым значением.',
+            'parent_id.integer' => 'parent_id должен быть целым числом.',
+            'parent_id.exists' => 'Выбранная родительская страница не найдена или не принадлежит проекту.',
         ];
     }
 
