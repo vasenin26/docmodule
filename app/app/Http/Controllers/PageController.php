@@ -83,7 +83,6 @@ class PageController extends Controller
             return [
                 'id' => (int)$page->id,
                 'title' => (string)($page->currentVersion?->title ?? ''),
-                'path' => method_exists($page, 'viewPage') ? $page->viewPage() : '',
                 'hasActiveDraft' => $page->hasActiveDraft(Auth::id()),
                 'isActualized' => $page->isActualized(),
                 'actualizationInfo' => $page->getActualizationInfo(),
@@ -298,7 +297,16 @@ class PageController extends Controller
         $page->load(['project', 'currentVersion.projectFiles', 'parent']);
 
         return Inertia::render('pages/Edit', [
-            'page' => $page,
+            'page' => [
+                'id' => $page->id,
+                'project_id' => $page->project_id,
+                'parent' => $page->parent ? [
+                    'id' => $page->parent->id,
+                    'title' => $page->parent->currentVersion?->title ?? '',
+                ] : null,
+                'parent_id' => $page->parent_id ?? null,
+                'is_important' => (bool) $page->is_important,
+            ],
             'pageVersion' => [
                 'id' => $page->currentVersion->id,
                 'title' => $page->currentVersion->title,
@@ -335,7 +343,16 @@ class PageController extends Controller
                 'page_id' => $version->page_id,
                 'project_files' => $page->currentVersion->projectFiles()->get(['id', 'url', 'description']),
             ],
-            'page' => $page,
+            'page' => [
+                'id' => $page->id,
+                'project_id' => $page->project_id,
+                'parent' => $page->parent ? [
+                    'id' => $page->parent->id,
+                    'title' => $page->parent->currentVersion?->title ?? '',
+                ] : null,
+                'parent_id' => $page->parent_id ?? null,
+                'is_important' => (bool) $page->is_important,
+            ],
             'is_current_version' => $page->checkCurrentVersion($version->id),
             'actualization' => $actualization ?
                 [
