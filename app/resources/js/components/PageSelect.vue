@@ -15,7 +15,7 @@
       <li v-if="loading" class="p-2 text-sm text-muted-foreground">Загрузка...</li>
       <li v-for="item in results" :key="item.id" class="p-2 hover:bg-gray-100 cursor-pointer" @click="select(item)">
         <div class="font-medium">{{ item.title }}</div>
-        <div class="text-xs text-muted-foreground">#{{ item.id }} {{ item.path || '' }}</div>
+        <div class="text-xs text-muted-foreground">#{{ item.id }}</div>
       </li>
       <li v-if="!loading && results.length === 0" class="p-2 text-sm text-muted-foreground">Ничего не найдено</li>
     </ul>
@@ -51,7 +51,7 @@ const fetchById = async (id: number) => {
     const json = await api.execute<any>(req);
     const item = Array.isArray(json.data) && json.data.length ? json.data[0] : json.data || null;
     if (item) {
-      selected.value = { id: item.id, title: item.title, path: item.path || '' } as PageItem;
+      selected.value = { id: item.id, title: item.title } as PageItem;
       query.value = selected.value.title;
     }
   } catch (err) {
@@ -67,7 +67,7 @@ watch(() => props.modelValue, (v) => {
     selected.value = null;
     query.value = '';
   }
-});
+}, { immediate: true });
 
 const onInput = () => {
   if (debounceTimer) clearTimeout(debounceTimer);
@@ -83,7 +83,7 @@ const onInput = () => {
       const params: any = { search: query.value, per_page: 10 };
       const req = new PageListRequest(params, props.projectId);
       const json = await api.execute<any>(req);
-      results.value = Array.isArray(json.data) ? json.data.map((p: any) => ({ id: p.id, title: p.title, path: p.path || '' })) : [];
+      results.value = Array.isArray(json.data) ? json.data.map((p: any) => ({ id: p.id, title: p.title })) : [];
       showList.value = true;
     } catch (err) {
       console.error('PageSelect search error', err);
