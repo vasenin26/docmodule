@@ -78,12 +78,17 @@ class PageController extends Controller
         // Всегда возвращаем JSON (это endpoint для AJAX). Формат: { data: [...], meta: { total, per_page, current_page, last_page } }
         $paginator = $query->orderBy('id', 'desc')->paginate($perPage)->appends($request->query());
 
-        // Трансформация коллекции для доп. полей
+        // Трансформация коллекции для возврата простого формата, используемого PageSelect
         $paginator->getCollection()->transform(function ($page) {
-            $page->hasActiveDraft = $page->hasActiveDraft(Auth::id());
-            $page->isActualized = $page->isActualized();
-            $page->actualizationInfo = $page->getActualizationInfo();
-            return $page;
+            return [
+                'id' => (int)$page->id,
+                'title' => (string)($page->currentVersion?->title ?? ''),
+                'path' => method_exists($page, 'viewPage') ? $page->viewPage() : '',
+                'hasActiveDraft' => $page->hasActiveDraft(Auth::id()),
+                'isActualized' => $page->isActualized(),
+                'actualizationInfo' => $page->getActualizationInfo(),
+                'parent_id' => $page->parent_id ?? null,
+            ];
         });
 
         return response()->json([
@@ -290,7 +295,7 @@ class PageController extends Controller
 
     public function edit(Page $page, HtmlToMdConvertor $convertor)
     {
-        $page->load(['project', 'currentVersion.projectFiles']);
+        $page->load(['project', 'currentVersion.projectFiles', 'parent']);
 
         return Inertia::render('pages/Edit', [
             'page' => $page,
@@ -315,7 +320,7 @@ class PageController extends Controller
             abort(404);
         }
 
-        $page->load(['project']);
+        $page->load(['project', 'parent']);
         $version->load(['projectFiles']);
 
         $actualization = $version->actualisation;
@@ -384,8 +389,12 @@ class PageController extends Controller
             'content' => $convertor->toMd($validated['content']),
         ]);
 
-        // Сохраняем флаг на уровне страницы
-        $page->update(['is_important' => $validated['is_important'] ?? $page->is_important]);
+        // Сохраняем родителя (если передан) и флаг is_important на уровне страницы
+        // Проверка циклов и валидация родителя уже выполнена выше
+        $page->update([
+            'parent_id' => $validated['parent_id'] ?? $page->parent_id,
+            'is_important' => $validated['is_important'] ?? $page->is_important,
+        ]);
 
         // Обработка project_files: если переданы в форме — используем их; иначе копируем с текущей версии
         $attachmentsInput = $validated['project_files'] ?? [];
@@ -488,6 +497,14 @@ class PageController extends Controller
         } else {
             $attachmentsInput = $validated['project_files'] ?? [];
             unset($validated['project_files']);
+
+            // Проверка циклов для parent_id
+            if (isset($validated['parent_id']) && !empty($validated['parent_id'])) {
+                if ($this->isDescendant($validated['parent_id'], $page->id)) {
+                    return redirect()->back()->withErrors(['parent_id' => 'Нельзя назначить дочернюю страницу родителем']);
+                }
+            }
+
             DB::transaction(function () use ($version, $page, $validated, $attachmentsInput) {
                 $version->update([
                     'title' => $validated['title'] ?? $version->title,
@@ -496,8 +513,11 @@ class PageController extends Controller
                 if (!empty($attachmentsInput)) {
                     $version->syncProjectFilesByUrls($attachmentsInput, (int)$page->project_id);
                 }
-                // Обновляем флаг страницы, если он передан
-                $page->update(['is_important' => $validated['is_important'] ?? $page->is_important]);
+                // Обновляем флаг страницы и parent_id, если они переданы
+                $page->update([
+                    'is_important' => $validated['is_important'] ?? $page->is_important,
+                    'parent_id' => $validated['parent_id'] ?? $page->parent_id,
+                ]);
             });
 
             $pageContextServiceFactory->createForProject($page->project_id)->flushCache();
@@ -587,8 +607,16 @@ class PageController extends Controller
             'content' => $convertor->toMd($validated['content']),
         ]);
 
-        // Обновляем флаг на уровне страницы
-        $page->update(['is_important' => $request->boolean('is_important')]);
+        // Проверка циклов: нельзя назначить дочернюю страницу родителем
+        if (!empty($validated['parent_id']) && $this->isDescendant($validated['parent_id'], $page->id)) {
+            return redirect()->back()->withErrors(['parent_id' => 'Нельзя назначить дочернюю страницу родителем']);
+        }
+
+        // Обновляем родителя и флаг на уровне страницы
+        $page->update([
+            'parent_id' => $validated['parent_id'] ?? null,
+            'is_important' => $request->boolean('is_important'),
+        ]);
 
         $page->approveDraft($pageVersion);
 
