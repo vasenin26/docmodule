@@ -396,25 +396,18 @@ class PageController extends Controller
             }
         }
 
--        $draft = $page->createDraft([
--            'title' => $validated['title'],
--            'content' => $convertor->toMd($validated['content']),
--        ]);
-+        // Защищаемся от nullable content: если content отсутствует (null),
-+        // не передаём ключ 'content' в createDraft, чтобы не перезаписывать
-+        // контент текущей версии на null.
-+        $contentInput = $validated['content'] ?? null;
-+
-+        $draftData = [
-+            'title' => $validated['title'],
-+        ];
-+
-+        if ($contentInput !== null) {
-+            // Гарантируем, что в convertor попадает строка
-+            $draftData['content'] = $convertor->toMd((string)$contentInput);
-+        }
-+
-+        $draft = $page->createDraft($draftData);
+       // Защищаемся от nullable content: если content отсутствует (null),
+       // не передаём ключ 'content' в createDraft, чтобы не перезаписывать
+       // контент текущей версии на null.
+       $contentInput = $validated['content'] ?? null;
+       $draftData = [
+           'title' => $validated['title'],
+       ];
+       if ($contentInput !== null) {
+           // Гарантируем, что в convertor попадает строка
+           $draftData['content'] = $convertor->toMd((string)$contentInput);
+       }
+       $draft = $page->createDraft($draftData);
 
         // Сохраняем родителя (если передан) и флаг is_important на уровне страницы
         // Проверка циклов и валидация родителя уже выполнена выше
