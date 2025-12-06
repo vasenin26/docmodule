@@ -4,9 +4,23 @@ set -e
 
 # Конфигурация
 APP_NAME="docmodule"
-COMPOSE_FILE="docker-compose.yaml"
+# COMPOSE_FILE can be overridden in environment; default to docker-compose.prod.yaml on disk
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yaml}"
+
+
 BACKUP_DIR="/opt/backups"
 LOG_FILE="/var/log/deploy.log"
+
+# Wrapper for docker compose that passes --env-file .env when present so variable
+# substitution (e.g. ${APP_IMAGE}) works even if the process environment doesn't contain variables.
+run_compose() {
+    local env_args=()
+    if [ -f .env ]; then
+        env_args+=("--env-file" ".env")
+    fi
+
+    docker compose "${env_args[@]}" -f "$COMPOSE_FILE" "$@"
+}
 
 # Утилита: логин в реестр контейнеров (опционально)
 registry_login_if_needed() {
@@ -32,12 +46,12 @@ registry_login_if_needed() {
 # Утилита: убедиться, что БД запущена и готова
 ensure_db_running() {
     log "Ensuring database service is running..."
-    docker compose -f "$COMPOSE_FILE" up -d db
+    run_compose up -d db
 
     local max_attempts=30
     local attempt=1
     while [ $attempt -le $max_attempts ]; do
-        if docker compose -f "$COMPOSE_FILE" exec -T db pg_isready -U "${DB_USERNAME:-laravel}" -d "${DB_DATABASE:-laravel}" >/dev/null 2>&1; then
+        if run_compose exec -T db pg_isready -U "${DB_USERNAME:-laravel}" -d "${DB_DATABASE:-laravel}" >/dev/null 2>&1; then
             log "Database is ready"
             return 0
         fi
@@ -51,24 +65,31 @@ ensure_db_running() {
 
 # Функция логирования
 log() {
+# If the configured compose file is missing on the host (for example CI copied it as docker-compose.yaml),
+# try a sensible fallback to docker-compose.yaml to be robust.
+if [ ! -f "${COMPOSE_FILE}" ] && [ -f docker-compose.yaml ]; then
+    echo "[INFO] Compose file '${COMPOSE_FILE}' not found, falling back to docker-compose.yaml"
+    COMPOSE_FILE="docker-compose.yaml"
+fi
+
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
 
 # Функция для создания бэкапа
 create_backup() {
     log "Creating backup..."
-    
+
     BACKUP_NAME="backup_$(date +%Y%m%d_%H%M%S)"
     mkdir -p "$BACKUP_DIR/$BACKUP_NAME"
-    
+
     # Убедимся, что БД доступна
     ensure_db_running
 
     # Бэкап базы данных
-    docker compose -f "$COMPOSE_FILE" exec -T db pg_dump -U "${DB_USERNAME:-laravel}" "${DB_DATABASE:-laravel}" > "$BACKUP_DIR/$BACKUP_NAME/database.sql" || {
+    run_compose exec -T db pg_dump -U "${DB_USERNAME:-laravel}" "${DB_DATABASE:-laravel}" > "$BACKUP_DIR/$BACKUP_NAME/database.sql" || {
         log "Warning: database backup failed"
     }
-    
+
     # Бэкап volumes
     if docker volume inspect docmodule_app_storage >/dev/null 2>&1; then
         docker run --rm -v docmodule_app_storage:/data -v "$BACKUP_DIR/$BACKUP_NAME":/backup alpine tar czf /backup/storage.tar.gz -C /data . || {
@@ -77,60 +98,104 @@ create_backup() {
     else
         log "Storage volume 'docmodule_app_storage' not found, skipping storage backup"
     fi
-    
+
     log "Backup created: $BACKUP_NAME"
 }
 
 # Функция для отката
 rollback() {
     log "Rolling back to previous version..."
-    
+
     # Остановка текущих контейнеров
-    docker compose -f "$COMPOSE_FILE" down
-    
+    run_compose down
+
     # Откат к предыдущему образу
-    docker tag "${APP_NAME}_app:backup" "${APP_NAME}_app:latest"
-    
+    docker tag "${APP_NAME}_app:backup" "${APP_NAME}_app:latest" || true
+
     # Запуск откаченной версии
-    docker compose -f "$COMPOSE_FILE" up -d
-    
+    run_compose up -d
+
     log "Rollback completed"
 }
 
 # Функция проверки здоровья приложения
 health_check() {
     log "Performing health check..."
-    
+
     local max_attempts=30
     local attempt=1
-    
+
     while [ $attempt -le $max_attempts ]; do
         if curl -f https://docsmodule.ru/api/health >/dev/null 2>&1; then
             log "Health check passed"
             return 0
         fi
-        
+
         log "Health check attempt $attempt/$max_attempts failed, waiting..."
         sleep 10
         ((attempt++))
     done
-    
+
     log "Health check failed after $max_attempts attempts"
     return 1
+}
+
+# Записывает APP_IMAGE в корневой .env и экспортирует переменную в среду выполнения
+set_app_image_in_env() {
+    local image_ref="$1"
+    local env_file=".env"
+
+    # Создаём файл если нужно и устанавливаем безопасные права
+    if [ ! -f "$env_file" ]; then
+        touch "$env_file"
+        chmod 640 "$env_file" || true
+    fi
+
+    # Записываем или обновляем APP_IMAGE
+    if grep -q "^APP_IMAGE=" "$env_file" 2>/dev/null; then
+        sed -i "s|^APP_IMAGE=.*|APP_IMAGE=$image_ref|" "$env_file"
+    else
+        echo "APP_IMAGE=$image_ref" >> "$env_file"
+    fi
+
+    # Экспортим для текущей сессии
+    export APP_IMAGE="$image_ref"
 }
 
 # Функция обновления приложения
 update_app() {
     local image_tag="$1"
-    
+
     log "Starting deployment of image: $image_tag"
-    
+
+    # Валидация формата: ожидание registry/imagename:tag или imagename:tag
+    if [[ ! "$image_tag" =~ .+:.+ ]]; then
+        log "Error: image tag must contain a tag part after ':' (format registry/imagename:tag). Given: $image_tag"
+        exit 1
+    fi
+
+    if [[ ! "$image_tag" =~ / ]]; then
+        log "Warning: image does not contain registry prefix. Ensure pull will work without auth if registry omitted. Given: $image_tag"
+    fi
+
+    # Обновление тега образа в docker-compose (ранний шаг, чтобы docker compose не увидел пустую переменную)
+    # Поддерживаем как старую запись (ghcr.io/vasenin26/docmodule:...), так и параметризованный вариант APP_IMAGE
+    if grep -q "ghcr.io/vasenin26/docmodule" "$COMPOSE_FILE" 2>/dev/null; then
+        sed -i "s|image: ghcr.io/vasenin26/docmodule:.*|image: $image_tag|g" "$COMPOSE_FILE"
+    else
+        # В противном случае заменим первую встреченную строку вида 'image: .*docmodule.*'
+        sed -i "0,/image: .*docmodule.*/s|image: .*docmodule.*|image: $image_tag|" "$COMPOSE_FILE" || true
+    fi
+
+    # Записать APP_IMAGE в .env (основной поток)
+    set_app_image_in_env "$image_tag"
+
     # Создание бэкапа
     create_backup
-    
+
     # Сохранение текущего образа как backup
     docker tag "${APP_NAME}_app:latest" "${APP_NAME}_app:backup" 2>/dev/null || true
-    
+
     # Обновление образа
     log "Pulling new image: $image_tag"
     registry_login_if_needed "$image_tag"
@@ -150,32 +215,48 @@ update_app() {
         log "Pull failed, retrying in ${sleep_secs}s... ($pull_attempts/$pull_max)"
         sleep $sleep_secs
     done
-    
+
+    # Записать APP_IMAGE в .env (основной поток)
+    set_app_image_in_env "$image_tag"
+
+    # Проверка: APP_IMAGE обязана быть задана
+    if [ -z "${APP_IMAGE:-}" ]; then
+        log "Error: APP_IMAGE is not set after attempting to write to .env — aborting to avoid :latest usage"
+        exit 1
+    fi
+
+
     # Обновление тега образа в docker-compose
-    sed -i "s|image: ghcr.io/vasenin26/docmodule:.*|image: $image_tag|g" "$COMPOSE_FILE"
-    
+    # Поддерживаем как старую запись (ghcr.io/vasenin26/docmodule:...), так и параметризованный вариант APP_IMAGE
+    if grep -q "ghcr.io/vasenin26/docmodule" "$COMPOSE_FILE" 2>/dev/null; then
+        sed -i "s|image: ghcr.io/vasenin26/docmodule:.*|image: $image_tag|g" "$COMPOSE_FILE"
+    else
+        # В противном случае заменим первую встреченную строку вида 'image: .*docmodule.*'
+        sed -i "0,/image: .*docmodule.*/s|image: .*docmodule.*|image: $image_tag|" "$COMPOSE_FILE" || true
+    fi
+
     # Остановка приложения
     log "Stopping current application..."
-    docker compose -f "$COMPOSE_FILE" stop app
-    
+    run_compose stop app || true
+
     # Запуск обновленного приложения
     log "Starting updated application..."
-    docker compose -f "$COMPOSE_FILE" up -d app
-    
+    run_compose up -d app
+
     # Ожидание запуска
     sleep 30
-    
+
     # Проверка здоровья
     if health_check; then
         log "Deployment successful"
-        
+
         # Очистка старых образов
-        docker image prune -f
-        docker system prune -f
-        
+        docker image prune -f || true
+        docker system prune -f || true
+
         # Очистка старых бэкапов (оставляем последние 5)
-        ls -t "$BACKUP_DIR" | tail -n +6 | xargs -r -I {} rm -rf "$BACKUP_DIR"/{}
-        
+        ls -t "$BACKUP_DIR" | tail -n +6 | xargs -r -I {} rm -rf "$BACKUP_DIR"/{}/ || true
+
     else
         log "Deployment failed, rolling back..."
         rollback
@@ -186,50 +267,50 @@ update_app() {
 # Функция для выполнения миграций
 run_migrations() {
     log "Running database migrations..."
-    
+
     # Ожидание доступности базы данных
     ensure_db_running
-    
+
     # Убедимся, что приложение запущено (нужно для artisan)
-    docker compose -f "$COMPOSE_FILE" up -d app
-    
+    run_compose up -d app
+
     # Выполнение миграций
-    docker compose -f "$COMPOSE_FILE" exec app php artisan migrate --force
-    
+    run_compose exec app php artisan migrate --force
+
     log "Migrations completed"
 }
 
 # Обработка webhook запроса
 handle_webhook() {
     log "Received webhook request"
-    
+
     # Чтение данных из stdin
     local payload=$(cat)
     local image=$(echo "$payload" | jq -r '.image // empty')
     local environment=$(echo "$payload" | jq -r '.environment // empty')
     local version=$(echo "$payload" | jq -r '.version // empty')
     local tag=$(echo "$payload" | jq -r '.tag // empty')
-    
+
     if [ -z "$image" ]; then
         log "Error: No image specified in webhook payload"
         exit 1
     fi
-    
+
     if [ "$environment" != "production" ]; then
         log "Ignoring deployment for environment: $environment"
         exit 0
     fi
-    
-    # Проверка формата тега (должен быть vX.X.X)
-    if [[ -n "$tag" && ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        log "Error: Invalid tag format. Expected vX.X.X, got: $tag"
+
+    # Проверка формата тега (должен быть vX.X.X или vYYYY.WW.Z)
+    if [[ -n "$tag" && ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ && ! "$tag" =~ ^v[0-9]{4}\.[0-9]{2}\.[0-9]+$ ]]; then
+        log "Error: Invalid tag format. Expected vX.X.X or vYYYY.WW.Z, got: $tag"
         exit 1
     fi
-    
+
     log "Deploying version: $version (tag: $tag)"
     update_app "$image"
     run_migrations
-    
+
     # Создание файла с информацией о текущей версии
     echo "{
         \"version\": \"$version\",
@@ -238,7 +319,7 @@ handle_webhook() {
         \"deployed_at\": \"$(date -Iseconds)\",
         \"deployed_by\": \"webhook\"
     }" > /opt/current_version.json
-    
+
     log "Version information saved to /opt/current_version.json"
 }
 

@@ -24,6 +24,7 @@ class Page extends Model implements DisplayableResource
         'deleted_by',
         'deleted_at',
         'project_id',
+        'is_important',
     ];
 
     protected $dates = [
@@ -39,6 +40,7 @@ class Page extends Model implements DisplayableResource
     {
         return [
             'deleted_at' => 'datetime',
+            'is_important' => 'boolean',
         ];
     }
 
@@ -210,7 +212,23 @@ class Page extends Model implements DisplayableResource
             throw new \Exception('Страница не имеет текущей версии');
         }
 
-        $draft = $currentVersion->createNewVersion($data);
+        // Подготовим безопасные значения: по умолчанию наследуем title и content
+        // из текущей версии, но не перезаписываем их, если в $data ключи
+        // присутствуют со значением null.
+        $draftData = [
+            'title' => $currentVersion->title ?? '',
+            'content' => $currentVersion->content ?? '',
+        ];
+
+        if (array_key_exists('title', $data) && $data['title'] !== null) {
+            $draftData['title'] = $data['title'];
+        }
+
+        if (array_key_exists('content', $data) && $data['content'] !== null) {
+            $draftData['content'] = $data['content'];
+        }
+
+        $draft = $currentVersion->createNewVersion($draftData);
         $draft->update(['is_draft' => true]);
 
         return $draft;

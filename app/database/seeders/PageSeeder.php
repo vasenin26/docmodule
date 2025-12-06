@@ -35,6 +35,7 @@ class PageSeeder extends Seeder
             // Создаем страницу
             $page = Page::create([
                 'created_by' => $user->id,
+                'is_important' => false,
             ]);
 
             // Создаем первую версию
@@ -60,6 +61,7 @@ class PageSeeder extends Seeder
                     $childPage = Page::create([
                         'created_by' => $user->id,
                         'parent_id' => $page->id,
+                        'is_important' => false,
                     ]);
 
                     // Создаем первую версию дочерней страницы
@@ -78,6 +80,7 @@ class PageSeeder extends Seeder
         // Создаем страницу с версиями для демонстрации
         $versionPage = Page::create([
             'created_by' => $user->id,
+            'is_important' => false,
         ]);
 
         // Создаем первую версию

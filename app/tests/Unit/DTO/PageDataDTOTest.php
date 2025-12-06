@@ -13,13 +13,15 @@ class PageDataDTOTest extends TestCase
         $dto = new PageDataDTO(
             title: 'Test Title',
             content: 'Test Content',
-            files: ['test.pdf', 'image.jpg']
+            files: ['test.pdf', 'image.jpg'],
+            isImportant: false
         );
 
         // Assert
         $this->assertEquals('Test Title', $dto->title);
         $this->assertEquals('Test Content', $dto->content);
         $this->assertEquals(['test.pdf', 'image.jpg'], $dto->files);
+        $this->assertFalse($dto->isImportant);
     }
 
     public function test_constructor_uses_default_files_array()
@@ -27,13 +29,15 @@ class PageDataDTOTest extends TestCase
         // Arrange & Act
         $dto = new PageDataDTO(
             title: 'Test Title',
-            content: 'Test Content'
+            content: 'Test Content',
+            isImportant: false
         );
 
         // Assert
         $this->assertEquals('Test Title', $dto->title);
         $this->assertEquals('Test Content', $dto->content);
         $this->assertEquals([], $dto->files);
+        $this->assertFalse($dto->isImportant);
     }
 
     public function test_from_array_creates_dto_correctly()
@@ -52,6 +56,7 @@ class PageDataDTOTest extends TestCase
         $this->assertEquals('Test Title', $dto->title);
         $this->assertEquals('Test Content', $dto->content);
         $this->assertEquals(['test.pdf'], $dto->files);
+        $this->assertFalse($dto->isImportant);
     }
 
     public function test_from_array_handles_missing_fields()
@@ -68,6 +73,7 @@ class PageDataDTOTest extends TestCase
         $this->assertEquals('Test Title', $dto->title);
         $this->assertEquals('', $dto->content);
         $this->assertEquals([], $dto->files);
+        $this->assertFalse($dto->isImportant);
     }
 
     public function test_from_array_handles_null_values()
@@ -86,6 +92,7 @@ class PageDataDTOTest extends TestCase
         $this->assertEquals('', $dto->title);
         $this->assertEquals('', $dto->content);
         $this->assertEquals([], $dto->files);
+        $this->assertFalse($dto->isImportant);
     }
 
     public function test_to_array_returns_correct_structure()
@@ -94,7 +101,8 @@ class PageDataDTOTest extends TestCase
         $dto = new PageDataDTO(
             title: 'Test Title',
             content: 'Test Content',
-            files: ['test.pdf']
+            files: ['test.pdf'],
+            isImportant: false
         );
 
         // Act
@@ -104,7 +112,8 @@ class PageDataDTOTest extends TestCase
         $this->assertEquals([
             'title' => 'Test Title',
             'content' => 'Test Content',
-            'files' => ['test.pdf']
+            'files' => ['test.pdf'],
+            'isImportant' => false,
         ], $array);
     }
 
@@ -113,7 +122,8 @@ class PageDataDTOTest extends TestCase
         // Arrange
         $dto = new PageDataDTO(
             title: 'Test Title',
-            content: 'Test Content'
+            content: 'Test Content',
+            isImportant: false
         );
 
         // Act & Assert

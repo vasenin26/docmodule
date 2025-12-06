@@ -43,6 +43,10 @@
                                     placeholder="Введите название страницы"
                                     :class="{ 'border-destructive': errors.title }"
                                 />
+                                <div class="flex items-center gap-2">
+                                    <ImportantStar v-model="form.isImportant" />
+                                </div>
+
                                 <InputError v-if="errors.title" :message="errors.title" />
                             </div>
 
@@ -93,6 +97,8 @@ import CardTitle from '@/components/ui/card/CardTitle.vue';
 import Input from '@/components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
 import PagesLayout from '@/layouts/pages/PagesLayout.vue';
+import ImportantStar from '@/components/ui/ImportantStar.vue';
+
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -111,7 +117,7 @@ const props = withDefaults(
         parentPage?: ParentPage;
         project?: Project;
         projects?: Project[];
-        errors?: Record<string, string>;
+        errors?: Record<string, any>;
     }>(),
     {
         errors: () => ({}),
@@ -122,8 +128,9 @@ const form = useForm({
     title: '',
     content: '',
     files: [] as string[],
-    parent_id: props.parentPage?.id || null,
-    project_id: props.project?.id || null,
+    parent_id: props.parentPage?.id ?? null,
+    project_id: props.project?.id ?? null,
+    isImportant: false,
 });
 
 const processing = ref(false);
@@ -138,6 +145,8 @@ const submit = () => {
         ...data,
         parent_id: props.parentPage?.id,
         project_files: Array.isArray(data.files) ? data.files.filter((u: string) => !!u).map((u: string) => ({ url: u })) : [],
+        is_important: !!data.isImportant,
+
     }));
 
     transformed.post(submitUrl, {

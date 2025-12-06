@@ -53,6 +53,9 @@ import ToolPageGetTaskHistory from '@/components/AgentChat/messages/tools/Page/T
 import ToolUtilsAddFileToList from '@/components/AgentChat/messages/tools/Utils/ToolUtilsAddFileToList.vue';
 import ToolUtilsUpdateArticle from '@/components/AgentChat/messages/tools/Utils/ToolUtilsUpdateArticle.vue';
 
+// Terminal tools
+import ToolTerminalRun from '@/components/AgentChat/messages/tools/Termenal/ToolTerminalRun.vue';
+
 const props = defineProps<{
     message: LLMMessage;
     index: number;
@@ -113,6 +116,9 @@ const toolComponentsMap: Record<string, any> = {
     // Utils tools
     'utils-add-file-to-list': ToolUtilsAddFileToList,
     'utils-update-article': ToolUtilsUpdateArticle,
+    
+    // Terminal tools
+    'terminal-run': ToolTerminalRun,
 };
 
 function getComponentName(): any {

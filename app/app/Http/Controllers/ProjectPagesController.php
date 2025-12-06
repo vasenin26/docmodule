@@ -28,21 +28,22 @@ class ProjectPagesController extends Controller
 
         // Применяем фильтры поиска если они есть
         $search = $request->get('search');
-        if ($search) {
-            $pages = $pages->where('title', 'like', '%' . $search . '%');
-        }
-
         // Фильтр по родительской странице
         $parentId = $request->get('parent_id');
-        if ($parentId) {
-            $pages = $pages->where('parent_id', $parentId);
+
+        if ($search) {
+            $pages = $pages->whereRelation('currentVersion', 'title', 'like', '%' . $search . '%');
         } else {
-            $pages = $pages->whereNull('parent_id');
+            if ($parentId) {
+                $pages = $pages->where('parent_id', $parentId);
+            } else {
+                $pages = $pages->whereNull('parent_id');
+            }
         }
 
         // Преобразуем в формат пагинации для совместимости с PageList компонентом
         $paginatedPages = [
-            'data' => $pages->values(), // values() для переиндексации после фильтрации
+            'data' => $pages->paginate()->values(), // values() для переиндексации после фильтрации
             'links' => [], // Пустые ссылки пагинации, так как getCurrentPages() возвращает все страницы
             'current_page' => 1,
             'per_page' => $pages->count(),

@@ -56,6 +56,32 @@ function getResultPayloadPretty(): string | undefined {
     try { return JSON.stringify(payload, null, 2); } catch { return String(payload); }
 }
 
+function isCommandResult(): boolean {
+    const payload = parseToolResult()?.payload;
+    if (!payload || typeof payload !== 'object') return false;
+    return 'command' in payload && ('stdout' in payload || 'stderr' in payload);
+}
+
+function getCommand(): string | undefined {
+    const payload = parseToolResult()?.payload;
+    return payload?.command;
+}
+
+function getStdout(): string | undefined {
+    const payload = parseToolResult()?.payload;
+    return payload?.stdout;
+}
+
+function getStderr(): string | undefined {
+    const payload = parseToolResult()?.payload;
+    return payload?.stderr;
+}
+
+function getExitCode(): number | undefined {
+    const payload = parseToolResult()?.payload;
+    return payload?.exit_code;
+}
+
 function getToolMessageClass(success: boolean | undefined): string {
     return success === false 
         ? 'bg-red-50 border border-red-200' 

@@ -40,7 +40,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Поиск страниц (должен быть до resource('pages'))
     Route::get('pages/search', [PageSearchController::class, 'index'])->name('pages.search');
 
-    // Маршруты проектов
+    // Новый endpoint: поиск страниц в контексте проекта (возвращает JSON, используется frontend)
+    Route::get('projects/{project}/pages/search', [PageController::class, 'index'])->name('projects.pages.search');
+
+
     Route::resource('projects', ProjectController::class);
 
     // Маршруты репозиториев проектов
@@ -56,7 +59,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('projects/{project}/pages', [PageController::class, 'store'])->name('projects.pages.store');
 
     // Общие маршруты для страниц
-    Route::resource('pages', PageController::class)->except('index');
+    // Страница списка/поиска страниц (поддерживает query params: search, id, project_id, per_page)
+
+
+    Route::resource('pages', PageController::class);
     Route::get('pages/{page}/versions', [PageController::class, 'versions'])->name('pages.versions');
     Route::post('pages/{page}/restore/{version}', [PageController::class, 'restore'])->name('pages.restore');
 
@@ -227,3 +233,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
+
+// Терминалы: страница терминалов (Inertia)
+use App\Http\Controllers\TerminalController;
+
+Route::get('terminals', [TerminalController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('terminals.index');

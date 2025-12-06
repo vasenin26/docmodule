@@ -1,33 +1,23 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue';
 import { useProjectStore } from '@/stores/project';
-import type { Page, PagesData, FlatPage, TreeNode } from '@/types';
+import type { FlatPage, TreeNode } from '@/types';
 import ProjectPagesSubtree from '@/components/pages/ProjectPagesSubtree.vue';
-import { usePage } from '@inertiajs/vue3';
-import { normalizeToFlat, buildTree, sortTreeByTitle } from '@/utils/normalizeToFlat';
+import { buildTree, sortTreeByTitle } from '@/utils/normalizeToFlat';
 import { FlatPagesService } from '@/services/FlatPagesService';
 
 defineOptions({ name: 'ProjectPagesTree' });
 
 const projectStore = useProjectStore();
-const inertiaPage = usePage();
 
 const project = computed(() => projectStore.selectedProject);
 const treeNodes = ref<TreeNode[]>([]);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 
-const pagesFromProps = computed<Page[] | null>(() => {
-    const props: any = inertiaPage.props;
-    const pd: PagesData | undefined = props?.pages;
-    if (pd && Array.isArray(pd.data)) return pd.data as Page[];
-    return null;
-});
-
-const pages = computed<Page[]>(() => pagesFromProps.value || project.value?.pages || []);
-
 /**
- * Загружает плоские страницы и строит дерево
+ * Загружает плоские страницы и строит дерево.
+ * Источник данных: FlatPagesService.loadFlatPagesForProject(projectId).
  */
 async function loadFlatPages() {
     if (!project.value?.id) {
@@ -39,19 +29,8 @@ async function loadFlatPages() {
     error.value = null;
 
     try {
-        // Приоритет источников данных: Inertia props > глобальное состояние проекта > серверная загрузка
-        let flatPages: FlatPage[] = [];
-
-        if (pagesFromProps.value && pagesFromProps.value.length > 0) {
-            // Используем данные из Inertia props
-            flatPages = normalizeToFlat(pagesFromProps.value);
-        } else if (project.value?.pages && project.value.pages.length > 0) {
-            // Используем данные из глобального состояния проекта
-            flatPages = normalizeToFlat(project.value.pages);
-        } else {
-            // Загружаем с сервера через FlatPagesService
-            flatPages = await FlatPagesService.loadFlatPagesForProject(project.value.id);
-        }
+        // Всегда загружаем данные через сервис (он сам использует кэш при необходимости)
+        const flatPages: FlatPage[] = await FlatPagesService.loadFlatPagesForProject(project.value.id);
 
         // Строим дерево и сортируем
         const tree = buildTree(flatPages);
@@ -68,7 +47,7 @@ async function loadFlatPages() {
 const hasPages = computed(() => treeNodes.value.length > 0);
 const hasProject = computed(() => !!project.value);
 
-// Загружаем данные при монтировании и изменении проекта
+// Загружаем данные при монтировании и при смене проекта
 onMounted(() => {
     loadFlatPages();
 });
@@ -76,10 +55,6 @@ onMounted(() => {
 watch(() => project.value?.id, () => {
     loadFlatPages();
 });
-
-watch(() => pagesFromProps.value, () => {
-    loadFlatPages();
-}, { deep: true });
 </script>
 
 <template>
@@ -112,6 +87,3 @@ watch(() => pagesFromProps.value, () => {
     }
 }
 </style>
-
-
-
