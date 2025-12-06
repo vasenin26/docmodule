@@ -233,3 +233,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
+
+// Терминалы: страница терминалов (Inertia)
+use App\Http\Controllers\TerminalController;
+
+Route::get('terminals', [TerminalController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('terminals.index');
