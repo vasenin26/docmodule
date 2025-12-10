@@ -11,6 +11,7 @@ enum AgentTaskType: string
     case ACTUALIZATION = 'actualization';
     case SEARCH_RELEVANT_FILES = 'search-relevant-files';
     case TASK_PLANING = 'task-planing';
+    case TERMINAL = 'terminal';
 
     /**
      * Получить все доступные типы задач
@@ -49,6 +50,7 @@ enum AgentTaskType: string
             self::ACTUALIZATION => 'Актуализация статьи документации',
             self::SEARCH_RELEVANT_FILES => 'Поиск связанных файлов',
             self::TASK_PLANING => 'Планирование работы',
+            self::TERMINAL => 'Терминальная задача',
         };
     }
 }

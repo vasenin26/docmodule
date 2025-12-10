@@ -18,6 +18,7 @@ use App\Http\Controllers\AgentTaskController;
 use App\Http\Controllers\PageSearchController;
 use App\Http\Controllers\TechplaneController;
 use App\Http\Controllers\ExpenseSummaryController;
+use App\Http\Controllers\TerminalController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -227,16 +228,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/chat/{chat}', [ChatController::class, 'state'])->name('chat.state');
     Route::delete('/chat/{chat}', [ChatController::class, 'stop'])->name('chat.stop');
     Route::post('/chat/{chat}/message', [ChatController::class, 'sendMessage'])->name('chat.message.send');
+
+    // Терминалы
+    Route::get('terminals', [TerminalController::class, 'index'])
+        ->name('terminals.index');
+    Route::get('terminals/list', [TerminalController::class, 'apiIndex'])
+        ->name('terminals.list');
+    Route::post('terminals', [TerminalController::class, 'store'])
+        ->name('terminals.store');
+    Route::post('terminals/{terminal}/command', [TerminalController::class, 'sendCommand'])
+        ->name('terminals.command');
+    Route::get('terminals/{terminal}/chat', [TerminalController::class, 'getChatState'])
+        ->name('terminals.chat');
 });
 
 
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
-
-// Терминалы: страница терминалов (Inertia)
-use App\Http\Controllers\TerminalController;
-
-Route::get('terminals', [TerminalController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('terminals.index');

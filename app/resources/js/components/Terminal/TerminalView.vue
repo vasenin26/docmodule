@@ -1,25 +1,34 @@
 <script setup lang="ts">
 import TerminalOutput from './TerminalOutput.vue';
 import TerminalInput from './TerminalInput.vue';
-import { ref, watch } from 'vue';
+import { watch, onBeforeUnmount } from 'vue';
+import { useTerminalChat } from '@/composables/useTerminalChat';
 
 const props = defineProps({ terminalId: [String, Number] });
-const outputLines = ref<string[]>([]);
+
+const { messages, status, sending, sendCommand, startPolling, stopPolling } = 
+    useTerminalChat(Number(props.terminalId));
 
 function onSubmitCommand(cmd: string) {
-  outputLines.value.push(`$ ${cmd}`);
-  outputLines.value.push(`(вывод команды не реализован)`);
+  sendCommand(cmd);
 }
 
 watch(() => props.terminalId, (newId) => {
-  // Очистка вывода при переключении терминала (можно заменить на загрузку истории)
-  outputLines.value = [];
+  if (newId) {
+    startPolling();
+  } else {
+    stopPolling();
+  }
+});
+
+onBeforeUnmount(() => {
+  stopPolling();
 });
 </script>
 
 <template>
   <div class="h-full flex flex-col">
-    <TerminalOutput :lines="outputLines" />
-    <TerminalInput @submit="onSubmitCommand" />
+    <TerminalOutput :messages="messages" />
+    <TerminalInput @submit="onSubmitCommand" :disabled="sending || status !== 'completed'" />
   </div>
 </template>

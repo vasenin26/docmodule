@@ -1,5 +1,7 @@
 import { ref } from 'vue';
-import axios from 'axios';
+import { TerminalCreateRequest } from '@/services/api/request/Terminal/TerminalCreateRequest';
+import { TerminalListRequest } from '@/services/api/request/Terminal/TerminalListRequest';
+import { createApi } from '@/services/api/Api';
 
 export function useTerminals() {
   const terminals = ref<any[]>([]);
@@ -9,12 +11,15 @@ export function useTerminals() {
   async function load() {
     loading.value = true;
     try {
-      const res = await axios.get('/api/terminals');
-      terminals.value = res.data || [];
+      const api = createApi();
+      const req = new TerminalListRequest();
+      const list = await req.call(api);
+      terminals.value = list || [];
       if (!activeId.value && terminals.value.length) {
         activeId.value = String(terminals.value[0].id);
       }
     } catch (e) {
+      console.error('Ошибка при загрузке терминалов:', e);
       terminals.value = [];
     } finally {
       loading.value = false;
@@ -23,16 +28,15 @@ export function useTerminals() {
 
   async function create(name?: string) {
     try {
-      const res = await axios.post('/api/terminals', { name: name || 'term' });
-      const t = res.data;
+      const api = createApi();
+      const req = new TerminalCreateRequest({ name: name || 'term' });
+      const t = await req.call(api);
       terminals.value.push(t);
       activeId.value = String(t.id);
       return t;
     } catch (e) {
-      const tmp = { id: Date.now(), name: name || 'term', created_at: new Date() };
-      terminals.value.push(tmp);
-      activeId.value = String(tmp.id);
-      return tmp;
+      console.error('Ошибка при создании терминала:', e);
+      throw e;
     }
   }
 
@@ -41,17 +45,11 @@ export function useTerminals() {
   }
 
   async function remove(id: string) {
-    try {
-      await axios.delete(`/api/terminals/${id}`);
-      terminals.value = terminals.value.filter(t => String(t.id) !== String(id));
-      if (activeId.value === String(id)) {
-        activeId.value = terminals.value.length ? String(terminals.value[0].id) : null;
-      }
-    } catch (e) {
-      terminals.value = terminals.value.filter(t => String(t.id) !== String(id));
-      if (activeId.value === String(id)) {
-        activeId.value = terminals.value.length ? String(terminals.value[0].id) : null;
-      }
+    // TODO: Реализовать удаление терминала через API
+    // Пока просто удаляем из локального состояния
+    terminals.value = terminals.value.filter(t => String(t.id) !== String(id));
+    if (activeId.value === String(id)) {
+      activeId.value = terminals.value.length ? String(terminals.value[0].id) : null;
     }
   }
 

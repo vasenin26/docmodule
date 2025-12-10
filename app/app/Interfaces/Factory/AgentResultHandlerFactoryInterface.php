@@ -9,6 +9,7 @@ use App\Models\Techplane;
 use App\Models\VersionDiffTask;
 use App\Models\Actualization;
 use App\Models\Implementation;
+use App\Models\Terminal;
 
 interface AgentResultHandlerFactoryInterface
 {
@@ -22,6 +23,8 @@ interface AgentResultHandlerFactoryInterface
     public function createActualizationResultHandler(Actualization $actualization): AgentResultHandlerInterface;
 
     public function createImplementationResultHandler(Implementation $implementation): AgentResultHandlerInterface;
+
+    public function createTerminalResultHandler(Terminal $terminal): AgentResultHandlerInterface;
 
     public function createChatHandler(LLMChat $chat): AgentResultHandlerInterface;
 }

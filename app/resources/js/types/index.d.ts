@@ -42,7 +42,7 @@ export interface User {
 }
 
 export interface LLMMessage {
-    type: 'user' | 'assistant' | 'system' | 'tool' | 'git-file' | 'page-version' | 'info' | 'services' | 'user-task';
+    type: 'user' | 'assistant' | 'system' | 'tool' | 'git-file' | 'page-version' | 'info' | 'services' | 'user-task' | 'result';
     message: {
         content?: string | null;
         timestamp?: string;
