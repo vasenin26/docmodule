@@ -17,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Models\LLMChat;
 
 class TaskController extends Controller
 {
@@ -126,11 +127,23 @@ class TaskController extends Controller
                 'stats' => $request->getTokenStats(),
                 'result' => $request->getResult(),
                 'context_fill' => $request->getContextFill(),
-                'model' => $request->input('model') ?? null,
-                'context' => $request->input('context'),
+                // Берём только провалидированные значения
+                'model' => $request->validated('model', null),
+                'context' => $request->validated('context', null),
             ]);
 
+            // У некоторых (старых/особых) задач может не быть чата — создаём для обратной совместимости
             $chat = $agentTask->llmChat;
+            if (!$chat) {
+                $chat = LLMChat::create([
+                    'project_id' => $agentTask->project_id,
+                    'messages' => [],
+                    'context' => [],
+                    'context_fill' => null,
+                ]);
+                $agentTask->update(['chat_id' => $chat->id]);
+            }
+
             $chatUpdateData = [
                 'messages' => $updateData->chat,
                 'context_fill' => $updateData->context_fill ?? $chat->context_fill,
@@ -188,6 +201,7 @@ class TaskController extends Controller
                 'agent_id' => $agent->id,
                 'agent_uuid' => $request->getAgentUuid(),
                 'error' => $e->getMessage(),
+                'exception' => $e,
             ]);
 
             return response()->json([

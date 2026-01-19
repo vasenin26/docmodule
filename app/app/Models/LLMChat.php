@@ -273,7 +273,14 @@ class LLMChat extends Model
 
     public function assignContext(array $context): void
     {
-        $this->context = [...$this->context, $context];
+        // $this->context может быть null (или не массивом) для старых записей
+        // Spread-оператор на null приводит к TypeError, поэтому нормализуем.
+        $existing = $this->context;
+        if (!is_array($existing)) {
+            $existing = [];
+        }
+
+        $this->context = [...$existing, $context];
     }
 
     /**
