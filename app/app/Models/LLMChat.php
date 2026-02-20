@@ -280,7 +280,7 @@ class LLMChat extends Model
             $existing = [];
         }
 
-        $this->context = [...$existing, $context];
+        $this->context = array_replace_recursive($existing, $context);
     }
 
     /**
