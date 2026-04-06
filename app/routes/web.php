@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActualizationController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImplementationController;
 use App\Http\Controllers\PageController;
@@ -26,6 +27,9 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
+
+Route::get('blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 
 Route::get('dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
