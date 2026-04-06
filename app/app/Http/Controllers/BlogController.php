@@ -13,7 +13,7 @@ class BlogController extends Controller
 
     public function index(): Response
     {
-        $blogPath = base_path('docs/blog');
+        $blogPath = storage_path('app/blog');
 
         if (!File::isDirectory($blogPath)) {
             return Inertia::render('blog/Index', [
@@ -24,10 +24,13 @@ class BlogController extends Controller
         $posts = collect(File::files($blogPath))
             ->filter(fn ($file) => strtolower($file->getExtension()) === 'md')
             ->map(function ($file) {
-                $slug = pathinfo($file->getFilename(), PATHINFO_FILENAME);
+                $filename = pathinfo($file->getFilename(), PATHINFO_FILENAME);
+                $slug = $filename;
                 $raw = File::get($file->getPathname());
                 $parsed = $this->parseFrontMatter($raw);
                 $meta = $this->extractMeta($parsed['content'], $parsed['frontmatter']);
+                $timestampFromFilename = $this->extractTimestampFromFilename($filename);
+                $updatedAt = Carbon::createFromTimestamp($file->getMTime());
 
                 return [
                     'slug' => $slug,
@@ -35,13 +38,18 @@ class BlogController extends Controller
                     'description' => $meta['description'],
                     'preview' => $meta['description'],
                     'keywords' => $meta['keywords'],
-                    'updated_at' => Carbon::createFromTimestamp($file->getMTime())->toISOString(),
-                    'updated_at_human' => Carbon::createFromTimestamp($file->getMTime())->format('Y-m-d'),
+                    'updated_at' => $updatedAt->toISOString(),
+                    'updated_at_human' => $updatedAt->format('Y-m-d'),
                     'published_at' => $meta['published_at'],
                     'published_at_human' => $meta['published_at_human'],
+                    'sort_key' => $timestampFromFilename?->timestamp ?? $updatedAt->timestamp,
                 ];
             })
-            ->sortByDesc('updated_at')
+            ->sortByDesc('sort_key')
+            ->map(function (array $post) {
+                unset($post['sort_key']);
+                return $post;
+            })
             ->values()
             ->all();
 
@@ -54,7 +62,7 @@ class BlogController extends Controller
     {
         abort_unless(preg_match(self::SLUG_PATTERN, $slug) === 1, 404);
 
-        $blogPath = base_path('docs/blog');
+        $blogPath = storage_path('app/blog');
         $filePath = $blogPath . DIRECTORY_SEPARATOR . $slug . '.md';
 
         abort_unless(File::isFile($filePath), 404);
@@ -185,5 +193,21 @@ class BlogController extends Controller
             'frontmatter' => $frontmatter,
             'content' => implode("\n", $contentLines),
         ];
+    }
+
+    private function extractTimestampFromFilename(string $filename): ?Carbon
+    {
+        if (!preg_match('/^(\d{12}|\d{8})-/', $filename, $matches)) {
+            return null;
+        }
+
+        $raw = $matches[1];
+        $format = strlen($raw) === 12 ? 'YmdHi' : 'Ymd';
+
+        try {
+            return Carbon::createFromFormat($format, $raw)->startOfMinute();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }
