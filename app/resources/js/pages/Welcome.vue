@@ -37,6 +37,12 @@ const features = [
     <header class="w-full px-6 pt-6 pb-4 lg:px-8">
       <nav class="max-w-4xl mx-auto flex items-center justify-end gap-4 text-sm">
         <Link
+          :href="route('blog.index')"
+          class="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
+        >
+          Блог
+        </Link>
+        <Link
           v-if="$page.props.auth.user"
           :href="route('dashboard')"
           class="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
