@@ -6,6 +6,15 @@
 2. **GitHub Container Registry** - хранение образов
 3. **SSH подключение** - прямое подключение к серверу для деплоя
 4. **Deploy скрипт** - автоматическое обновление приложения
+5. **Traefik** (на сервере) - TLS и маршрутизация `docsmodule.ru` / `www.docsmodule.ru` во внешнюю Docker-сеть `web` (без `nginx-proxy` в compose)
+
+## Traefik и сеть Docker
+
+- Стек приложения подключается к **внешней** сети Traefik (по умолчанию имя сети: `web`).
+- Перед первым запуском убедитесь, что Traefik подключён к этой же сети, например:  
+  `docker network connect web traefik` (имя контейнера Traefik уточните через `docker ps`).
+- В `.env` на сервере можно задать `TRAEFIK_NETWORK=web` (значение по умолчанию в compose — `web`).
+- Для HTTPS в labels используется `certresolver=myresolver` и entrypoint `websecure` (как у других сервисов на этом сервере). При другом resolver/entrypoint задайте `TRAEFIK_ENTRYPOINTS=...` в `.env`.
 
 ## Настройка на сервере
 
@@ -47,13 +56,23 @@ chmod 644 ~/.ssh/authorized_keys
 
 ### 4. Настройка переменных окружения
 
-Создайте файл `.env` на сервере:
+Создайте файл `.env` в каталоге деплоя (CI кладёт compose в `/opt/docmodule`, там же должен лежать `.env`):
 
 ```bash
+# Образ из GHCR (при деплое скрипт обновит APP_IMAGE на конкретный тег)
+APP_IMAGE=ghcr.io/<owner>/<repo>:<tag>
+
+# Traefik (опционально, если не совпадает с умолчанием)
+TRAEFIK_NETWORK=web
+# TRAEFIK_ENTRYPOINTS=websecure
+
+# Опционально: базовый URL для дополнительной проверки с хоста после деплоя
+# HEALTH_PUBLIC_URL=https://docsmodule.ru
+
 # Основные настройки приложения
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://your-domain.com
+APP_URL=https://docsmodule.ru
 
 # База данных
 DB_CONNECTION=pgsql
@@ -67,14 +86,21 @@ DB_PASSWORD=secure_password
 OPENAI_API_KEY=your_openai_key
 ```
 
-### 5. Настройка GitHub Secrets
+Для pull приватного образа из GHCR на сервере задайте `GHCR_USERNAME` и `GHCR_TOKEN` (токен с правом `read:packages`).
 
-В настройках репозитория добавьте:
+### 5. Настройка GitHub Secrets и Variables
 
-- `SERVER_HOST` - IP адрес вашего сервера
-- `SERVER_USER` - имя пользователя для SSH
-- `SERVER_SSH_KEY` - содержимое приватного ключа (~/.ssh/github_deploy)
-- `SERVER_PORT` - порт SSH (обычно 22)
+В **Settings → Secrets and variables → Actions**:
+
+**Secrets**
+
+- `SERVER_SSH_KEY` — приватный SSH-ключ для входа на сервер
+
+**Variables** (repository или environment `Production`)
+
+- `SERVER_HOST` — хост или IP сервера
+- `SERVER_USER` — пользователь SSH
+- `SERVER_PORT` — порт SSH (часто `22`)
 
 ### 6. Настройка файрвола
 
@@ -88,61 +114,54 @@ sudo ufw enable
 
 ### 7. Первоначальный деплой
 
+CI при пуше в `main` сам скачивает `deploy.sh` и `docker-compose.prod.yaml` в `/opt/docmodule` и запускает деплой.
+
+Ручной первый запуск (если нужно без CI):
+
 ```bash
-# Создание директории для деплоя
-sudo mkdir -p /opt/deploy
-sudo chown $USER:$USER /opt/deploy
+sudo mkdir -p /opt/docmodule
+sudo chown $USER:$USER /opt/docmodule
+cp deploy/deploy.sh /opt/docmodule/
+cp docker-compose.prod.yaml /opt/docmodule/docker-compose.yaml
+# Создайте /opt/docmodule/.env (см. выше), задайте APP_IMAGE и секреты
 
-# Копирование файлов деплоя
-cp deploy/deploy.sh /opt/deploy/
-chmod +x /opt/deploy/deploy.sh
+cd /opt/docmodule
+docker compose -f docker-compose.yaml --env-file .env up -d
 
-# Копирование compose файла
-cp docker-compose.prod.yaml /opt/deploy/
-
-# Запуск приложения
-cd /opt/deploy
-docker compose -f docker-compose.prod.yaml up -d
-
-# Проверка статуса
-docker compose -f docker-compose.prod.yaml ps
+docker compose -f docker-compose.yaml ps
 ```
+
+Порты 80/443 на хосте занимает Traefik; стек `docmodule` их не публикует.
 
 ## Использование
 
 ### Автоматический деплой
 
-**Деплой происходит только при создании тега в формате vX.X.X:**
+**Деплой запускается при push в ветку `main`** (workflow `../.github/workflows/deploy.yml`):
 
-```bash
-# Создание и пуш тега для деплоя
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-При создании тега GitHub Actions автоматически:
-1. Соберет Docker образ с тегом версии
-2. Опубликует его в GitHub Container Registry
-3. Подключится к серверу по SSH
-4. Запустит скрипт деплоя для обновления приложения
+1. Создаётся релизный тег вида `vYYYY.WW.Z`
+2. Собирается и публикуется образ в GHCR
+3. По SSH обновляются файлы в `/opt/docmodule` и выполняется `./deploy.sh deploy <image:tag>`
 
 ### Ручной деплой
 
 ```bash
+cd /opt/docmodule
+
 # Деплой конкретной версии
-/opt/deploy/deploy.sh deploy ghcr.io/your-username/docmodule:latest
+./deploy.sh deploy ghcr.io/your-username/docmodule:vYYYY.WW.Z
 
 # Откат к предыдущей версии
-/opt/deploy/deploy.sh rollback
+./deploy.sh rollback
 
 # Создание бэкапа
-/opt/deploy/deploy.sh backup
+./deploy.sh backup
 
 # Проверка здоровья
-/opt/deploy/deploy.sh health
+./deploy.sh health
 
 # Просмотр текущей версии
-/opt/deploy/deploy.sh version
+./deploy.sh version
 ```
 
 ### Мониторинг

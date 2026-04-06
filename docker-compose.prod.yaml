@@ -1,29 +1,10 @@
+# Production: образ из GHCR + внешний Traefik (сеть web, TLS myresolver).
+# На сервере в .env задайте TRAEFIK_NETWORK=web при необходимости и APP_IMAGE.
+
 services:
-  nginx-proxy:
-    image: jwilder/nginx-proxy
-    container_name: nginx-proxy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-      - ./certs:/etc/nginx/certs:rw
-      - ./vhost.d:/etc/nginx/vhost.d:rw
-      - ./html:/usr/share/nginx/html:rw
-
-  letsencrypt:
-    image: nginxproxy/acme-companion
-    container_name: nginx-letsencrypt
-    environment:
-      NGINX_PROXY_CONTAINER: nginx-proxy
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./certs:/etc/nginx/certs:rw
-      - ./vhost.d:/etc/nginx/vhost.d:rw
-      - ./html:/usr/share/nginx/html:rw
-
   app:
     image: ${APP_IMAGE}
+    restart: unless-stopped
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
@@ -40,31 +21,48 @@ services:
       - DB_DATABASE=laravel
       - DB_USERNAME=laravel
       - DB_PASSWORD=laravel
-      - VIRTUAL_HOST=docsmodule.ru
-      - LETSENCRYPT_HOST=docsmodule.ru
-      - LETSENCRYPT_EMAIL=admin@docsmodule.ru
     env_file:
       - .env
     depends_on:
-      - db
+      db:
+        condition: service_started
     volumes:
       - repos:/var/repos:ro
+    networks:
+      - default
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-web}
+      - "traefik.http.routers.docmodule-web.rule=Host(`docsmodule.ru`)"
+      - traefik.http.routers.docmodule-web.entrypoints=${TRAEFIK_ENTRYPOINTS:-websecure}
+      - traefik.http.routers.docmodule-web.service=docmodule-app
+      - traefik.http.routers.docmodule-web.tls.certresolver=myresolver
+      - "traefik.http.routers.docmodule-web-www.rule=Host(`www.docsmodule.ru`)"
+      - traefik.http.routers.docmodule-web-www.entrypoints=${TRAEFIK_ENTRYPOINTS:-websecure}
+      - traefik.http.routers.docmodule-web-www.service=docmodule-app
+      - traefik.http.routers.docmodule-web-www.tls.certresolver=myresolver
+      - traefik.http.services.docmodule-app.loadbalancer.server.port=80
 
   ssr:
     image: ${APP_IMAGE}
     container_name: ssr
+    restart: unless-stopped
     command: php artisan inertia:start-ssr --port=13714 --host=0.0.0.0
+    env_file:
+      - .env
+    depends_on:
+      - app
 
   db:
     image: postgres:16
+    restart: unless-stopped
     environment:
       - POSTGRES_DB=${DB_DATABASE:-laravel}
       - POSTGRES_USER=${DB_USERNAME:-laravel}
       - POSTGRES_PASSWORD=${DB_PASSWORD:-laravel}
     volumes:
       - pg_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
 
 volumes:
   pg_data:
@@ -73,3 +71,6 @@ volumes:
 networks:
   default:
     name: docmodule
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-web}

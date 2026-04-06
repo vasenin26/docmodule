@@ -118,16 +118,32 @@ rollback() {
     log "Rollback completed"
 }
 
+# Публичный URL для опциональной проверки через Traefik (DNS/TLS).
+# Основной критерий успеха — внутренний /api/health из контейнера app.
+health_public_url() {
+    local base="${HEALTH_PUBLIC_URL:-https://docsmodule.ru}"
+    base="${base%/}"
+    echo "${base}/api/health"
+}
+
 # Функция проверки здоровья приложения
 health_check() {
-    log "Performing health check..."
+    log "Performing health check (internal: app container → nginx → /api/health)..."
 
     local max_attempts=30
     local attempt=1
 
     while [ $attempt -le $max_attempts ]; do
-        if curl -f https://docsmodule.ru/api/health >/dev/null 2>&1; then
-            log "Health check passed"
+        if run_compose exec -T app curl -sf --max-time 10 http://127.0.0.1/api/health >/dev/null 2>&1; then
+            log "Internal health check passed"
+            local pub
+            pub="$(health_public_url)"
+            log "Optional public check (Traefik): ${pub}"
+            if curl -sf --max-time 15 "$pub" >/dev/null 2>&1; then
+                log "Public health check passed"
+            else
+                log "Notice: public health check failed or not ready yet (Traefik/DNS/TLS); deploy OK if internal passed"
+            fi
             return 0
         fi
 
@@ -239,9 +255,9 @@ update_app() {
     log "Stopping current application..."
     run_compose stop app || true
 
-    # Запуск обновленного приложения
+    # Запуск обновлённого приложения и SSR (один образ APP_IMAGE)
     log "Starting updated application..."
-    run_compose up -d app
+    run_compose up -d app ssr
 
     # Ожидание запуска
     sleep 30
@@ -272,7 +288,7 @@ run_migrations() {
     ensure_db_running
 
     # Убедимся, что приложение запущено (нужно для artisan)
-    run_compose up -d app
+    run_compose up -d app ssr
 
     # Выполнение миграций
     run_compose exec app php artisan migrate --force
