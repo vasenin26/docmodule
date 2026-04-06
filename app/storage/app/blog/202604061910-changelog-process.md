@@ -3,7 +3,7 @@ title: Как мы ведем changelog
 description: Описали простой и регулярный процесс ведения changelog и публичного devlog для прозрачной истории изменений.
 keywords: changelog, devlog, документация, процессы
 published_at: 2026-04-06
-canonical: /blog/changelog-process
+canonical: /blog/202604061910-changelog-process
 ---
 
 # Как мы ведем changelog

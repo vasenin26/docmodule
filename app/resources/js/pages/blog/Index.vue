@@ -32,7 +32,7 @@ defineProps<{
             </div>
 
             <div v-if="posts.length === 0" class="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-                Пока нет публикаций. Добавьте `.md` файлы в `docs/blog`.
+                Пока нет публикаций. Добавьте `.md` файлы в `storage/app/blog`.
             </div>
 
             <div v-else class="space-y-4">
