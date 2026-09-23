@@ -48,7 +48,7 @@ services:
     image: ${APP_IMAGE}
     container_name: ssr
     restart: unless-stopped
-    command: php artisan inertia:start-ssr --port=13714 --host=0.0.0.0
+    command: php artisan inertia:start-ssr
     env_file:
       - .env
     depends_on:
