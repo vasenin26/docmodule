@@ -7,6 +7,7 @@ export interface ActualizationStatusResponse {
         id: number;
         status: string;
         content: string;
+        content_html: string;
         chat_id: int|null;
         patches?: Patch[]
     };

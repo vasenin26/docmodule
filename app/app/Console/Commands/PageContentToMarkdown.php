@@ -30,7 +30,8 @@ class PageContentToMarkdown extends Command
     )
     {
         PageVersion::all()->each(function (PageVersion $pageVersion) use ($converter) {
-            if (str_contains("\\>", $pageVersion->content)) {
+            // Конвертируем только контент, похожий на HTML, чтобы не испортить уже сохранённый Markdown
+            if ($pageVersion->content && preg_match('/<\/?(p|br|h[1-6]|ul|ol|li|div|span|strong|em|a|pre|code|table|blockquote)\b[^>]*>/i', $pageVersion->content)) {
                 $pageVersion->content = $converter->toMd($pageVersion->content);
                 $pageVersion->save();
             }

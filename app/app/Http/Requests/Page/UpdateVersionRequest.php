@@ -6,6 +6,9 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateVersionRequest extends FormRequest
 {
+    const FORMAT_HTML = 'html';
+    const FORMAT_MARKDOWN = 'markdown';
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -32,6 +35,7 @@ class UpdateVersionRequest extends FormRequest
         return [
             'title' => 'nullable|string|max:255',
             'content' => 'nullable|string',
+            'content_format' => 'nullable|in:' . self::FORMAT_HTML . ',' . self::FORMAT_MARKDOWN,
             'project_files' => 'array',
             'project_files.*.url' => 'required|string|url',
             'project_files.*.description' => 'nullable|string',

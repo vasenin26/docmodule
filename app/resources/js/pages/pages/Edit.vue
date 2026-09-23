@@ -343,8 +343,9 @@ const fetchActualizationStatus = async () => {
             }
 
             // Обновляем содержимое черновика при завершении актуализации
-            if (data.data.status === 'success' && data.data.content && !contentUpdated.value) {
-                form.content = data.data.content;
+            // Редактор работает с HTML, в БД контент хранится в Markdown
+            if (data.data.status === 'success' && data.data.content_html && !contentUpdated.value) {
+                form.content = data.data.content_html;
                 contentUpdated.value = true;
             }
 

@@ -8,6 +8,7 @@ use App\Common\Enums\AgentTaskType;
 use App\Http\Requests\SendActualizationMessageRequest;
 use App\Http\Requests\StartPageActualizationRequest;
 use App\Interfaces\AgentTaskManagerInterface;
+use App\Interfaces\HtmlToMdInterface;
 use App\Interfaces\Factory\AgentResultHandlerFactoryInterface;
 use App\Models\Actualization;
 use App\Models\AgentTask;
@@ -95,7 +96,7 @@ class ActualizationController extends Controller
         }
     }
 
-    public function status(Actualization $actualization): JsonResponse
+    public function status(Actualization $actualization, HtmlToMdInterface $convertor): JsonResponse
     {
         return response()->json([
             'success' => true,
@@ -104,6 +105,7 @@ class ActualizationController extends Controller
                 'status' => $actualization->getGenerationStatus(),
                 'chat_id' => $actualization->llm_chat_id,
                 'content' => $actualization->pageVersion->content,
+                'content_html' => $convertor->toHtml($actualization->pageVersion->content ?? ''),
                 'patches' => $actualization->patches()->latest()->get()->map((fn (Patch $patch) => ['id' => $patch->id, 'title' => $patch->title]))
             ]
         ]);

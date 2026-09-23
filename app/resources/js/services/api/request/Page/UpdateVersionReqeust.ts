@@ -11,7 +11,7 @@ export class UpdatePageContent implements Request<UpdateResponse> {
 
     constructor(page: number, version: number, content: string) {
         this.url = route('pages.versions.update', { page, version });
-        this.body = { content };
+        this.body = { content, content_format: 'markdown' };
     }
 
     public async call(api: ApiInterface): Promise<UpdateResponse> {

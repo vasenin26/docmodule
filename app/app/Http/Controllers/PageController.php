@@ -503,6 +503,7 @@ class PageController extends Controller
         Page $page,
         PageVersion $version,
         PageContextServiceFactoryInterface $pageContextServiceFactory,
+        HtmlToMdConvertor $convertor,
     )
     {
         // Проверяем, что версия принадлежит странице
@@ -525,10 +526,19 @@ class PageController extends Controller
                 }
             }
 
-            DB::transaction(function () use ($version, $page, $validated, $attachmentsInput) {
+            // В БД контент всегда хранится в Markdown: HTML из редактора конвертируем,
+            // Markdown (например, со страницы актуализации) сохраняем как есть
+            $content = $version->content;
+            if (array_key_exists('content', $validated) && $validated['content'] !== null) {
+                $content = ($validated['content_format'] ?? UpdateVersionRequest::FORMAT_HTML) === UpdateVersionRequest::FORMAT_MARKDOWN
+                    ? $validated['content']
+                    : $convertor->toMd($validated['content']);
+            }
+
+            DB::transaction(function () use ($version, $page, $validated, $attachmentsInput, $content) {
                 $version->update([
                     'title' => $validated['title'] ?? $version->title,
-                    'content' => $validated['content'],
+                    'content' => $content,
                 ]);
                 if (!empty($attachmentsInput)) {
                     $version->syncProjectFilesByUrls($attachmentsInput, (int)$page->project_id);

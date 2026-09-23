@@ -92,4 +92,47 @@ class PageEditingProcessTest extends TestCase
             'content' => 'Updated draft content',
         ]);
     }
+
+    public function test_update_draft_converts_html_to_markdown()
+    {
+        $user = User::factory()->create();
+        $page = Page::factory()->create(['created_by' => $user->id]);
+
+        $draft = PageVersion::factory()->create([
+            'page_id' => $page->id,
+            'is_draft' => true,
+            'content' => 'Draft content',
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('pages.versions.update', [$page->id, $draft->id]), [
+                'content' => '<p>Text with <strong>bold</strong></p>',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('Text with **bold**', $draft->fresh()->content);
+    }
+
+    public function test_update_draft_keeps_markdown_as_is()
+    {
+        $user = User::factory()->create();
+        $page = Page::factory()->create(['created_by' => $user->id]);
+
+        $draft = PageVersion::factory()->create([
+            'page_id' => $page->id,
+            'is_draft' => true,
+            'content' => 'Draft content',
+        ]);
+
+        $markdown = "# Title\n\n- item_with_underscore\n- **bold**";
+
+        $this->actingAs($user)
+            ->put(route('pages.versions.update', [$page->id, $draft->id]), [
+                'content' => $markdown,
+                'content_format' => 'markdown',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame($markdown, $draft->fresh()->content);
+    }
 }
